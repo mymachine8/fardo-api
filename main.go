@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/mymachine8/fardo-api/stringutil"
+)
 
 func main() {
-	fmt.Printf("Hello, world.\n")
+	fmt.Printf(stringutil.Reverse("!oG ,olleH"))
 }
