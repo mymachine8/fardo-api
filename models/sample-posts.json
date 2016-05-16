@@ -1,0 +1,35 @@
+[{
+  "userId" : "FAASFDSF3E34343",
+"upvotes": 30,
+"downvotes": 20,
+"content": "Hello I'm Krishna Chaitanya, this is demo post",
+"replyCount": 10
+},
+  {
+    "userId" : "FAASFDSF3E34343",
+    "upvotes": 40,
+    "downvotes": 10,
+    "content": "Hello I'm Jhawar, this is demo post",
+    "replyCount": 10
+  },
+  {
+    "userId" : "FAASFDSF3E34343",
+    "upvotes": 45,
+    "downvotes": 20,
+    "content": "Hello I'm Bobby, this is demo post",
+    "replyCount": 30
+  },
+  {
+    "userId" : "FAASFDSF3E34343",
+    "upvotes": 30,
+    "downvotes": 20,
+    "content": "Hello I'm Pandodu, this is demo post",
+    "replyCount": 10
+  },
+  {
+    "userId" : "FAASFDSF3E34343",
+    "upvotes": 30,
+    "downvotes": 20,
+    "content": "Hello I'm Shilpa, this is demo post",
+    "replyCount": 10
+  }]
