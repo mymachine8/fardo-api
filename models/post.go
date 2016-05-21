@@ -13,16 +13,16 @@ import (
 
 type Post struct {
 	//UserId bson.ObjectId
-	Loc   [2]float64  `bson:"loc,omitempty" json:"loc"`
+	Loc   [2]float64  `bson:"loc,omitempty" json:"loc,omitempty"`
 	Upvotes    int  `bson:"upvotes,omitempty" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes,omitempty" json:"downvotes"`
-	CreatedAt  time.Time `bson:"created_at,omitempty"`
-	ModifiedAt time.Time
-	GroupId    int
-	CityId	   int
-	Content    string `json:"content"`
-	ReplyCount int
-	ReplyIds   []bson.ObjectId
+	CreatedAt  time.Time `bson:"created_at,omitempty" json:"-"`
+	ModifiedAt time.Time `json:"-"`
+	GroupId    int `json:"groupId,omitempty"`
+	CityId	   int `json:"cityId,omitempty"`
+	Content    string `json:"content,omitempty"`
+	ReplyCount int `json:"replyCount,omitempty"`
+	ReplyIds   []bson.ObjectId `json:"replyIds,omitempty"`
 }
 
 const PostCollectionName = "posts"
@@ -48,7 +48,9 @@ func MyPosts(userId bson.ObjectId, currentLatLng [2]float64) []Post {
 	fmt.Printf("%s\n", string(file))
 
 	var posts []Post;
-	json.Unmarshal(file, &posts)
+
+	json.Unmarshal(file, &posts);
+
 	fmt.Printf("Results: %v\n", posts)
 	return posts;
 }

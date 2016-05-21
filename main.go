@@ -6,15 +6,14 @@ import (
 	"github.com/mymachine8/fardo-api/bootstrap/dbconn"
 	"net/http"
 	"github.com/facebookgo/grace/gracehttp"
+	"os"
 )
 
-var (
-	address0 = "localhost:8082"
-)
 func main() {
 	r := controllers.GetRouter()
+	var port string = os.Getenv("PORT")
 	dbconn.GetInstance()
 	fmt.Println("Starting server on :8082");
 	gracehttp.Serve(
-		&http.Server{Addr: address0, Handler: r});
+		&http.Server{Addr: ":" + port, Handler: r});
 }

@@ -29,6 +29,17 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	var latLong [2]float64 = [2] float64{3232.323,32323.3232};
 	result := models.MyPosts(bson.NewObjectId(),latLong);
 	rw.Header().Set("Content-Type", "application/json")
-	jsonResult, _ := json.Marshal(result);
+
+	var error models.FardoError
+	response := struct {
+		Data [] models.Post `json:"data"`
+		Error models.FardoError `json:"error,omitempty"`
+	} {
+		result,
+		error,
+	}
+
+	jsonResult, _ := json.Marshal(response);
+
 	rw.Write(jsonResult)
 }
