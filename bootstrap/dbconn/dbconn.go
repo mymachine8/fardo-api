@@ -3,15 +3,22 @@ package dbconn
 import (
 	"gopkg.in/mgo.v2"
 	"fmt"
+	"time"
+	"log"
+	"github.com/mymachine8/fardo-api/models"
 )
 
+const (
+	MongoDBHosts = "localhost:27017"
+	AuthDatabase = "fardo"
+)
 
 type mongoSession struct {
-	session *mgo.Session
-	hosts []string
-	username string
-	password string
-	database string
+	Session *mgo.Session
+	Hosts []string
+	Username string
+	Password string
+	Database string
 }
 
 var instance *mongoSession
@@ -19,40 +26,35 @@ var instance *mongoSession
 func GetInstance() *mongoSession {
 	if instance == nil {
 		instance = &mongoSession{}   // <--- NOT THREAD SAFE
+		instance.Hosts = []string {MongoDBHosts}
+		instance.Database = AuthDatabase
 		instance.initializeDBConnection();
-		instance.database = "fardo"
 	}
 	return instance;
 }
 
 func (ms mongoSession) initializeDBConnection() {
-	/*mongoDBDialInfo := &mgo.DialInfo{
-		Addrs:    ms.hosts,
-		Timeout:  60 * time.Second,
-		Database: ms.database,
-		Username: ms.username,
-		Password: ms.password,
-	}*/
+	mongoDBDialInfo := &mgo.DialInfo{
+		Addrs:    ms.Hosts,
+		Timeout:  1 * time.Hour,
+		Database: ms.Database,
+	}
 
-	session, err := mgo.Dial("localhost:27017");
+	session, err := mgo.DialWithInfo(mongoDBDialInfo);
 
-
-	// Create a session which maintains a pool of socket connections
-	// to our MongoDB.
-	//session, err := mgo.DialWithInfo(mongoDBDialInfo)
 	if err != nil {
 		fmt.Printf("CreateSession: %s\n", err)
 		return;
 	}
 
-	ms.session = session;
+	ms.Session = session;
 
 	// Reads may not be entirely up-to-date, but they will always see the
 	// history of changes moving forward, the data read will be consistent
 	// across sequential queries in the same session, and modifications made
 	// within the session will be observed in following queries (read-your-writes).
 	// http://godoc.org/labix.org/v2/mgo#Session.SetMode
-	ms.session.SetMode(mgo.Monotonic, true)
+	ms.Session.SetMode(mgo.Monotonic, true)
 	ms.initializeIndexes();
 }
 
@@ -61,17 +63,29 @@ func  (ms mongoSession) initializeIndexes(){
 		Key: []string{"$2d:loc"},
 		Bits: 26,
 	}
-	collection := ms.session.DB(ms.database).C("posts");
+	collection := ms.Session.DB(ms.Database).C("posts");
 	err := collection.EnsureIndex(index)
 	if(err != nil) {
 		fmt.Printf(err.Error());
 	}
+
+	var categories [] models.Category;
+	collection = ms.Session.DB(ms.Database).C("categories");
+	query := collection.Find(nil)
+	log.Printf("came here");
+	err = query.All(&categories);
+	if(err != nil) {
+		fmt.Printf(err.Error());
+	}
+
+	fmt.Printf("%+v\n", categories);
+
 }
 
 func (ms mongoSession) GetSession() *mgo.Session{
-	return ms.session;
+	return ms.Session;
 }
 
 func (ms mongoSession) GetDatabaseName() string {
-	return ms.database;
+	return ms.Database;
 }
