@@ -2,7 +2,6 @@ package models
 
 import (
 	"time"
-	//"github.com/mymachine8/fardo-api/bootstrap/dbconn"
 	"gopkg.in/mgo.v2/bson"
 	"io/ioutil"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 
 type Post struct {
 	//UserId bson.ObjectId
+	Id bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
 	Loc        [2]float64  `bson:"loc,omitempty" json:"loc,omitempty"`
 	Upvotes    int  `bson:"upvotes,omitempty" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes,omitempty" json:"downvotes"`

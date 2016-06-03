@@ -6,6 +6,7 @@ import (
 	"time"
 	"log"
 	"github.com/mymachine8/fardo-api/models"
+	"github.com/mymachine8/fardo-api/common"
 )
 
 const (
@@ -80,12 +81,4 @@ func  (ms mongoSession) initializeIndexes(){
 
 	fmt.Printf("%+v\n", categories);
 
-}
-
-func (ms mongoSession) GetSession() *mgo.Session{
-	return ms.Session;
-}
-
-func (ms mongoSession) GetDatabaseName() string {
-	return ms.Database;
 }

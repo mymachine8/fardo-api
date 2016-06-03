@@ -3,11 +3,16 @@ package models
 import (
 	//"github.com/mymachine8/fardo-api/bootstrap/dbconn"
 )
+import (
+	"time"
+	"gopkg.in/mgo.v2/bson"
+)
 
 type Category struct {
-	Id int `bson:"_id" json:"id"`
+	Id bson.ObjectId `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
 	Description int `bson:"description" json:"description"`
+	CreatedOn time.Time
 }
 
 //var CategoryCollectionName = "categories"

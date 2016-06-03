@@ -10,15 +10,16 @@ import (
 	"encoding/json"
 	"log"
 	"github.com/urfave/negroni"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/mymachine8/fardo-api/data"
+	"github.com/mymachine8/fardo-api/common"
 )
 
 
-func GetRouter() *httprouter.Router{
+func InitRoutes() *httprouter.Router{
 	r := httprouter.New();
 
 	n := negroni.New();
-	n.Use(authMiddleware);
+	n.Use(negroni.HandlerFunc(common.Authorize));
 	n.UseHandler(r);
 
 	r.GET("/", helloWorldHandler);
@@ -39,20 +40,6 @@ func GetRouter() *httprouter.Router{
 	r.POST("/post", createPostHandler);
 
 	return r;
-}
-
-
-func authMiddleware(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	// validate the token
-	token, err := jwt.ParseFromRequest(r, func(token *jwt.Token) (interface{}, error) {
-		return verifyKey, nil
-	})
-	if(err==nil && token.Valid) {
-		next(w,r)
-	} else {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "Authentication failed")
-	}
 }
 
 func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -154,10 +141,11 @@ func removeLabelsBulkHandler(rw http.ResponseWriter, r *http.Request, p httprout
 }
 
 func categoryListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var result [] models.Category;
+
+	result := data.GetAllCategories();
 	var error models.FardoError
 	response := struct {
-		Data [] interface {} `json:"data"`
+		Data interface{} `json:"data"`
 		Error models.FardoError `json:"error,omitempty"`
 	} {
 		result,
