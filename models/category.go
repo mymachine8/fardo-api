@@ -12,7 +12,8 @@ type Category struct {
 	Id bson.ObjectId `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
 	Description int `bson:"description" json:"description"`
-	CreatedOn time.Time
+	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
+	IsActigve time.Time `bson:"isActive" json:"isActive"`
 }
 
 //var CategoryCollectionName = "categories"

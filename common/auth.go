@@ -7,6 +7,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/julienschmidt/httprouter"
 )
 
 // using asymmetric crypto/RSA keys
@@ -52,7 +53,9 @@ func GenerateJWT(name, role string) (string, error) {
 	}{name, role}
 
 	// set the expire time for JWT token
-	t.Claims["exp"] = time.Now().Add(time.Minute * 20).Unix()
+
+	//TODO: For admin expire it for every day
+	t.Claims["exp"] = time.Now().Add(time.Hour * 800).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {
 		return "", err
@@ -60,57 +63,42 @@ func GenerateJWT(name, role string) (string, error) {
 	return tokenString, nil
 }
 
-// Middleware for validating JWT tokens
-func Authorize(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// validate the token
-	token, err := jwt.ParseFromRequest(r, func(token *jwt.Token) (interface{}, error) {
+func BasicAuth(h httprouter.Handle) httprouter.Handle {
+	return func(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		// validate the token
+		token, err := jwt.ParseFromRequest(r, func(token *jwt.Token) (interface{}, error) {
 
-		// Verify the token with public key, which is the counter part of private key
-		return verifyKey, nil
-	})
+			// Verify the token with public key, which is the counter part of private key
+			return verifyKey, nil
+		})
 
-	if err != nil {
-		switch err.(type) {
+		if err != nil {
+			log.Print(err.Error());
+			switch err.(type) {
 
-		case *jwt.ValidationError: // JWT validation error
-			vErr := err.(*jwt.ValidationError)
+			case *jwt.ValidationError: // JWT validation error
+				vErr := err.(*jwt.ValidationError)
 
-			switch vErr.Errors {
-			case jwt.ValidationErrorExpired: //JWT expired
-				DisplayAppError(
-					w,
-					err,
-					"Access Token is expired, get a new Token",
-					401,
-				)
-				return
+				switch vErr.Errors {
+				case jwt.ValidationErrorExpired: //JWT expired
+					rw.WriteHeader(http.StatusInternalServerError);
+					rw.Write(ResponseJson(nil, ResponseError(http.StatusInternalServerError, "Token Expired")));
+					return;
 
-			default:
-				DisplayAppError(w,
-					err,
-					"Error while parsing the Access Token!",
-					500,
-				)
-				return
+				default:
+					rw.WriteHeader(http.StatusInternalServerError);
+					rw.Write(ResponseJson(nil, ResponseError(http.StatusInternalServerError, "Error Validating Token")));
+					return
+				}
+
 			}
-
-		default:
-			DisplayAppError(w,
-				err,
-				"Error while parsing Access Token!",
-				500)
-			return
 		}
 
-	}
-	if token.Valid {
-		next(w, r)
-	} else {
-		DisplayAppError(
-			w,
-			err,
-			"Invalid Access Token",
-			401,
-		)
+		if token.Valid {
+			h(rw,r,ps)
+		}
 	}
 }
+
+// Middleware for validating JWT tokens
+

@@ -1,1 +1,95 @@
 package data
+
+import (
+	"golang.org/x/crypto/bcrypt"
+	"github.com/mymachine8/fardo-api/models"
+	"gopkg.in/mgo.v2/bson"
+	"github.com/mymachine8/fardo-api/common"
+	"gopkg.in/mgo.v2"
+	"log"
+)
+
+func RegisterUser(user models.User) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+	obj_id := bson.NewObjectId()
+	user.Id = obj_id
+	hpass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	user.HashPassword = hpass
+	//clear the incoming text password
+	user.Password = ""
+	err = c.Insert(&user)
+	return err
+}
+
+func Login(user models.User) (u models.User, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	err = c.Find(bson.M{"username": user.Username}).One(&u)
+	if err != nil {
+		return
+	}
+
+	// Validate password
+	err = bcrypt.CompareHashAndPassword(u.HashPassword, []byte(user.Password))
+	if err != nil {
+		u = models.User{}
+	}
+	return
+}
+
+func RegisterAppUser(user models.User) (userId string, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	var existingUser models.User;
+
+	err = c.Find(bson.M{"imei": user.Imei}).One(&existingUser)
+
+	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
+		err = c.Insert(&user)
+		if (err != nil) {
+			return user.Id.Hex(), err
+		}
+		return
+	} else if(err!= nil){
+          return
+	}
+
+	return existingUser.Id.Hex(), err
+}
+
+func GetUserId(token string) (string, error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("access_token")
+
+	var result struct{ userId bson.ObjectId `bson:"userId"` }
+
+	err := c.Find(bson.M{"accessToken": token}).Select(bson.M{"userID": 1}).One(result)
+
+	return result.userId.Hex(), err
+
+}
+
+func SetUserToken(token string, userId string) error {
+	log.Println(userId);
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("access_token")
+
+	var accessToken models.AccessToken;
+	accessToken.Id = bson.NewObjectId();
+	accessToken.Token = token;
+	accessToken.UserId = bson.ObjectIdHex(userId);
+	err := c.Insert(&accessToken)
+
+	return err
+}

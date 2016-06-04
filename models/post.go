@@ -12,22 +12,19 @@ import (
 
 type Post struct {
 	//UserId bson.ObjectId
-	Id bson.ObjectId `bson:"_id,omitempty" json:"id,omitempty"`
-	Loc        [2]float64  `bson:"loc,omitempty" json:"loc,omitempty"`
-	Upvotes    int  `bson:"upvotes,omitempty" json:"upvotes"`
-	Downvotes  int  `bson:"downvotes,omitempty" json:"downvotes"`
-	CreatedAt  time.Time `bson:"created_at,omitempty" json:"-"`
-	ModifiedAt time.Time `json:"-"`
-	GroupId    int `json:"groupId,omitempty"`
-	CityId     int `json:"cityId,omitempty"`
-	Content    string `json:"content,omitempty"`
-	ReplyCount int `json:"replyCount,omitempty"`
-	ReplyIds   []bson.ObjectId `json:"replyIds,omitempty"`
-	LabelId    int `json:"labelId,omitempty"`
-	isActive   bool
+	Id bson.ObjectId `bson:"_id" json:"id"`
+	Loc        [2]float64  `bson:"loc" json:"loc"`
+	Upvotes    int  `bson:"upvotes" json:"upvotes"`
+	Downvotes  int  `bson:"downvotes" json:"downvotes"`
+	CreatedOn  time.Time `bson:"createdOn" json:"-"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
+	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
+	Content    string `bson:"content" json:"content"`
+	ReplyCount int `bson:"replyCount" json:"replyCount"`
+	ReplyIds   []bson.ObjectId `bson:"replyIds" json:"replyIds"`
+	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
+	isActive   bool `bson:"isActive" json:"isActive"`
 }
-
-const PostCollectionName = "posts"
 
 func MyPosts(userId bson.ObjectId, currentLatLng [2]float64) []Post {
 	//TODO: Get the feed from his Groups, 1 km of his current location.

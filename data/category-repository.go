@@ -5,7 +5,6 @@ import (
 	"github.com/mymachine8/fardo-api/models"
 	"gopkg.in/mgo.v2/bson"
 	"github.com/mymachine8/fardo-api/common"
-	"log"
 )
 
 func CreateCategory(category *models.Category) error {
@@ -32,18 +31,13 @@ func UpdateCategory(category *models.Category) error {
 	return err
 }
 
-func GetAllCategories() []models.Category {
+func GetAllCategories() (categories []models.Category,err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("categories")
 
-	var categories []models.Category
-	err := c.Find(nil).All(&categories)
+	err = c.Find(nil).All(&categories)
 
-	if(err != nil) {
-		log.Println("error in getting categories");
-	}
-
-	return categories
+	return categories, err
 }
 

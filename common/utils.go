@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"github.com/mymachine8/fardo-api/models"
 )
 
 type (
@@ -51,6 +52,38 @@ func initConfig() {
 	if err != nil {
 		log.Fatalf("[loadAppConfig]: %s\n", err)
 	}
+}
+
+func SuccessResponseJSON(result interface{}) []byte {
+	return ResponseJson(result, models.ResponseError{});
+}
+
+func ResponseJson(result interface{}, responseError models.ResponseError) []byte {
+	response := struct {
+		Data interface{} `json:"data"`
+		Error models.ResponseError `json:"error,omitempty"`
+	} {
+		result,
+		responseError,
+	}
+
+	jsonResult, err := json.Marshal(response);
+	if(err !=nil) {
+		log.Panic(err);
+	}
+
+	log.Println(string(jsonResult));
+
+	return jsonResult
+}
+
+func ResponseError(code int, message string) models.ResponseError {
+	log.Print(message);
+	errObj := models.ResponseError{
+		Code:      code,
+		Message:    message,
+	}
+	return errObj;
 }
 
 // Reads config.json and decode into AppConfig

@@ -46,6 +46,12 @@ func addIndexes() {
 		Sparse:     true,
 	}
 
+	groupIndex := mgo.Index{
+		Key:        []string{"$text:name"},
+		Background: true,
+		Sparse:     true,
+	}
+
 	postIndex := mgo.Index{
 		Key: []string{"$2d:loc"},
 		Bits: 26,
@@ -56,6 +62,7 @@ func addIndexes() {
 	defer session.Close()
 	userCol := session.DB(AppConfig.Database).C("users")
 	postCol := session.DB(AppConfig.Database).C("posts")
+	groupCol := session.DB(AppConfig.Database).C("groups")
 
 
 	err = userCol.EnsureIndex(userIndex)
@@ -63,6 +70,10 @@ func addIndexes() {
 		log.Fatalf("[addIndexes]: %s\n", err)
 	}
 	err = postCol.EnsureIndex(postIndex)
+	if err != nil {
+		log.Fatalf("[addIndexes]: %s\n", err)
+	}
+	err = groupCol.EnsureIndex(groupIndex)
 	if err != nil {
 		log.Fatalf("[addIndexes]: %s\n", err)
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 )
 
-func CreateGroup(group *models.Group) error {
+func CreateGroup(group models.Group) ( string , error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
@@ -16,15 +16,15 @@ func CreateGroup(group *models.Group) error {
 	group.Id = obj_id
 	group.CreatedOn = time.Now()
 	err := c.Insert(&group)
-	return err
+	return obj_id.Hex(), err
 }
 
-func UpdateGroup(group *models.Group) error {
+func UpdateGroup(id string, group models.Group) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err := c.Update(bson.M{"_id": group.Id},
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"name": group.Name,
 			"description": group.Description,
@@ -37,7 +37,7 @@ func RemoveGroup(id string) error {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err := c.Update(bson.M{"_id": id},
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"isActive": false,
 		}})
@@ -49,8 +49,16 @@ func GetAllGroups() (groups []models.Group, err error) {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	var groups []models.Group
 	err = c.Find(nil).All(&groups)
+	return
+}
+
+func GetGroups(name string) (groups []models.Group, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	err = c.Find(bson.M{"$text": bson.M{"$search": name}}).All(&groups)
 	return
 }
 
@@ -63,36 +71,37 @@ func GetGroupById(id string) (group models.Group, err error) {
 	return
 }
 
-func CreateLabel(label *models.Label) error {
+func CreateLabel(groupId string, label models.Label) ( string , error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("labels")
 
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
+	label.GroupId = bson.ObjectIdHex(groupId);
 	label.CreatedOn = time.Now()
 	err := c.Insert(&label)
-	return err;
+	return obj_id.Hex(), err;
 }
 
-func DeleteLabel(id string) (label models.Label, err error) {
+func RemoveLabel(id string) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("labels")
 
-	err = c.Update(bson.M{"_id": id},
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"isActive": false,
 		}})
-	return
+	return err;
 }
 
-func UpdateLabel(label *models.Label) error {
+func UpdateLabel(id string, label models.Label) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("labels")
 
-	err := c.Update(bson.M{"_id": label.Id},
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"name": label.Name,
 			"description": label.Description,
@@ -115,5 +124,14 @@ func GetAllLabels() (labels []models.Label, err error) {
 	c := context.DbCollection("labels")
 
 	err = c.Find(nil).All(&labels)
+	return
+}
+
+func GetGroupLabels(groupId string) (labels []models.Label, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("labels")
+
+	err = c.Find(bson.M{"_id": bson.ObjectIdHex(groupId)}).All(&labels)
 	return
 }

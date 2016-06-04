@@ -6,11 +6,11 @@ import (
 )
 
 type Label struct {
-	Id bson.ObjectId
-	Name string
-	Description string
-	GroupId int
-	IsVerified bool
-	IsActive bool
-	CreatedOn time.Time
+	Id bson.ObjectId `bson:"_id" json:"id"`
+	Name string `bson:"name" json:"name"`
+	Description string `bson:"description" json:"description"`
+	GroupId bson.ObjectId `bson:"groupId" json:"groupId"`
+	IsVerified bool `bson:"isVerified" json:"isVerified"`
+	IsActive bool `bson:"isActive" json:"isActive"`
+	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
 }
