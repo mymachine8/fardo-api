@@ -19,10 +19,12 @@ type Post struct {
 	CreatedOn  time.Time `bson:"createdOn" json:"-"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
+	GroupName   string `bson:"groupName,omitempty" json:"groupName,omitempty"`
 	Content    string `bson:"content" json:"content"`
 	ReplyCount int `bson:"replyCount" json:"replyCount"`
 	ReplyIds   []bson.ObjectId `bson:"replyIds" json:"replyIds"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
+	LabelName    string `bson:"labelName,omitempty" json:"labelName,omitempty"`
 	isActive   bool `bson:"isActive" json:"isActive"`
 }
 

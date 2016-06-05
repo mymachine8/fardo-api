@@ -48,8 +48,6 @@ func addIndexes() {
 
 	groupIndex := mgo.Index{
 		Key:        []string{"$text:name"},
-		Background: true,
-		Sparse:     true,
 	}
 
 	postIndex := mgo.Index{
@@ -57,25 +55,36 @@ func addIndexes() {
 		Bits: 26,
 	}
 
+	currentPostTTL := mgo.Index{
+		Key:         []string{"createdOn"},
+		Unique:      false,
+		DropDups:    false,
+		Background:  true,
+		ExpireAfter: time.Hour * 400}
+
 	// Add indexes into MongoDB
 	session := GetSession().Copy()
 	defer session.Close()
 	userCol := session.DB(AppConfig.Database).C("users")
 	postCol := session.DB(AppConfig.Database).C("posts")
 	groupCol := session.DB(AppConfig.Database).C("groups")
+	currentPostCol := session.DB(AppConfig.Database).C("current_posts")
 
 
 	err = userCol.EnsureIndex(userIndex)
 	if err != nil {
-		log.Fatalf("[addIndexes]: %s\n", err)
+		log.Print("[addIndexes]: %s\n", err.Error())
 	}
 	err = postCol.EnsureIndex(postIndex)
 	if err != nil {
-		log.Fatalf("[addIndexes]: %s\n", err)
+		log.Print("[addIndexes]: %s\n", err.Error())
 	}
 	err = groupCol.EnsureIndex(groupIndex)
 	if err != nil {
-		log.Fatalf("[addIndexes]: %s\n", err)
+		log.Print("[addIndexes]: %s\n", err.Error())
+	}
+	if err := currentPostCol.EnsureIndex(currentPostTTL); err != nil {
+		log.Print("[addIndexes]: %s\n", err.Error())
 	}
 }
 

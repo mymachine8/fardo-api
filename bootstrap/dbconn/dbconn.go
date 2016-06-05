@@ -37,7 +37,7 @@ func GetInstance() *mongoSession {
 func (ms mongoSession) initializeDBConnection() {
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    ms.Hosts,
-		Timeout:  1 * time.Hour,
+		Timeout:  30 * time.Second,
 		Database: ms.Database,
 	}
 

@@ -8,7 +8,6 @@ import (
 	"github.com/mymachine8/fardo-api/models"
 	"gopkg.in/mgo.v2/bson"
 	"encoding/json"
-	"log"
 	"github.com/mymachine8/fardo-api/data"
 	"github.com/mymachine8/fardo-api/common"
 )
@@ -44,7 +43,12 @@ func InitRoutes() *httprouter.Router {
 	r.POST("/api/admin/login", loginAdminHandler);
 	r.POST("/api/member/token", memberRegisterHandler);
 
+	r.GET("/api/posts", allPostsListHandler);
+	r.GET("/api/posts/current", currentPostsListHandler);
 	r.POST("/api/posts", createPostHandler);
+	r.POST("/api/posts/:id/upvote", upvotePostHandler);
+	r.POST("/api/posts/:id/downvote", downvotePostHandler);
+	r.POST("/api/posts/:id/suspend", suspendPostHandler);
 
 	return r;
 }
@@ -98,15 +102,75 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	rw.Write(jsonResult)
 }
 
-func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO:Create Post Do all necessary validations and save it to DB
-	decoder := json.NewDecoder(r.Body)
-	var post models.Post
-	err := decoder.Decode(&post);
-	if err != nil {
-		panic(err)
+func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	result, err := data.GetAllPosts();
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
 	}
-	log.Println(post)
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func currentPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	result, err := data.GetCurrentPosts();
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var post models.Post
+	err := json.NewDecoder(r.Body).Decode(&post)
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	id, err := data.CreatePost(post);
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(id));
+}
+
+func upvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.UpvotePost(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.DownvotePost(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.DownvotePost(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
 }
 
 func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -175,21 +239,19 @@ func categoryListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 }
 
 func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	searchStr := r.URL.Query().Get("name");
-	r.URL.Query()
 
+	searchStr := r.URL.Query().Get("name");
 	var err error
 	var result []models.Group
-	if(len(searchStr) > 0) {
+	if (len(searchStr) > 0) {
 		result, err = data.GetGroups(searchStr);
-	}else{
-	result, err = data.GetAllGroups();
+	} else {
+		result, err = data.GetAllGroups();
 	}
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
 	}
-
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
@@ -285,7 +347,6 @@ func getLabelByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 		return
 	}
 
-
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
@@ -315,7 +376,7 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 		return
 	}
 
-	err = data.SetUserToken(token,loginUser.Id.Hex());
+	err = data.SetUserToken(token, loginUser.Id.Hex());
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
@@ -359,7 +420,7 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	err = data.SetUserToken(token,userId);
+	err = data.SetUserToken(token, userId);
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);

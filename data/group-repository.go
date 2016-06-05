@@ -58,6 +58,7 @@ func GetGroups(name string) (groups []models.Group, err error) {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
+	name = "/" + name + "/";
 	err = c.Find(bson.M{"$text": bson.M{"$search": name}}).All(&groups)
 	return
 }
@@ -72,15 +73,23 @@ func GetGroupById(id string) (group models.Group, err error) {
 }
 
 func CreateLabel(groupId string, label models.Label) ( string , error) {
+	groupContext := common.NewContext()
+	groupCol := groupContext.DbCollection("groups")
+	var group models.Group
+	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group)
+	groupContext.Close()
+	if(err != nil) {
+		return "",err
+	}
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("labels")
-
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
 	label.GroupId = bson.ObjectIdHex(groupId);
 	label.CreatedOn = time.Now()
-	err := c.Insert(&label)
+	label.GroupName = group.Name;
+	err = c.Insert(&label)
 	return obj_id.Hex(), err;
 }
 
@@ -132,6 +141,6 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	defer context.Close()
 	c := context.DbCollection("labels")
 
-	err = c.Find(bson.M{"_id": bson.ObjectIdHex(groupId)}).All(&labels)
+	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&labels)
 	return
 }

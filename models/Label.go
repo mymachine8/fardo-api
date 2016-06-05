@@ -10,6 +10,7 @@ type Label struct {
 	Name string `bson:"name" json:"name"`
 	Description string `bson:"description" json:"description"`
 	GroupId bson.ObjectId `bson:"groupId" json:"groupId"`
+	GroupName string `bson:"groupName" json:"groupName"`
 	IsVerified bool `bson:"isVerified" json:"isVerified"`
 	IsActive bool `bson:"isActive" json:"isActive"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
