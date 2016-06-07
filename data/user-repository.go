@@ -69,11 +69,11 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 func GetUserId(token string) (string, error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("access_token")
+	c := context.DbCollection("access_tokens")
 
 	var result struct{ userId bson.ObjectId `bson:"userId"` }
 
-	err := c.Find(bson.M{"accessToken": token}).Select(bson.M{"userID": 1}).One(result)
+	err := c.Find(bson.M{"token": token}).Select(bson.M{"userID": 1}).One(result)
 
 	return result.userId.Hex(), err
 
@@ -83,7 +83,7 @@ func SetUserToken(token string, userId string) error {
 	log.Println(userId);
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("access_token")
+	c := context.DbCollection("access_tokens")
 
 	var accessToken models.AccessToken;
 	accessToken.Id = bson.NewObjectId();
@@ -92,4 +92,38 @@ func SetUserToken(token string, userId string) error {
 	err := c.Insert(&accessToken)
 
 	return err
+}
+
+func UpdateUserGroup(token string, groupId string) (err error) {
+	context := common.NewContext()
+	tokenCol := context.DbCollection("access_tokens")
+	defer context.Close()
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	log.Print(result.UserId);
+	if(err != nil) {
+		return
+	}
+
+	err = userCol.Update(bson.M{"_id": result.UserId},
+		bson.M{"$set": bson.M{
+			"groupId": bson.ObjectIdHex(groupId),
+		}})
+
+	if(err != nil) {
+		return
+	}
+
+	err = tokenCol.Update(bson.M{"userId": result.UserId},
+		bson.M{"$set": bson.M{
+			"groupId": bson.ObjectIdHex(groupId),
+		}})
+
+	return
 }

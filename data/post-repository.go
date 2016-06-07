@@ -8,21 +8,19 @@ import (
 	"log"
 )
 
-func CreatePost(post models.Post) ( string , error) {
+func CreatePostUser(token string, post models.Post) (string, error) {
 	var err error
-	log.Print(len(post.GroupId))
-	if(len(post.GroupId) > 0) {
-		groupContext := common.NewContext()
-		groupCol := groupContext.DbCollection("groups")
-		var group models.Group
-		err = groupCol.FindId(post.GroupId).One(&group)
-		groupContext.Close()
-		if (err == nil) {
-			post.GroupName = group.Name;
-		}
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("access_tokens")
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	if(err != nil) {
+		return "", err
 	}
-	log.Print(len(post.LabelId))
-	if(len(post.LabelId) > 0) {
+	post.GroupId = result.GroupId;
+	if (len(post.LabelId) > 0) {
 		labelContext := common.NewContext()
 		labelCol := labelContext.DbCollection("labels")
 		var label models.Label
@@ -33,15 +31,14 @@ func CreatePost(post models.Post) ( string , error) {
 		}
 	}
 
-
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
 	obj_id := bson.NewObjectId()
 	post.Id = obj_id
+	post.IsActive = true;
 	post.CreatedOn = time.Now()
-
 
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
@@ -49,6 +46,54 @@ func CreatePost(post models.Post) ( string , error) {
 	return obj_id.Hex(), err
 }
 
+func CreatePostAdmin(token string, post models.Post) (string, error) {
+	var err error
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("access_tokens")
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	if(err != nil) {
+		return "", err
+	}
+	log.Print(len(post.GroupId))
+	if (len(post.GroupId) > 0) {
+		groupContext := common.NewContext()
+		groupCol := groupContext.DbCollection("groups")
+		var group models.Group
+		err = groupCol.FindId(post.GroupId).One(&group)
+		groupContext.Close()
+		if (err == nil) {
+			post.GroupName = group.Name;
+		}
+	}
+	log.Print(len(post.LabelId))
+	if (len(post.LabelId) > 0) {
+		labelContext := common.NewContext()
+		labelCol := labelContext.DbCollection("labels")
+		var label models.Label
+		err = labelCol.FindId(post.LabelId).One(&label)
+		labelContext.Close()
+		if (err == nil) {
+			post.LabelName = label.Name;
+		}
+	}
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	obj_id := bson.NewObjectId()
+	post.Id = obj_id
+	post.IsActive = true;
+	post.CreatedOn = time.Now()
+
+	err = c.Insert(&post)
+	go addToCurrentPosts(post);
+
+	return obj_id.Hex(), err
+}
 
 func addToCurrentPosts(post models.Post) {
 	var postLite models.PostLite
@@ -61,7 +106,7 @@ func addToCurrentPosts(post models.Post) {
 	postLite.CreatedOn = post.CreatedOn
 	c := context.DbCollection("current_posts")
 	err := c.Insert(&postLite)
-	if(err != nil) {
+	if (err != nil) {
 		log.Print("Error Inserting to Current Post " + err.Error())
 	}
 }

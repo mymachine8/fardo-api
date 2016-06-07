@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"github.com/mymachine8/fardo-api/models"
+	"strings"
 )
 
 type (
@@ -84,6 +85,16 @@ func ResponseError(code int, message string) models.ResponseError {
 		Message:    message,
 	}
 	return errObj;
+}
+
+func GetAccessToken(req *http.Request) string {
+	if ah := req.Header.Get("Authorization"); ah != "" {
+		// Should be a bearer token
+		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
+			return ah[7:]
+		}
+	}
+	return "";
 }
 
 // Reads config.json and decode into AppConfig

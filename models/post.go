@@ -25,7 +25,7 @@ type Post struct {
 	ReplyIds   []bson.ObjectId `bson:"replyIds" json:"replyIds"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
 	LabelName    string `bson:"labelName,omitempty" json:"labelName,omitempty"`
-	isActive   bool `bson:"isActive" json:"isActive"`
+	IsActive   bool `bson:"isActive" json:"isActive"`
 }
 
 func MyPosts(userId bson.ObjectId, currentLatLng [2]float64) []Post {

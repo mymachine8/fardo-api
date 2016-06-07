@@ -17,7 +17,6 @@ func main() {
 	fmt.Println("Starting server on :8082");
 
 	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:9001"},
 		AllowCredentials: true,
 		Debug: true,
 		AllowedMethods : []string{"GET", "POST","PUT", "DELETE"},

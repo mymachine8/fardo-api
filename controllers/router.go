@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"github.com/mymachine8/fardo-api/data"
 	"github.com/mymachine8/fardo-api/common"
+	"log"
 )
 
 func InitRoutes() *httprouter.Router {
@@ -35,20 +36,24 @@ func InitRoutes() *httprouter.Router {
 	r.GET("/api/labels/:id", getLabelByIdHandler);
 	r.POST("/api/groups/:id/labels", createLabelHandler);
 	r.PUT("/api/labels/:id", updateLabelHandler);
+	r.PUT("/api/labels/:id/activate", updateLabelHandler);
+	r.PUT("/api/labels/:id/suspend", updateLabelHandler);
 	r.DELETE("/api/labels/:id", removeLabelHandler);
 	r.POST("/api/labels/bulk", createLabelsBulkHandler);
 
 
 	r.POST("/api/admin/register", registerAdminHandler);
 	r.POST("/api/admin/login", loginAdminHandler);
-	r.POST("/api/member/token", memberRegisterHandler);
+	r.POST("/api/users", memberRegisterHandler);
+	r.PUT("/api/users/group", updateUserGroupHandler);
 
-	r.GET("/api/posts", allPostsListHandler);
-	r.GET("/api/posts/current", currentPostsListHandler);
+	r.GET("/api/admin/posts", allPostsListHandler);
+	r.GET("/api/admin/posts/current", currentPostsListHandler);
+	r.POST("/api/admin/posts", createAdminPostHandler);
 	r.POST("/api/posts", createPostHandler);
-	r.POST("/api/posts/:id/upvote", upvotePostHandler);
-	r.POST("/api/posts/:id/downvote", downvotePostHandler);
-	r.POST("/api/posts/:id/suspend", suspendPostHandler);
+	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
+	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
+	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
 
 	return r;
 }
@@ -113,6 +118,7 @@ func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 }
 
+
 func currentPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	result, err := data.GetCurrentPosts();
@@ -124,6 +130,27 @@ func currentPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprout
 
 }
 
+func createAdminPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var post models.Post
+	err := json.NewDecoder(r.Body).Decode(&post)
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	id, err := data.CreatePostAdmin(token, post);
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(id));
+}
+
 func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var post models.Post
 	err := json.NewDecoder(r.Body).Decode(&post)
@@ -133,7 +160,9 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 		return
 	}
 
-	id, err := data.CreatePost(post);
+	token := common.GetAccessToken(r);
+
+	id, err := data.CreatePostUser(token, post);
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
@@ -165,11 +194,32 @@ func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.DownvotePost(p.ByName("id"));
+	err := data.SuspendPost(p.ByName("id"));
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
 	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var body struct { GroupId string};
+	err := json.NewDecoder(r.Body).Decode(&body)
+
+	token := common.GetAccessToken(r);
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusBadRequest, err);
+		return
+	}
+
+	err = data.UpdateUserGroup(token, body.GroupId);
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
 }
 
@@ -401,14 +451,16 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user);
 	if (err != nil) {
-		panic(err);
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
 	}
 
 	var userId string;
 	userId, err = data.RegisterAppUser(user);
 
 	if (err != nil) {
-		panic(err);
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
 	}
 
 	var token string
@@ -420,6 +472,7 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
+	log.Print(userId);
 	err = data.SetUserToken(token, userId);
 
 	if (err != nil) {

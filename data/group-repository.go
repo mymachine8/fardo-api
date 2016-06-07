@@ -14,6 +14,7 @@ func CreateGroup(group models.Group) ( string , error) {
 
 	obj_id := bson.NewObjectId()
 	group.Id = obj_id
+	group.IsActive = true;
 	group.CreatedOn = time.Now()
 	err := c.Insert(&group)
 	return obj_id.Hex(), err
