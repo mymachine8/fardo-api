@@ -56,9 +56,9 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		err = c.Insert(&user)
 		if (err != nil) {
-			return user.Id.Hex(), err
+			return
 		}
-		return
+		return user.Id.Hex(), err
 	} else if(err!= nil){
           return
 	}
