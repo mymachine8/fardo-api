@@ -23,6 +23,7 @@ func InitRoutes() *httprouter.Router {
 
 
 	r.GET("/api/categories", common.BasicAuth(categoryListHandler));
+	r.GET("/api/categories/:id/sub-categories", common.BasicAuth(subCategoryListHandler));
 
 
 	r.GET("/api/groups", groupListHandler);
@@ -327,6 +328,18 @@ func createLabelsBulkHandler(rw http.ResponseWriter, r *http.Request, p httprout
 func categoryListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	result, err := data.GetAllCategories();
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func subCategoryListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	result, err := data.GetSubCategories(p.ByName("id"));
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
