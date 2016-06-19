@@ -165,3 +165,53 @@ func GetCurrentPosts() (posts []models.PostLite, err error) {
 	return
 }
 
+func AddComment(comment models.Comment) (string, error) {
+	var err error
+	log.Print(comment);
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	obj_id := bson.NewObjectId()
+	comment.Id = obj_id
+	comment.IsActive = true;
+	comment.CreatedOn = time.Now()
+
+	err = c.Insert(&comment)
+
+	return obj_id.Hex(), err
+}
+
+func UpvoteComment(id string) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"upvotes": 1,
+		}})
+	return
+}
+
+func DownvoteComment(id string) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"downvotes": 1,
+		}})
+	return
+}
+
+func GetAllComments(postId string) (posts []models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&posts)
+	return
+}
+

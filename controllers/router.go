@@ -54,6 +54,10 @@ func InitRoutes() *httprouter.Router {
 	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
 	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
 	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
+	r.GET("/api/posts/:id/comments", commentListHandler);
+	r.POST("/api/posts/:id/comments", createCommentHandler);
+	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
+	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 
 	return r;
 }
@@ -154,6 +158,8 @@ func createAdminPostHandler(rw http.ResponseWriter, r *http.Request, p httproute
 func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var post models.Post
 	err := json.NewDecoder(r.Body).Decode(&post)
+	log.Print("Post came here");
+	log.Print(post);
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
@@ -161,8 +167,30 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 
 	token := common.GetAccessToken(r);
+	log.Print(token);
 
 	id, err := data.CreatePostUser(token, post);
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(id));
+}
+
+func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var comment models.Comment
+	err := json.NewDecoder(r.Body).Decode(&comment)
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	log.Print(comment);
+
+	id, err := data.AddComment(comment);
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
@@ -185,6 +213,26 @@ func upvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	err := data.DownvotePost(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func upvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.UpvoteComment(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func downvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.DownvoteComment(p.ByName("id"));
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
@@ -307,6 +355,17 @@ func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 
 func groupLabelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result, err := data.GetGroupLabels(p.ByName("id"));
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func commentListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	result, err := data.GetAllComments(p.ByName("id"));
 
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
