@@ -17,6 +17,9 @@ func InitRoutes() *httprouter.Router {
 	r := httprouter.New();
 
 	r.GET("/", helloWorldHandler);
+	//http.HandleFunc("/", hellWorldHandler);
+
+	http.Handle("/", r);
 
 	//TODO: Other routers come here
 	r.GET("/api/my-circle", myCircleHandler);
@@ -24,6 +27,7 @@ func InitRoutes() *httprouter.Router {
 
 	r.GET("/api/categories", common.BasicAuth(categoryListHandler));
 	r.GET("/api/categories/:id/sub-categories", common.BasicAuth(subCategoryListHandler));
+	r.POST("/api/sub-categories/bulk-insert", bulkInsertSubCategoryHandler);
 
 
 	r.GET("/api/groups", groupListHandler);
@@ -48,6 +52,8 @@ func InitRoutes() *httprouter.Router {
 	r.POST("/api/users", memberRegisterHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
 
+	r.GET("/api/featured-groups", featuredGroupsHandler);
+
 	r.GET("/api/admin/posts", allPostsListHandler);
 	r.GET("/api/admin/posts/current", currentPostsListHandler);
 	r.POST("/api/admin/posts", createAdminPostHandler);
@@ -65,6 +71,10 @@ func InitRoutes() *httprouter.Router {
 
 func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	fmt.Fprintln(rw, "Hello World")
+}
+
+func hellWorldHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "Hello World")
 }
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -110,6 +120,16 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	jsonResult, _ := json.Marshal(response);
 
 	rw.Write(jsonResult)
+}
+
+func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	token := common.GetAccessToken(r);
+	result, err := data.GetFeaturedGroups(token);
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
 }
 
 func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -584,6 +604,22 @@ func registerAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 	rw.Write(common.SuccessResponseJSON(user));
 
+}
+
+func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var subCategories []models.GroupSubCategory
+	err := json.NewDecoder(r.Body).Decode(&subCategories);
+	if(err!=nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
+
+	err = data.CreateSubCategories(subCategories)
+
+	if(err!=nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
+	}
 }
 
 func writeErrorResponse(rw http.ResponseWriter, statusCode int, err error) {

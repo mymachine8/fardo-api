@@ -7,6 +7,32 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 )
 
+
+func GetFeaturedGroups(token string) (groups []models.Group, err error) {
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("access_tokens")
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	if(err != nil) {
+		return
+	}
+
+	context := common.NewContext()
+	defer context.Close()
+
+	var group models.Group;
+	c := context.DbCollection("groups")
+	err = c.FindId(result.GroupId).One(&group);
+
+	if(err !=nil) {
+		return;
+	}
+
+	err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
+	return;
+}
+
 func CreateGroup(group models.Group) ( string , error) {
 	context := common.NewContext()
 	defer context.Close()

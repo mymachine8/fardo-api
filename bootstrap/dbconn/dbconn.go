@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MongoDBHosts = "localhost:27017"
+	MongoDBHosts = "104.155.143.185"
 	AuthDatabase = "fardo"
 )
 

@@ -11,8 +11,7 @@ func CreateCategory(category *models.GroupCategory) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("group_categories")
-	obj_id := bson.NewObjectId()
-	category.Id = obj_id
+	category.Id = bson.NewObjectId()
 	category.CreatedOn = time.Now()
 	err := c.Insert(&category)
 	return err
@@ -41,15 +40,21 @@ func GetAllCategories() (categories []models.GroupCategory,err error) {
 	return categories, err
 }
 
-func CreateSubCategory(category *models.GroupSubCategory) error {
+func CreateSubCategories(categories []models.GroupSubCategory) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("group_subcategories")
-	obj_id := bson.NewObjectId()
-	category.Id = obj_id
-	category.CreatedOn = time.Now()
-	err := c.Insert(&category)
-	return err
+
+	for i := 0; i < len(categories); i++ {
+		category := &categories[i]
+		category.Id = bson.NewObjectId();
+		err = c.Insert(&category)
+		if(err!=nil) {
+			return
+		}
+	}
+
+	return
 }
 
 func UpdateSubCategory(category *models.GroupSubCategory) error {

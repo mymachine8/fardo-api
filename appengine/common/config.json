@@ -1,6 +1,6 @@
 {
   "Server"      : "0.0.0.0:8080",
-  "MongoDBHost" : "localhost",
+  "MongoDBHost" : "127.0.0.1",
   "MongoDBUser"	: "",
   "MongoDBPwd"	: "",
   "Database"    : "fardo"
