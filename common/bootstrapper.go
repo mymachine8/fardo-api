@@ -7,6 +7,5 @@ func StartUp() {
 	initKeys()
 	// Start a MongoDB session
 	createDbSession()
-	// Add indexes into MongoDB
-	addIndexes()
+
 }

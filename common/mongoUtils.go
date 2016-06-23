@@ -18,7 +18,7 @@ func GetSession() *mgo.Session {
 			Timeout:  60 * time.Second,
 		})
 		if err != nil {
-			log.Fatalf("[GetSession]: %s\n", err)
+			log.Print("[GetSession]: %s\n", err)
 		}
 	}
 	return session
@@ -32,8 +32,10 @@ func createDbSession() {
 		Timeout:  60 * time.Second,
 	})
 	if err != nil {
-		log.Fatalf("[createDbSession]: %s\n", err)
+		log.Print("[createDbSession]: %s\n", err)
+		return;
 	}
+	addIndexes()
 }
 
 // Add indexes into MongoDB
