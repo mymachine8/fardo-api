@@ -11,9 +11,10 @@ import (
 	"github.com/mymachine8/fardo-api/data"
 	"github.com/mymachine8/fardo-api/common"
 	"log"
+	"github.com/rs/cors"
 )
 
-func InitRoutes() *httprouter.Router {
+func InitRoutes() http.Handler {
 	r := httprouter.New();
 
 	r.GET("/", helloWorldHandler);
@@ -66,7 +67,15 @@ func InitRoutes() *httprouter.Router {
 	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 
-	return r;
+	c := cors.New(cors.Options{
+		AllowCredentials: true,
+		Debug: true,
+		AllowedMethods : []string{"GET", "POST","PUT", "DELETE"},
+		AllowedHeaders :[]string{"Origin", "Accept", "Content-Type", "Authorization"},
+	})
+	handler := c.Handler(r)
+
+	return handler;
 }
 
 func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
