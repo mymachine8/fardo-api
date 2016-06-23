@@ -1,3 +1,5 @@
+application: fardo-854c8
+version: alpha-001
 runtime: go
 api_version: go1
 

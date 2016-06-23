@@ -73,10 +73,6 @@ func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	fmt.Fprintln(rw, "Hello World")
 }
 
-func hellWorldHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello World")
-}
-
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	v := r.URL.Query()
 	fmt.Println(v["lat"]);

@@ -15,7 +15,7 @@ func GetSession() *mgo.Session {
 			Addrs:    []string{AppConfig.MongoDBHost},
 			Username: AppConfig.DBUser,
 			Password: AppConfig.DBPwd,
-			Timeout:  60 * time.Second,
+			Timeout:  5 * time.Second,
 		})
 		if err != nil {
 			log.Print("[GetSession]: %s\n", err)
@@ -29,7 +29,7 @@ func createDbSession() {
 		Addrs:    []string{AppConfig.MongoDBHost},
 		Username: AppConfig.DBUser,
 		Password: AppConfig.DBPwd,
-		Timeout:  60 * time.Second,
+		Timeout:  5 * time.Second,
 	})
 	if err != nil {
 		log.Print("[createDbSession]: %s\n", err)
