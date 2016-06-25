@@ -2,11 +2,12 @@ package common
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"github.com/mymachine8/fardo-api/models"
 	"strings"
+	log "github.com/Sirupsen/logrus"
+	"github.com/johntdyer/slackrus"
 )
 
 type (
@@ -61,15 +62,15 @@ func SuccessResponseJSON(result interface{}) []byte {
 
 func ResponseJson(result interface{}, responseError models.ResponseError) []byte {
 	response := struct {
-		Data interface{} `json:"data"`
+		Data  interface{} `json:"data"`
 		Error models.ResponseError `json:"error,omitempty"`
-	} {
+	}{
 		result,
 		responseError,
 	}
 
 	jsonResult, err := json.Marshal(response);
-	if(err !=nil) {
+	if (err != nil) {
 		log.Panic(err);
 	}
 
@@ -95,6 +96,20 @@ func GetAccessToken(req *http.Request) string {
 		}
 	}
 	return "";
+}
+
+func initSlackHook() {
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stderr)
+	log.SetLevel(log.DebugLevel)
+
+	log.AddHook(&slackrus.SlackrusHook{
+		HookURL:        "https://hooks.slack.com/services/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",
+		AcceptedLevels: slackrus.LevelThreshold(log.DebugLevel),
+		Channel:        "#bugs",
+		IconEmoji:      ":ghost:",
+		Username:       "golang",
+	})
 }
 
 // Reads config.json and decode into AppConfig

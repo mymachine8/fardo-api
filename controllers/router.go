@@ -68,9 +68,10 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 
 	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://fardo.krishnakommanapalli.in", "http://localhost:9003"},
 		AllowCredentials: true,
 		Debug: true,
-		AllowedMethods : []string{"GET", "POST","PUT", "DELETE"},
+		AllowedMethods : []string{"GET", "POST", "PUT", "DELETE"},
 		AllowedHeaders :[]string{"Origin", "Accept", "Content-Type", "Authorization"},
 	})
 	handler := c.Handler(r)
@@ -147,7 +148,6 @@ func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 	rw.Write(common.SuccessResponseJSON(result));
 
 }
-
 
 func currentPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
@@ -277,7 +277,7 @@ func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var body struct { GroupId string};
+	var body struct{ GroupId string };
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	token := common.GetAccessToken(r);
@@ -614,14 +614,14 @@ func registerAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var subCategories []models.GroupSubCategory
 	err := json.NewDecoder(r.Body).Decode(&subCategories);
-	if(err!=nil) {
+	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
 	}
 
 	err = data.CreateSubCategories(subCategories)
 
-	if(err!=nil) {
+	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return
 	}

@@ -2,6 +2,8 @@ package common
 
 func StartUp() {
 	// Initialize AppConfig variable
+	initSlackHook();
+
 	initConfig()
 	// Initialize private/public keys for JWT authentication
 	initKeys()

@@ -1,7 +1,7 @@
 package common
 
 import (
-	"log"
+	log "github.com/Sirupsen/logrus"
 	"time"
 	"gopkg.in/mgo.v2"
 )
@@ -18,11 +18,12 @@ func GetSession() *mgo.Session {
 			Timeout:  5 * time.Second,
 		})
 		if err != nil {
-			log.Print("[GetSession]: %s\n", err)
+			log.Panic("[GetSession]: %s\n", err)
 		}
 	}
 	return session
 }
+
 func createDbSession() {
 	var err error
 	session, err = mgo.DialWithInfo(&mgo.DialInfo{
@@ -32,8 +33,7 @@ func createDbSession() {
 		Timeout:  5 * time.Second,
 	})
 	if err != nil {
-		log.Print("[createDbSession]: %s\n", err)
-		return;
+		log.Panic("[createDbSession]: %s\n", err)
 	}
 	addIndexes()
 }
