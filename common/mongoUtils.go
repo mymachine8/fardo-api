@@ -1,7 +1,7 @@
 package common
 
 import (
-	log "github.com/Sirupsen/logrus"
+	"log"
 	"time"
 	"gopkg.in/mgo.v2"
 )
