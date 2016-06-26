@@ -3,11 +3,16 @@ package common
 import (
 	"encoding/json"
 	"net/http"
-	"os"
 	"github.com/mymachine8/fardo-api/models"
+	"google.golang.org/cloud/storage"
+	"golang.org/x/net/context"
 	"strings"
-	log "github.com/Sirupsen/logrus"
-	"github.com/johntdyer/slackrus"
+	"log"
+)
+
+var (
+	StorageBucket     *storage.BucketHandle
+	StorageBucketName string
 )
 
 type (
@@ -20,7 +25,7 @@ type (
 		Data appError `json:"data"`
 	}
 	configuration struct {
-		Server, MongoDBHost, DBUser, DBPwd, Database string
+		MongoDBHost, DBUser, DBPwd, Database string
 	}
 )
 
@@ -38,21 +43,30 @@ func DisplayAppError(w http.ResponseWriter, handlerError error, message string, 
 	}
 }
 
+func configureStorage(bucketID string) (*storage.BucketHandle, error) {
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return client.Bucket(bucketID), nil
+}
+
 // AppConfig holds the configuration values from config.json file
 var AppConfig configuration
 
 // Initialize AppConfig
 func initConfig() {
-	file, err := os.Open("common/config.json")
-	defer file.Close()
-	if err != nil {
-		log.Fatalf("[loadConfig]: %s\n", err)
-	}
-	decoder := json.NewDecoder(file)
-	AppConfig = configuration{}
-	err = decoder.Decode(&AppConfig)
-	if err != nil {
-		log.Fatalf("[loadAppConfig]: %s\n", err)
+
+	var err error
+	AppConfig.MongoDBHost = "104.155.143.185"
+	AppConfig.DBUser = ""
+	AppConfig.DBPwd = ""
+	AppConfig.Database = "fardo"
+	StorageBucketName = "go-server"
+	StorageBucket, err = configureStorage(StorageBucketName)
+	if(err != nil) {
+		log.Print(err.Error())
 	}
 }
 
@@ -96,20 +110,6 @@ func GetAccessToken(req *http.Request) string {
 		}
 	}
 	return "";
-}
-
-func initSlackHook() {
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stderr)
-	log.SetLevel(log.DebugLevel)
-
-	log.AddHook(&slackrus.SlackrusHook{
-		HookURL:        "https://hooks.slack.com/services/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",
-		AcceptedLevels: slackrus.LevelThreshold(log.DebugLevel),
-		Channel:        "#bugs",
-		IconEmoji:      ":ghost:",
-		Username:       "golang",
-	})
 }
 
 // Reads config.json and decode into AppConfig

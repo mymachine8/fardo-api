@@ -11,10 +11,10 @@ import (
 func main() {
 
 	common.StartUp();
-
 	handler := controllers.InitRoutes()
 	var port string = "8082"//os.Getenv("PORT")
 	fmt.Println("Starting server on :8082");
+
 
 	err := gracehttp.Serve(
 		&http.Server{Addr: "localhost:" + port, Handler: handler});
