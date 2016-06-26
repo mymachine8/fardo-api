@@ -19,7 +19,7 @@ set -ex
 
 # Talk to the metadata server to get the project id and location of application binary.
 PROJECTID=$(curl -s "http://metadata.google.internal/computeMetadata/v1/project/project-id" -H "Metadata-Flavor: Google")
-FARDO_DEPLOY_LOCATION="gs://go-server/fardo-alpha003.tar"
+FARDO_DEPLOY_LOCATION="gs://go-server/fardo-alpha005.tar"
 
 # Install logging monitor. The monitor will automatically pickup logs send to
 # syslog.

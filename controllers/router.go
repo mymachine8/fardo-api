@@ -12,6 +12,7 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"log"
 	"github.com/rs/cors"
+	"github.com/mymachine8/fardo-api/slack"
 )
 
 func InitRoutes() http.Handler {
@@ -628,6 +629,7 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 }
 
 func writeErrorResponse(rw http.ResponseWriter, statusCode int, err error) {
+	slack.Send(slack.ErrorLevel, err.Error())
 	rw.WriteHeader(statusCode);
 	rw.Write(common.ResponseJson(nil, common.ResponseError(statusCode, err.Error())))
 }

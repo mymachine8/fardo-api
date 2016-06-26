@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 	"gopkg.in/mgo.v2"
+	"github.com/mymachine8/fardo-api/slack"
 )
 
 var session *mgo.Session
@@ -15,9 +16,10 @@ func GetSession() *mgo.Session {
 			Addrs:    []string{AppConfig.MongoDBHost},
 			Username: AppConfig.DBUser,
 			Password: AppConfig.DBPwd,
-			Timeout:  5 * time.Second,
+			Timeout:  30 * time.Second,
 		})
 		if err != nil {
+			slack.Send(slack.PanicLevel, err.Error());
 			log.Panic("[GetSession]: %s\n", err)
 		}
 	}
@@ -30,9 +32,10 @@ func createDbSession() {
 		Addrs:    []string{AppConfig.MongoDBHost},
 		Username: AppConfig.DBUser,
 		Password: AppConfig.DBPwd,
-		Timeout:  5 * time.Second,
+		Timeout:  30 * time.Second,
 	})
 	if err != nil {
+		slack.Send(slack.PanicLevel, err.Error());
 		log.Panic("[createDbSession]: %s\n", err)
 	}
 	addIndexes()
