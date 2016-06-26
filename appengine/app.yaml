@@ -1,8 +1,0 @@
-application: fardo-854c8
-version: alpha-006
-runtime: go
-api_version: go1
-
-handlers:
-- url: /.*
-  script: _go_app

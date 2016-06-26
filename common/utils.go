@@ -52,7 +52,6 @@ func configureStorage(bucketID string) (*storage.BucketHandle, error) {
 	return client.Bucket(bucketID), nil
 }
 
-// AppConfig holds the configuration values from config.json file
 var AppConfig configuration
 
 // Initialize AppConfig
@@ -111,5 +110,3 @@ func GetAccessToken(req *http.Request) string {
 	}
 	return "";
 }
-
-// Reads config.json and decode into AppConfig
