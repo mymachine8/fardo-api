@@ -19,6 +19,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	if(err != nil) {
 		return "", err
 	}
+	//TODO: Have to revisit this algorithm
 	post.GroupId = result.GroupId;
 	if (len(post.LabelId) > 0) {
 		labelContext := common.NewContext()
@@ -35,15 +36,14 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	obj_id := bson.NewObjectId()
-	post.Id = obj_id
+	post.Id = bson.NewObjectId()
 	post.IsActive = true;
 	post.CreatedOn = time.Now()
 
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
 
-	return obj_id.Hex(), err
+	return post.Id.Hex(), err
 }
 
 func CreatePostAdmin(token string, post models.Post) (string, error) {
@@ -57,6 +57,9 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	if(err != nil) {
 		return "", err
 	}
+	log.Print(post);
+	log.Print("GroupID:");
+	log.Print(post.GroupId);
 	log.Print(len(post.GroupId))
 	if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
@@ -153,6 +156,9 @@ func GetAllPosts() (posts []models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.Find(nil).All(&posts)
+	if(posts == nil) {
+		posts = []models.Post{}
+	}
 	return
 }
 
@@ -162,6 +168,10 @@ func GetCurrentPosts() (posts []models.PostLite, err error) {
 	c := context.DbCollection("current_posts")
 
 	err = c.Find(nil).All(&posts)
+
+	if(posts == nil) {
+		posts = []models.PostLite{}
+	}
 	return
 }
 
@@ -212,6 +222,10 @@ func GetAllComments(postId string) (posts []models.Post, err error) {
 	c := context.DbCollection("comments")
 
 	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&posts)
+
+	if(posts == nil) {
+		posts = []models.Post{}
+	}
 	return
 }
 

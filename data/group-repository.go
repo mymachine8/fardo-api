@@ -30,6 +30,10 @@ func GetFeaturedGroups(token string) (groups []models.Group, err error) {
 	}
 
 	err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
+
+	if(groups == nil) {
+		groups = []models.Group{}
+	}
 	return;
 }
 
@@ -37,13 +41,11 @@ func CreateGroup(group models.Group) ( string , error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
-
-	obj_id := bson.NewObjectId()
-	group.Id = obj_id
+	group.Id = bson.NewObjectId()
 	group.IsActive = true;
-	group.CreatedOn = time.UTC()
-	err := c.Insert(&group)
-	return obj_id.Hex(), err
+	group.CreatedOn = time.Now().UTC()
+	err := c.Insert(group)
+	return group.Id.Hex(), err
 }
 
 func UpdateGroup(id string, group models.Group) error {
@@ -77,16 +79,9 @@ func GetAllGroups() (groups []models.Group, err error) {
 	c := context.DbCollection("groups")
 
 	err = c.Find(nil).All(&groups)
-	return
-}
-
-func GetGroups(name string) (groups []models.Group, err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("groups")
-
-	name = "/" + name + "/";
-	err = c.Find(bson.M{"$text": bson.M{"$search": name}}).All(&groups)
+	if(groups == nil) {
+		groups = []models.Group{}
+	}
 	return
 }
 
@@ -114,7 +109,7 @@ func CreateLabel(groupId string, label models.Label) ( string , error) {
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
 	label.GroupId = bson.ObjectIdHex(groupId);
-	label.CreatedOn = time.UTC()
+	label.CreatedOn = time.Now().UTC()
 	label.GroupName = group.Name;
 	err = c.Insert(&label)
 	return obj_id.Hex(), err;
@@ -160,6 +155,9 @@ func GetAllLabels() (labels []models.Label, err error) {
 	c := context.DbCollection("labels")
 
 	err = c.Find(nil).All(&labels)
+	if(labels == nil) {
+		labels = []models.Label{}
+	}
 	return
 }
 
@@ -169,5 +167,8 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	c := context.DbCollection("labels")
 
 	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&labels)
+	if(labels == nil) {
+		labels = []models.Label{}
+	}
 	return
 }

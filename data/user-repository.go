@@ -15,7 +15,7 @@ func RegisterUser(user models.User) error {
 	defer context.Close()
 	c := context.DbCollection("users")
 	user.Id = bson.NewObjectId()
-	user.CreatedOn = time.UTC()
+	user.CreatedOn = time.Now().UTC()
 	hpass, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
@@ -56,7 +56,7 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		user.Id = bson.NewObjectId()
-		user.CreatedOn = time.UTC()
+		user.CreatedOn = time.Now().UTC()
 		err = c.Insert(&user)
 		if (err != nil) {
 			return
@@ -91,7 +91,7 @@ func SetUserToken(token string, userId string) error {
 	var accessToken models.AccessToken;
 	accessToken.Id = bson.NewObjectId();
 	accessToken.Token = token;
-	accessToken.CreatedOn = time.UTC()
+	accessToken.CreatedOn = time.Now().UTC()
 	accessToken.UserId = bson.ObjectIdHex(userId);
 	_, err := c.Upsert(bson.M{"userId": accessToken.UserId},
 		bson.M{"$set": bson.M{

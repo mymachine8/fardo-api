@@ -10,7 +10,6 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"github.com/rs/cors"
 	"github.com/mymachine8/fardo-api/slack"
-	"log"
 )
 
 func InitRoutes() http.Handler {
@@ -29,6 +28,7 @@ func InitRoutes() http.Handler {
 
 
 	r.GET("/api/groups", groupListHandler);
+	r.GET("/api/suggested-groups", suggestedGroupsHandler);
 	r.GET("/api/groups/:id", getGroupByIdHandler);
 	r.POST("/api/groups", createGroupHandler);
 	r.PUT("/api/groups/:id", updateGroupHandler);
@@ -85,6 +85,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 }
 
 func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	//TODO: Write algorithm to return featured groups
 	token := common.GetAccessToken(r);
 	result, err := data.GetFeaturedGroups(token);
 	if (err != nil) {
@@ -327,14 +328,23 @@ func subCategoryListHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	searchStr := r.URL.Query().Get("name");
 	var err error
 	var result []models.Group
-	if (len(searchStr) > 0) {
-		result, err = data.GetGroups(searchStr);
-	} else {
-		result, err = data.GetAllGroups();
+
+	result, err = data.GetAllGroups();
+
+	if (err != nil) {
+		writeErrorResponse(rw, http.StatusInternalServerError, err);
+		return
 	}
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func suggestedGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	//TODO: Write algorithm to return suggested groups for him to select based on location
+	var err error
+	var result []models.Group
+	result, err = data.GetAllGroups();
 	if (err != nil) {
 		writeErrorResponse(rw, http.StatusInternalServerError, err);
 		return

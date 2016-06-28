@@ -8,9 +8,10 @@ import (
 type Group struct {
 	Id bson.ObjectId `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
+	ShortName string `bson:"shortName" json:"shortName"`
 	Description string `bson:"description" json:"description"`
 	CategoryId bson.ObjectId `bson:"categoryId" json:"categoryId"`
-	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subategoryId"`
+	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
 	Radius int `bson:"radius" json:"radius"`
 	Loc [2]float64 `bson:"loc" json:"loc"`
 	City string `bson:"city" json:"city"`
