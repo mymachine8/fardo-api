@@ -2,6 +2,7 @@ package models
 
 import (
 	"gopkg.in/mgo.v2/bson"
+	"time"
 )
 
 type User struct {
@@ -17,4 +18,5 @@ type User struct {
 	GroupIds []bson.ObjectId `json:"groupIds,omitempty" bson:"groupIds,omitempty"`
 	IsActive bool `bson:"isActive" json:"isActive"`
 	Role string `bson:"role"`
+	CreatedOn time.Time `bson:"createdOn" json:"-"`
 }

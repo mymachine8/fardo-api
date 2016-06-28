@@ -88,6 +88,6 @@ func sendMessage(webhookUrl string, payload map[string]interface{}) {
 	r := bytes.NewReader(data)
 	_, err := http.Post(webhookUrl, "application/json", r);
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 }

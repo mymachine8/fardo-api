@@ -41,7 +41,7 @@ func CreateGroup(group models.Group) ( string , error) {
 	obj_id := bson.NewObjectId()
 	group.Id = obj_id
 	group.IsActive = true;
-	group.CreatedOn = time.Now()
+	group.CreatedOn = time.UTC()
 	err := c.Insert(&group)
 	return obj_id.Hex(), err
 }
@@ -114,7 +114,7 @@ func CreateLabel(groupId string, label models.Label) ( string , error) {
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
 	label.GroupId = bson.ObjectIdHex(groupId);
-	label.CreatedOn = time.Now()
+	label.CreatedOn = time.UTC()
 	label.GroupName = group.Name;
 	err = c.Insert(&label)
 	return obj_id.Hex(), err;
