@@ -26,9 +26,6 @@ GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ../app
 # [START tar]
 # Add the app binary
 tar -c -f $TMP/bundle.tar -C $TMP app
-
-# Add static files.
-tar -u -f $TMP/bundle.tar -C ../app keys
 # [END tar]
 
 # [START gcs_push]
