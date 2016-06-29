@@ -588,14 +588,16 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 }
 
 func writeErrorResponse(rw http.ResponseWriter, r *http.Request, p httprouter.Params, body interface{}, statusCode int, err error) {
-	errMsg := r.Method + ": " + r.URL.String() + " ";
+	errMsg := r.Method + ": " + r.URL.String();
 	if((r.Method == "GET" || r.Method == "PUT") && len(p.ByName("id"))> 0) {
-		errMsg += "Params: " + p.ByName("id");
+		errMsg += " Params: " + p.ByName("id");
+		errMsg += " ";
 	}
 	if(r.Method == "POST") {
 		bodyBuff, _ := json.Marshal(body)
 		if(len(string(bodyBuff)) > 0) {
-			errMsg += "Req Body: " + string(bodyBuff); + " ";
+			errMsg += "Req Body: " + string(bodyBuff);
+			errMsg += " ";
 		}
 	}
 
