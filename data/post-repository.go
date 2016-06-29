@@ -17,7 +17,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if(err != nil) {
-		return "", err
+		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this algorithm
 	post.GroupId = result.GroupId;
@@ -43,7 +43,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
 
-	return post.Id.Hex(), err
+	return post.Id.Hex(), models.FardoError{"Insert Post Error: " + err.Error()}
 }
 
 func CreatePostAdmin(token string, post models.Post) (string, error) {
@@ -55,12 +55,9 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if(err != nil) {
-		return "", err
+		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
-	log.Print(post);
-	log.Print("GroupID:");
-	log.Print(post.GroupId);
-	log.Print(len(post.GroupId))
+
 	if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
@@ -71,7 +68,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 			post.GroupName = group.Name;
 		}
 	}
-	log.Print(len(post.LabelId))
+
 	if (len(post.LabelId) > 0) {
 		labelContext := common.NewContext()
 		labelCol := labelContext.DbCollection("labels")
@@ -177,19 +174,16 @@ func GetCurrentPosts() (posts []models.PostLite, err error) {
 
 func AddComment(comment models.Comment) (string, error) {
 	var err error
-	log.Print(comment);
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
-
-	obj_id := bson.NewObjectId()
-	comment.Id = obj_id
+	comment.Id = bson.NewObjectId()
 	comment.IsActive = true;
 	comment.CreatedOn = time.Now()
 
 	err = c.Insert(&comment)
 
-	return obj_id.Hex(), err
+	return comment.Id.Hex(), err
 }
 
 func UpvoteComment(id string) (err error) {
