@@ -84,7 +84,7 @@ func GetSubCategories(categoryId string) (categories []models.GroupSubCategory,e
 	defer context.Close()
 	c := context.DbCollection("group_subcategories")
 
-	err = c.Find(bson.M{"groupCategoryId": bson.ObjectIdHex(categoryId)}).All(&categories)
+	err = c.Find(bson.M{"categoryId": bson.ObjectIdHex(categoryId)}).All(&categories)
 	return
 }
 
