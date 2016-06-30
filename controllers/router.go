@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"github.com/mymachine8/fardo-api/data"
 	"github.com/mymachine8/fardo-api/common"
-	"github.com/rs/cors"
 	"github.com/mymachine8/fardo-api/slack"
 	"log"
+	"github.com/mymachine8/fardo-api/cors"
 )
 
 func InitRoutes() http.Handler {

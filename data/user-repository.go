@@ -97,6 +97,7 @@ func SetUserToken(token string, userId string) error {
 		bson.M{"$set": bson.M{
 			"token": token,
 			"userId": bson.ObjectIdHex(userId),
+			"createdOn": accessToken.CreatedOn,
 		}})
 
 	return err
