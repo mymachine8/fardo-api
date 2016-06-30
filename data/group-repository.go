@@ -54,10 +54,7 @@ func UpdateGroup(id string, group models.Group) error {
 	c := context.DbCollection("groups")
 
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
-		bson.M{"$set": bson.M{
-			"name": group.Name,
-			"description": group.Description,
-		}})
+		group);
 	return err
 }
 
