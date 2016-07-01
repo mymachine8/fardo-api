@@ -90,7 +90,7 @@ func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	token := common.GetAccessToken(r);
 	result, err := data.GetFeaturedGroups(token);
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,[]byte{}, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -100,7 +100,7 @@ func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 	result, err := data.GetAllPosts();
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,[]byte{}, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -111,7 +111,7 @@ func currentPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprout
 
 	result, err := data.GetCurrentPosts();
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,[]byte{}, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -123,7 +123,7 @@ func createAdminPostHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	err := json.NewDecoder(r.Body).Decode(&post)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,post, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -132,7 +132,7 @@ func createAdminPostHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	id, err := data.CreatePostAdmin(token, post);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,post, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -144,7 +144,7 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	err := json.NewDecoder(r.Body).Decode(&post)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,post, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -153,7 +153,7 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	id, err := data.CreatePostUser(token, post);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,post, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -165,14 +165,14 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 	err := json.NewDecoder(r.Body).Decode(&comment)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,comment, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
 		return
 	}
 
 	id, err := data.AddComment(comment);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,comment, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -183,7 +183,7 @@ func upvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 	err := data.UpvotePost(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
@@ -193,7 +193,7 @@ func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 	err := data.DownvotePost(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
@@ -203,7 +203,7 @@ func upvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 	err := data.UpvoteComment(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
@@ -213,7 +213,7 @@ func downvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 	err := data.DownvoteComment(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
@@ -223,7 +223,7 @@ func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 	err := data.SuspendPost(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
@@ -236,14 +236,14 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	token := common.GetAccessToken(r);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,body, http.StatusBadRequest, err);
+		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
 		return
 	}
 
 	err = data.UpdateUserGroup(token, body.GroupId);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,body, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -255,14 +255,14 @@ func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	err := json.NewDecoder(r.Body).Decode(&group)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,group, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
 		return
 	}
 
 	id, err := data.CreateGroup(group);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,group, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -275,14 +275,14 @@ func createLabelHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	err := json.NewDecoder(r.Body).Decode(&label)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,label, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, label, http.StatusInternalServerError, err);
 		return
 	}
 
 	id, err := data.CreateLabel(p.ByName("id"), label);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,label, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, label, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -292,7 +292,7 @@ func createLabelHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 func removeLabelHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	err := data.RemoveLabel(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 
@@ -319,7 +319,7 @@ func subCategoryListHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 	result, err := data.GetSubCategories(p.ByName("id"));
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 
@@ -335,7 +335,7 @@ func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 	result, err = data.GetAllGroups();
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -347,7 +347,7 @@ func suggestedGroupsHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	var result []models.Group
 	result, err = data.GetAllGroups();
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -390,7 +390,7 @@ func labelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 	result, err := data.GetAllLabels();
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 
@@ -402,14 +402,14 @@ func updateGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	err := json.NewDecoder(r.Body).Decode(&group)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,group, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
 		return
 	}
 
 	err = data.UpdateGroup(p.ByName("id"), group);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,group, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -421,14 +421,14 @@ func updateLabelHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	err := json.NewDecoder(r.Body).Decode(&label)
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,label, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, label, http.StatusInternalServerError, err);
 		return
 	}
 
 	err = data.UpdateLabel(p.ByName("id"), label);
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,label, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, label, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -440,7 +440,7 @@ func removeGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	err := data.RemoveGroup(p.ByName("id"));
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 
@@ -452,7 +452,7 @@ func getLabelByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 	result, err := data.GetLabelById(p.ByName("id"));
 
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,"", http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 
@@ -481,7 +481,7 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	// Generate JWT token
 	token, err = common.GenerateJWT(user.Username, "admin")
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,user, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -507,12 +507,24 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 }
 
 func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user);
+	var body struct {
+		Imei  string `json:"imei"`
+		Lat float64 `json:"lat,omitempty"`
+		Lng float64 `json:"lng,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body);
 	if (err != nil) {
-		writeErrorResponse(rw, r, p,user, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
 		return
 	}
+
+	log.Print(body);
+	var user models.User;
+	user.Imei = body.Imei;
+	user.LastKnowLocation[0] = body.Lng;
+	user.LastKnowLocation[1] = body.Lat;
+
+	log.Print(user);
 
 	var userId string;
 	userId, err = data.RegisterAppUser(user);
@@ -521,6 +533,11 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
+
+	var groups []models.Group
+	groups, err = data.GetNearByGroups(body.Lat, body.Lng);
+	log.Print("Groups Length");
+	log.Print(len(groups));
 
 	var token string
 
@@ -540,9 +557,11 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	authUser := struct {
 		User  models.User `json:"user"`
 		Token string `json:"token"`
+		SuggestedGroups []models.Group `json:"suggestedGroups"`
 	}{
 		user,
 		token,
+		groups,
 	}
 
 	rw.Write(common.SuccessResponseJSON(authUser));
@@ -589,13 +608,13 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 
 func writeErrorResponse(rw http.ResponseWriter, r *http.Request, p httprouter.Params, body interface{}, statusCode int, err error) {
 	errMsg := r.Method + ": " + r.URL.String();
-	if((r.Method == "GET" || r.Method == "PUT") && len(p.ByName("id"))> 0) {
+	if ((r.Method == "GET" || r.Method == "PUT") && len(p.ByName("id")) > 0) {
 		errMsg += " Params: " + p.ByName("id");
 		errMsg += " ";
 	}
-	if(r.Method == "POST") {
+	if (r.Method == "POST") {
 		bodyBuff, _ := json.Marshal(body)
-		if(len(string(bodyBuff)) > 0) {
+		if (len(string(bodyBuff)) > 0) {
 			errMsg += "Req Body: " + string(bodyBuff);
 			errMsg += " ";
 		}

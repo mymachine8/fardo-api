@@ -37,6 +37,18 @@ func GetFeaturedGroups(token string) (groups []models.Group, err error) {
 	return;
 }
 
+func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64 {lng, lat}
+	c := context.DbCollection("groups")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 10/3963.2} }}}).All(&groups);
+	return
+}
+
 func CreateGroup(group models.Group) ( string , error) {
 	context := common.NewContext()
 	defer context.Close()
@@ -75,7 +87,7 @@ func GetAllGroups() (groups []models.Group, err error) {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err = c.Find(nil).All(&groups)
+	err = c.Find(nil).Sort("-createdOn").All(&groups)
 	if(groups == nil) {
 		groups = []models.Group{}
 	}

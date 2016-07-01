@@ -13,7 +13,7 @@ type User struct {
 	Imei string `json:"imei,omitempty" bson:"imei,omitempty"`
 	Status string `json:"status" bson:"status"`
 	Score int `json:"score" bson:"score"`
-	LastKnowLocation []float64 `bson:"lastKnownLocation" json:"lastKnownLocation"`
+	LastKnowLocation [2]float64 `bson:"lastKnownLocation" json:"lastKnownLocation"`
 	Phone string `json:"phone,omitempty" bson:"phone,omitempty"`
 	GroupIds []bson.ObjectId `json:"groupIds,omitempty" bson:"groupIds,omitempty"`
 	IsActive bool `bson:"isActive" json:"isActive"`
