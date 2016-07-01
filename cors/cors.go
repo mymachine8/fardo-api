@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"golang.org/x/net/context"
-	"github.com/mymachine8/fardo-api/slack"
 	"github.com/mymachine8/fardo-api/cors/xhandler"
 )
 
@@ -174,7 +173,6 @@ func (c *Cors) Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
 			c.logf("Handler: Preflight request")
-			slack.Send(slack.DebugLevel, "Handler: Preflight request");
 			c.handlePreflight(w, r)
 			// Preflight requests are standalone and should stop the chain as some other
 			// middleware may not handle OPTIONS requests correctly. One typical example
@@ -325,7 +323,7 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	slack.Send(slack.DebugLevel, "Access-Control-Allow-Origin");
+
 	headers.Set("Access-Control-Allow-Origin", origin)
 	if len(c.exposedHeaders) > 0 {
 		headers.Set("Access-Control-Expose-Headers", strings.Join(c.exposedHeaders, ", "))
