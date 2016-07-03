@@ -15,7 +15,8 @@ type User struct {
 	Score int `json:"score" bson:"score"`
 	LastKnowLocation [2]float64 `bson:"lastKnownLocation" json:"lastKnownLocation"`
 	Phone string `json:"phone,omitempty" bson:"phone,omitempty"`
-	GroupIds []bson.ObjectId `json:"groupIds,omitempty" bson:"groupIds,omitempty"`
+	GroupId bson.ObjectId `json:"groupId,omitempty" bson:"groupId,omitempty"`
+	IsGroupLocked bool `json:"isGroupLocked,omitempty" bson:"isGroupLocked,omitempty"`
 	IsActive bool `bson:"isActive" json:"isActive"`
 	Role string `bson:"role"`
 	CreatedOn time.Time `bson:"createdOn" json:"-"`

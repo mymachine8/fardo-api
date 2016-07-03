@@ -11,6 +11,7 @@ import (
 	"github.com/mymachine8/fardo-api/slack"
 	"log"
 	"github.com/mymachine8/fardo-api/cors"
+	"strconv"
 )
 
 func InitRoutes() http.Handler {
@@ -54,6 +55,7 @@ func InitRoutes() http.Handler {
 	r.GET("/api/featured-groups", featuredGroupsHandler);
 
 	r.GET("/api/admin/posts", allPostsListHandler);
+	r.GET("/api/admin/solr-collection", solrCollectionHandler);
 	r.GET("/api/admin/posts/current", currentPostsListHandler);
 	r.POST("/api/admin/posts", createAdminPostHandler);
 	r.POST("/api/posts", createPostHandler);
@@ -83,6 +85,53 @@ func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	//TODO:High! Write the logic for mycircle
+}
+
+func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	var groups []models.Group
+	var err error
+	groups, err = data.GetAllGroups();
+
+	if(err!= nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+
+	var labels []models.Label
+	labels, err = data.GetAllLabels();
+
+	if(err!= nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+
+	var results []models.SolrSchema
+
+	groupsLen := len(groups);
+	labelsLen := len(labels);
+
+	i := 0
+
+	for i = 0; i < groupsLen; i++ {
+		result := models.SolrSchema{Id: groups[i].Id, Name: groups[i].Name, Type: "group"};
+		results = append(results,result)
+	}
+
+	for i = 0; i < labelsLen; i++ {
+		result := models.SolrSchema{Id: labels[i].Id, Name: labels[i].Name, GroupName: labels[i].GroupName, Type: "label"};
+		results = append(results, result)
+		i++;
+	}
+
+	rw.Header().Set("Content-Disposition", "attachment; filename=solr_collection")
+	rw.Header().Set("Content-Type", "application/json")
+	jsonResult, err := json.Marshal(results);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(jsonResult);
 }
 
 func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -230,7 +279,11 @@ func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var body struct{ GroupId string };
+	var body struct {
+		GroupId string `json:"groupId"`
+		Lat     float64 `json:"lat,omitempty"`
+		Lng     float64 `json:"lng,omitempty"`
+	}
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	token := common.GetAccessToken(r);
@@ -240,14 +293,25 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	err = data.UpdateUserGroup(token, body.GroupId);
+	var isGroupLocked bool;
+	isGroupLocked, err = data.UpdateUserGroup(token, body.GroupId, body.Lat, body.Lng);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+	response := struct {
+		GroupId       string `json:"groupId"`
+		IsGroupLocked bool `json:"isGroupLocked"`
+	}{
+		body.GroupId,
+		isGroupLocked,
+	}
+
+	log.Print(isGroupLocked);
+
+	rw.Write(common.SuccessResponseJSON(response));
 }
 
 func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -342,10 +406,18 @@ func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 }
 
 func suggestedGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO: Write algorithm to return suggested groups for him to select based on location
+
 	var err error
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
 	var result []models.Group
-	result, err = data.GetAllGroups();
+	result, err = data.GetNearByGroups(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
@@ -508,9 +580,9 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var body struct {
-		Imei  string `json:"imei"`
-		Lat float64 `json:"lat,omitempty"`
-		Lng float64 `json:"lng,omitempty"`
+		Imei string `json:"imei"`
+		Lat  float64 `json:"lat,omitempty"`
+		Lng  float64 `json:"lng,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&body);
 	if (err != nil) {
@@ -555,8 +627,8 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	}
 
 	authUser := struct {
-		User  models.User `json:"user"`
-		Token string `json:"token"`
+		User            models.User `json:"user"`
+		Token           string `json:"token"`
 		SuggestedGroups []models.Group `json:"suggestedGroups"`
 	}{
 		user,
@@ -608,8 +680,9 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 
 func writeErrorResponse(rw http.ResponseWriter, r *http.Request, p httprouter.Params, body interface{}, statusCode int, err error) {
 	errMsg := r.Method + ": " + r.URL.String();
+	errMsg += " ";
 	if ((r.Method == "GET" || r.Method == "PUT") && len(p.ByName("id")) > 0) {
-		errMsg += " Params: " + p.ByName("id");
+		errMsg += "Params: " + p.ByName("id");
 		errMsg += " ";
 	}
 	if (r.Method == "POST") {

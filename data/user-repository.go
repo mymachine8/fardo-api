@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2"
 	"log"
 	"time"
+	"strings"
 )
 
 func RegisterUser(user models.User) error {
@@ -50,9 +51,8 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 	defer context.Close()
 	c := context.DbCollection("users")
 
-	var existingUser models.User;
+	err = c.Find(bson.M{"imei": user.Imei}).One(&user)
 
-	err = c.Find(bson.M{"imei": user.Imei}).One(&existingUser)
 
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		user.Id = bson.NewObjectId()
@@ -62,11 +62,11 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 			return
 		}
 		return user.Id.Hex(), err
-	} else if(err!= nil){
-          return
+	} else if (err != nil) {
+		return
 	}
 
-	return existingUser.Id.Hex(), err
+	return user.Id.Hex(), err
 }
 
 func GetUserId(token string) (string, error) {
@@ -103,7 +103,8 @@ func SetUserToken(token string, userId string) error {
 	return err
 }
 
-func UpdateUserGroup(token string, groupId string) (err error) {
+func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( bool, error) {
+	isGroupLocked := true;
 	context := common.NewContext()
 	tokenCol := context.DbCollection("access_tokens")
 	defer context.Close()
@@ -112,21 +113,35 @@ func UpdateUserGroup(token string, groupId string) (err error) {
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	var result models.AccessToken
-	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	groupContext := common.NewContext()
+	groupCol := groupContext.DbCollection("groups")
+	defer groupContext.Close()
 
-	log.Print(result.UserId);
-	if(err != nil) {
-		return
+	var result models.AccessToken
+	err := tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	if (err != nil) {
+		return isGroupLocked,err
+	}
+
+	var group models.Group
+
+	err = groupCol.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 1 / 3963.2} }}}).One(&group);
+
+	if(err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
+		isGroupLocked = false;
 	}
 
 	err = userCol.Update(bson.M{"_id": result.UserId},
 		bson.M{"$set": bson.M{
 			"groupId": bson.ObjectIdHex(groupId),
+			"isGroupLocked" : isGroupLocked,
 		}})
 
-	if(err != nil) {
-		return
+	if (err != nil) {
+		return isGroupLocked,err
 	}
 
 	err = tokenCol.Update(bson.M{"userId": result.UserId},
@@ -134,5 +149,5 @@ func UpdateUserGroup(token string, groupId string) (err error) {
 			"groupId": bson.ObjectIdHex(groupId),
 		}})
 
-	return
+	return isGroupLocked,err
 }
