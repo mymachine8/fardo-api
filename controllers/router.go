@@ -85,6 +85,13 @@ func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	//TODO:High! Write the logic for mycircle
+	result, err := data.GetAllPosts();
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
 }
 
 func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
