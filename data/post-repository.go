@@ -43,7 +43,12 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
 
-	return post.Id.Hex(), models.FardoError{"Insert Post Error: " + err.Error()}
+
+	if(err != nil) {
+		return "", models.FardoError{"Insert Post Error: " + err.Error()}
+	}
+
+	return post.Id.Hex(), err
 }
 
 func CreatePostAdmin(token string, post models.Post) (string, error) {
