@@ -51,6 +51,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/admin/login", loginAdminHandler);
 	r.POST("/api/users", memberRegisterHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
+	r.GET("/api/users/recent-posts", recentUserPostsHandler);
+	r.GET("/api/users/recent-comments", recentUserCommentedPostsHandler);
 
 	r.GET("/api/featured-groups", featuredGroupsHandler);
 
@@ -99,6 +101,32 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 func labelPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	result, err := data.GetLabelPosts(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func recentUserCommentedPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetRecentUserPosts(token, "comment");
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func recentUserPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetRecentUserPosts(token, "post");
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
@@ -259,7 +287,9 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 		return
 	}
 
-	id, err := data.AddComment(comment);
+	token := common.GetAccessToken(r);
+
+	id, err := data.AddComment(token, comment);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);

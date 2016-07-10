@@ -12,5 +12,6 @@ type Comment struct {
 	CreatedOn time.Time `bson:"createdOn" json:"-"`
 	Upvotes   int  `bson:"upvotes" json:"upvotes"`
 	Downvotes int  `bson:"downvotes" json:"downvotes"`
+	IsPrivate  bool `bson:"isPrivate" json:"isPrivate"`
 	IsActive  bool `bson:"isActive" json:"isActive"`
 }
