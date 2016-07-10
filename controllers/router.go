@@ -289,7 +289,7 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 	token := common.GetAccessToken(r);
 
-	id, err := data.AddComment(token, comment);
+	id, err := data.AddComment(token, p.ByName("id"), comment);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);

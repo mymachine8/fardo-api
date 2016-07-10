@@ -88,6 +88,8 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 
+	post.UserId = result.UserId;
+
 	if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
@@ -269,13 +271,14 @@ func GetCurrentPosts() (posts []models.PostLite, err error) {
 	return
 }
 
-func AddComment(token string, comment models.Comment) (string, error) {
+func AddComment(token string,postId string, comment models.Comment) (string, error) {
 	var err error
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
 	comment.Id = bson.NewObjectId()
 	comment.IsActive = true;
+	comment.PostId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
 
 	err = c.Insert(&comment)
