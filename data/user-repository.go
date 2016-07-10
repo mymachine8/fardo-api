@@ -47,6 +47,8 @@ func Login(user models.User) (u models.User, err error) {
 }
 
 func RegisterAppUser(user models.User) (userId string, err error) {
+
+	lastLocation := user.LastKnowLocation;
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("users")
@@ -64,6 +66,11 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 		return user.Id.Hex(), err
 	} else if (err != nil) {
 		return
+	} else {
+		err = c.Update(bson.M{"_id": user.Id},
+			bson.M{"$set": bson.M{
+				"lastKnownLocation": lastLocation,
+			}})
 	}
 
 	return user.Id.Hex(), err
