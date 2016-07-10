@@ -6,7 +6,6 @@ import (
 )
 
 type PostLite struct {
-	//UserId bson.ObjectId
 	Id        bson.ObjectId `bson:"_id" json:"id"`
 	Loc       [2]float64  `bson:"loc" json:"loc"`
 	CreatedOn time.Time `bson:"createdOn" json:"-"`

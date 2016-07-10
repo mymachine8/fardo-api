@@ -14,4 +14,6 @@ type Label struct {
 	IsVerified bool `bson:"isVerified" json:"isVerified"`
 	IsActive bool `bson:"isActive" json:"isActive"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"modifiedOn"`
+	SuggestedBy bson.ObjectId `bson:"suggestedBy" json:"suggestedBy"`
 }

@@ -11,5 +11,6 @@ type GroupSubCategory struct {
 	CategoryId string `bson:"categoryId" json:"categoryId"`
 	Description int `bson:"description" json:"description"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"modifiedOn"`
 	IsActive time.Time `bson:"isActive" json:"isActive"`
 }

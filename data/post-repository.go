@@ -164,6 +164,30 @@ func GetAllPosts() (posts []models.Post, err error) {
 	return
 }
 
+func GetLabelPosts(labelId string) (posts []models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	err = c.Find(bson.M{"labelId": bson.ObjectIdHex(labelId)}).All(&posts)
+	if(posts == nil) {
+		posts = []models.Post{}
+	}
+	return
+}
+
+func GetGroupPosts(groupId string) (posts []models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&posts)
+	if(posts == nil) {
+		posts = []models.Post{}
+	}
+	return
+}
+
 func GetCurrentPosts() (posts []models.PostLite, err error) {
 	context := common.NewContext()
 	defer context.Close()

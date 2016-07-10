@@ -18,4 +18,5 @@ type Group struct {
 	State string `bson:"state" json:"state"`
 	IsActive bool `bson:"isActive" json:"isActive"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"modifiedOn"`
 }

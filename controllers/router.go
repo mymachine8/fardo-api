@@ -59,6 +59,8 @@ func InitRoutes() http.Handler {
 	r.GET("/api/admin/posts/current", currentPostsListHandler);
 	r.POST("/api/admin/posts", createAdminPostHandler);
 	r.POST("/api/posts", createPostHandler);
+	r.GET("/api/label-posts/:id", labelPostsListHandler);
+	r.GET("/api/group-posts/:id", groupPostsGroupHandler);
 	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
 	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
 	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
@@ -94,6 +96,28 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 
 }
 
+func labelPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	result, err := data.GetLabelPosts(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func groupPostsGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	result, err := data.GetGroupPosts(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
 func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	var groups []models.Group
@@ -113,15 +137,19 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
+	var subCategories []models.GroupSubCategory
+	subCategories, err = data.GetAllSubCategories();
+
 	var results []models.SolrSchema
 
 	groupsLen := len(groups);
 	labelsLen := len(labels);
+	subCategoriesLen := len(subCategories);
 
 	i := 0
 
 	for i = 0; i < groupsLen; i++ {
-		result := models.SolrSchema{Id: groups[i].Id, Name: groups[i].Name, Type: "group"};
+		result := models.SolrSchema{Id: groups[i].Id, Name: groups[i].Name, ShortName:groups[i].ShortName, Type: "group"};
 		results = append(results,result)
 	}
 
@@ -131,7 +159,13 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		i++;
 	}
 
-	rw.Header().Set("Content-Disposition", "attachment; filename=solr_collection")
+	for i = 0; i < subCategoriesLen; i++ {
+		result := models.SolrSchema{Id: subCategories[i].Id, Name: subCategories[i].Name, Type: "subcategory"};
+		results = append(results, result)
+		i++;
+	}
+
+	rw.Header().Set("Content-Disposition", "attachment; filename=solr_collection.json")
 	rw.Header().Set("Content-Type", "application/json")
 	jsonResult, err := json.Marshal(results);
 	if (err != nil) {

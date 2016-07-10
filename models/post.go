@@ -11,20 +11,19 @@ import (
 )
 
 type Post struct {
-	//UserId bson.ObjectId
-	Id bson.ObjectId `bson:"_id" json:"id"`
+	Id         bson.ObjectId `bson:"_id" json:"id"`
 	Loc        [2]float64  `bson:"loc" json:"loc"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
 	CreatedOn  time.Time `bson:"createdOn" json:"-"`
+	UserId     bson.ObjectId `bson:"userId" json:"_"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
-	GroupName   string `bson:"groupName,omitempty" json:"groupName,omitempty"`
+	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`
 	Content    string `bson:"content" json:"content"`
 	ReplyCount int `bson:"replyCount" json:"replyCount"`
-	ReplyIds   []bson.ObjectId `bson:"replyIds" json:"replyIds"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
-	LabelName    string `bson:"labelName,omitempty" json:"labelName,omitempty"`
+	LabelName  string `bson:"labelName,omitempty" json:"labelName,omitempty"`
 	IsActive   bool `bson:"isActive" json:"isActive"`
 }
 

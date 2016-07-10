@@ -20,4 +20,5 @@ type User struct {
 	IsActive bool `bson:"isActive" json:"isActive"`
 	Role string `bson:"role"`
 	CreatedOn time.Time `bson:"createdOn" json:"-"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 }
