@@ -7,14 +7,17 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 )
 
-
+//Based on Affinity
+//isLocal: So bring most of the local colleges to this group (Eg: Vignan's IIT, ANITS, GITAM)
+//isGlobal: So bring most of the same category global colleges to this group (NIT, IIT, MEDICAL COLLEGES, NIFT)
+//ismMixed: Don't know, maybe mix of local and global
 func GetFeaturedGroups(token string) (groups []models.Group, err error) {
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if(err != nil) {
+	if (err != nil) {
 		return
 	}
 
@@ -25,13 +28,36 @@ func GetFeaturedGroups(token string) (groups []models.Group, err error) {
 	c := context.DbCollection("groups")
 	err = c.FindId(result.GroupId).One(&group);
 
-	if(err !=nil) {
+	if (err != nil) {
 		return;
 	}
 
-	err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
+	var similarGroups [] models.Group
 
-	if(groups == nil) {
+	if (group.Affinity == models.CategoryAffinity) {
+		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
+	}
+
+	switch group.Affinity {
+	case models.CategoryAffinity:
+		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
+	case models.LocalAffinity:
+		groups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
+	case models.MixedAffinity:
+		var nearGroups []models.Group
+		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&similarGroups)
+		nearGroups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
+		for _, grp := range nearGroups {
+			if (grp.SubCategoryId == group.SubCategoryId) {
+				groups = append(groups, grp)
+			}
+		}
+
+	default:
+		groups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
+	}
+
+	if (groups == nil) {
 		groups = []models.Group{}
 	}
 	return;
@@ -41,15 +67,15 @@ func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error
 	context := common.NewContext()
 	defer context.Close()
 
-	currentLatLng := [2]float64 {lng, lat}
+	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 10/3963.2} }}}).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 10 / 3963.2} }}}).All(&groups);
 	return
 }
 
-func CreateGroup(group models.Group) ( string , error) {
+func CreateGroup(group models.Group) (string, error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
@@ -88,7 +114,7 @@ func GetAllGroups() (groups []models.Group, err error) {
 	c := context.DbCollection("groups")
 
 	err = c.Find(nil).Sort("-createdOn").All(&groups)
-	if(groups == nil) {
+	if (groups == nil) {
 		groups = []models.Group{}
 	}
 	return
@@ -103,14 +129,14 @@ func GetGroupById(id string) (group models.Group, err error) {
 	return
 }
 
-func CreateLabel(groupId string, label models.Label) ( string , error) {
+func CreateLabel(groupId string, label models.Label) (string, error) {
 	groupContext := common.NewContext()
 	groupCol := groupContext.DbCollection("groups")
 	var group models.Group
 	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group)
 	groupContext.Close()
-	if(err != nil) {
-		return "",err
+	if (err != nil) {
+		return "", err
 	}
 	context := common.NewContext()
 	defer context.Close()
@@ -164,7 +190,7 @@ func GetAllLabels() (labels []models.Label, err error) {
 	c := context.DbCollection("labels")
 
 	err = c.Find(nil).All(&labels)
-	if(labels == nil) {
+	if (labels == nil) {
 		labels = []models.Label{}
 	}
 	return
@@ -176,7 +202,7 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	c := context.DbCollection("labels")
 
 	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&labels)
-	if(labels == nil) {
+	if (labels == nil) {
 		labels = []models.Label{}
 	}
 	return

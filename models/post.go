@@ -13,6 +13,11 @@ import (
 type Post struct {
 	Id         bson.ObjectId `bson:"_id" json:"id"`
 	Loc        [2]float64  `bson:"loc" json:"loc"`
+	City string `bson:"city" json:"city"`
+	State string `bson:"state" json:"state"`
+	Locality string `bson:"locality" json:"locality"`
+	FullAddress string `bson:"fullAddress" json:"fullAddress"`
+	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
 	CreatedOn  time.Time `bson:"createdOn" json:"-"`

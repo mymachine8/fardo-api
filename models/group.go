@@ -5,6 +5,14 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+type Affinity uint8
+
+const (
+	LocalAffinity = 0
+	CategoryAffinity = 1
+	MixedAffinity = 2
+)
+
 type Group struct {
 	Id bson.ObjectId `bson:"_id" json:"id"`
 	Name string `bson:"name" json:"name"`
@@ -19,4 +27,5 @@ type Group struct {
 	IsActive bool `bson:"isActive" json:"isActive"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"modifiedOn"`
+	Affinity int `bson:"affinity" json:"-"`
 }
