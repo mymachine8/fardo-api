@@ -21,8 +21,6 @@ func InitRoutes() http.Handler {
 
 	http.Handle("/", r);
 
-	r.GET("/api/my-circle", myCircleHandler);
-
 
 	r.GET("/api/categories", common.BasicAuth(categoryListHandler));
 	r.GET("/api/categories/:id/sub-categories", common.BasicAuth(subCategoryListHandler));
@@ -54,8 +52,6 @@ func InitRoutes() http.Handler {
 	r.GET("/api/users/recent-posts", recentUserPostsHandler);
 	r.GET("/api/users/recent-comments", recentUserCommentedPostsHandler);
 
-	r.GET("/api/featured-groups", featuredGroupsHandler);
-
 	r.GET("/api/admin/posts", allPostsListHandler);
 	r.GET("/api/admin/solr-collection", solrCollectionHandler);
 	r.GET("/api/admin/posts/current", currentPostsListHandler);
@@ -70,6 +66,15 @@ func InitRoutes() http.Handler {
 	r.POST("/api/posts/:id/comments", createCommentHandler);
 	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
+
+	//---------------  Main Endpoints -------------------------------
+
+	r.GET("/api/featured-groups", featuredGroupsHandler);
+	r.GET("/api/my-circle", myCircleHandler);
+	r.GET("/api/popular", popularPostsHandler);
+
+	//----------------  End of main endpoints -----------------------
+
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://fardo.krishnakommanapalli.in", "http://localhost:9003"},
@@ -96,6 +101,28 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	rw.Write(common.SuccessResponseJSON(result));
 
+}
+
+func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	//TODO:High! Write the logic for mycircle
+	result, err := data.GetAllPosts();
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	//TODO: Write algorithm to return featured groups
+	token := common.GetAccessToken(r);
+	result, err := data.GetFeaturedGroups(token);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
 }
 
 func labelPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -201,17 +228,6 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 	rw.Write(jsonResult);
-}
-
-func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO: Write algorithm to return featured groups
-	token := common.GetAccessToken(r);
-	result, err := data.GetFeaturedGroups(token);
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
-		return
-	}
-	rw.Write(common.SuccessResponseJSON(result));
 }
 
 func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
