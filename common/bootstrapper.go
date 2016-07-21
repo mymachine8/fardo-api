@@ -8,4 +8,6 @@ func StartUp() {
 	// Start a MongoDB session
 	createDbSession()
 
+	InitCloudStorage()
+
 }

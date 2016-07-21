@@ -18,10 +18,12 @@ type Post struct {
 	Locality string `bson:"locality" json:"locality"`
 	FullAddress string `bson:"fullAddress" json:"fullAddress"`
 	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
+	ImageType string `bson:"imageType" json:"imageType"`
+	ImageData string `bson:"-" json:"imageData, omitempty"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
 	CreatedOn  time.Time `bson:"createdOn" json:"-"`
-	UserId     bson.ObjectId `bson:"userId" json:"_"`
+	UserId     bson.ObjectId `bson:"userId" json:"-"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
 	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`
@@ -29,6 +31,8 @@ type Post struct {
 	ReplyCount int `bson:"replyCount" json:"replyCount"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
 	LabelName  string `bson:"labelName,omitempty" json:"labelName,omitempty"`
+	IsGroup bool `bson:"isGroup" json:"isGroup"`
+	IsLocation bool `bson:"isLocation" json:"isLocation"`
 	IsActive   bool `bson:"isActive" json:"isActive"`
 }
 

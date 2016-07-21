@@ -6,6 +6,8 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"gopkg.in/mgo.v2/bson"
 	"log"
+	"encoding/base64"
+	"strings"
 )
 
 func CreatePostUser(token string, post models.Post) (string, error) {
@@ -21,8 +23,18 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	}
 	//TODO: Have to revisit this algorithm
 	post.GroupId = result.GroupId;
-	post.UserId = result.UserId
-	if (len(post.LabelId) > 0) {
+	post.UserId = result.UserId;
+	if (len(post.GroupId) > 0 && post.IsGroup) {
+		groupContext := common.NewContext()
+		groupCol := groupContext.DbCollection("groups")
+		var group models.Group
+		err = groupCol.FindId(post.GroupId).One(&group)
+		groupContext.Close()
+		if (err == nil) {
+			post.GroupName = group.ShortName;
+		}
+	}
+	if (len(post.LabelId) > 0 && post.IsGroup) {
 		labelContext := common.NewContext()
 		labelCol := labelContext.DbCollection("labels")
 		var label models.Label
@@ -33,11 +45,28 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 		}
 	}
 
+	post.Id = bson.NewObjectId();
+
+	fileName := "post_"  + post.Id.Hex();
+
+	imageReader := strings.NewReader(post.ImageData);
+
+	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
+	res, err := common.SendItemToCloudStorage(post.ImageType,fileName, dec);
+
+	if(err != nil) {
+		return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
+	}
+
+	post.ImageUrl = res.MediaLink;
+	post.ImageType = res.ContentType;
+
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	post.Id = bson.NewObjectId()
+
+
 	post.IsActive = true;
 	post.CreatedOn = time.Now()
 
