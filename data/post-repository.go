@@ -6,8 +6,8 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"gopkg.in/mgo.v2/bson"
 	"log"
-	"encoding/base64"
 	"strings"
+	"encoding/base64"
 )
 
 func CreatePostUser(token string, post models.Post) (string, error) {
@@ -47,19 +47,22 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	post.Id = bson.NewObjectId();
 
-	fileName := "post_"  + post.Id.Hex();
 
-	imageReader := strings.NewReader(post.ImageData);
+	if(len(post.ImageData) > 0 ) {
+		fileName := "post_"  + post.Id.Hex();
+		imageReader := strings.NewReader(post.ImageData);
 
-	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
-	res, err := common.SendItemToCloudStorage(post.ImageType,fileName, dec);
+		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-	if(err != nil) {
-		return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
+		res, err := common.SendItemToCloudStorage(common.PostImage,fileName, dec);
+
+		if(err != nil) {
+			return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
+		}
+
+		post.ImageUrl = res;
+
 	}
-
-	post.ImageUrl = res.MediaLink;
-	post.ImageType = res.ContentType;
 
 	context := common.NewContext()
 	defer context.Close()
@@ -305,23 +308,55 @@ func AddComment(token string,postId string, comment models.Comment) (string, err
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
-	comment.Id = bson.NewObjectId()
-	comment.IsActive = true;
-	comment.PostId = bson.ObjectIdHex(postId);
-	comment.CreatedOn = time.Now()
-
-	err = c.Insert(&comment)
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	if(err != nil ) {
+		return "", err
+	}
+
+	comment.Id = bson.NewObjectId()
+	comment.IsActive = true;
+	comment.PostId = bson.ObjectIdHex(postId);
+	comment.CreatedOn = time.Now()
+	comment.UserId = result.UserId;
+
+	err = c.Insert(&comment)
+
+
 	if(err == nil) {
 		go addToRecentUserPosts(result.UserId, comment.PostId, "comment");
 	}
 
 	return comment.Id.Hex(), err
+}
+
+func AddReply(token string,commentId string, reply models.Reply) (string, error) {
+	var err error
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("access_tokens")
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	if(err != nil) {
+		return "", models.FardoError{"Get Access Token: " + err.Error()}
+	}
+	//TODO: Have to revisit this algorithm
+	reply.UserId = result.UserId;
+	reply.CreatedOn = time.Now()
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
+		bson.M{"$push": bson.M{"replies": reply}})
+
+	return commentId, err
 }
 
 func UpvoteComment(id string) (err error) {
@@ -348,15 +383,15 @@ func DownvoteComment(id string) (err error) {
 	return
 }
 
-func GetAllComments(postId string) (posts []models.Post, err error) {
+func GetAllComments(postId string) (comments []models.Comment, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
 
-	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&posts)
+	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&comments)
 
-	if(posts == nil) {
-		posts = []models.Post{}
+	if(comments == nil) {
+		comments = []models.Comment{}
 	}
 	return
 }

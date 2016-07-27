@@ -18,6 +18,9 @@ type Group struct {
 	Name string `bson:"name" json:"name"`
 	ShortName string `bson:"shortName" json:"shortName"`
 	Description string `bson:"description" json:"description"`
+	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
+	LogoData string `bson:"logoData" json:"logoData, omitempty"`
+	ImageData string `bson:"-" json:"imageData, omitempty"`
 	CategoryId bson.ObjectId `bson:"categoryId" json:"categoryId"`
 	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
 	Radius int `bson:"radius" json:"radius"`

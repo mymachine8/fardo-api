@@ -5,6 +5,8 @@ import (
 	"github.com/mymachine8/fardo-api/models"
 	"gopkg.in/mgo.v2/bson"
 	"github.com/mymachine8/fardo-api/common"
+	"strings"
+	"encoding/base64"
 )
 
 //Based on Affinity
@@ -82,6 +84,22 @@ func CreateGroup(group models.Group) (string, error) {
 	group.Id = bson.NewObjectId()
 	group.IsActive = true;
 	group.CreatedOn = time.Now().UTC()
+
+	if(len(group.ImageData) > 0 ) {
+		fileName := "group_image_"  + group.Id.Hex();
+		imageReader := strings.NewReader(group.ImageData);
+
+		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
+
+		res, err := common.SendItemToCloudStorage(common.GroupImage,fileName, dec);
+
+		if(err != nil) {
+			return "", models.FardoError{"Insert Group Image Error: " + err.Error()}
+		}
+
+		group.ImageUrl = res;
+
+	}
 	err := c.Insert(group)
 	return group.Id.Hex(), err
 }
@@ -93,6 +111,39 @@ func UpdateGroup(id string, group models.Group) error {
 
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		group);
+	return err
+}
+
+func UpdateGroupLogo(id string,groupLogo string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{"logoData": groupLogo}});
+	return err
+}
+
+func UpdateGroupImage(id string,imageData string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	imageId := bson.NewObjectId()
+	fileName := "group_image_"  + imageId.Hex();
+	imageReader := strings.NewReader(imageData);
+
+	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
+
+	res, err := common.SendItemToCloudStorage(common.GroupImage,fileName, dec);
+
+	if(err != nil) {
+		return models.FardoError{"Insert Post Image Error: " + err.Error()}
+	}
+
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{"imageUrl": res}});
 	return err
 }
 
@@ -113,7 +164,7 @@ func GetAllGroups() (groups []models.Group, err error) {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err = c.Find(nil).Sort("-createdOn").All(&groups)
+	err = c.Find(nil).Sort("-createdOn").All(&groups);
 	if (groups == nil) {
 		groups = []models.Group{}
 	}

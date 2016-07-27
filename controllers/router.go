@@ -32,6 +32,8 @@ func InitRoutes() http.Handler {
 	r.GET("/api/groups/:id", getGroupByIdHandler);
 	r.POST("/api/groups", createGroupHandler);
 	r.PUT("/api/groups/:id", updateGroupHandler);
+	r.PUT("/api/upload-group-icon/:id", uploadGroupIcon);
+	r.PUT("/api/upload-group-image/:id", uploadGroupImage);
 	r.DELETE("/api/groups/:id", removeGroupHandler);
 
 	r.GET("/api/groups/:id/labels", groupLabelListHandler);
@@ -49,8 +51,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/admin/login", loginAdminHandler);
 	r.POST("/api/users", memberRegisterHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
-	r.GET("/api/users/recent-posts", recentUserPostsHandler);
-	r.GET("/api/users/recent-comments", recentUserCommentedPostsHandler);
+	r.GET("/api/my-recent-posts", recentUserPostsHandler);
+	r.GET("/api/my-recent-comments", recentUserCommentedPostsHandler);
 
 	r.GET("/api/admin/posts", allPostsListHandler);
 	r.GET("/api/admin/solr-collection", solrCollectionHandler);
@@ -64,6 +66,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
 	r.GET("/api/posts/:id/comments", commentListHandler);
 	r.POST("/api/posts/:id/comments", createCommentHandler);
+	r.POST("/api/comments/:id/replies", createReplyHandler);
 	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 
@@ -309,6 +312,27 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(id));
+}
+
+func createReplyHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var reply models.Reply
+	err := json.NewDecoder(r.Body).Decode(&reply)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, reply, http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	id, err := data.AddReply(token, p.ByName("id"), reply);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, reply, http.StatusInternalServerError, err);
 		return
 	}
 
@@ -566,6 +590,44 @@ func updateGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	}
 
 	err = data.UpdateGroup(p.ByName("id"), group);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func uploadGroupIcon(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var group models.Group
+	err := json.NewDecoder(r.Body).Decode(&group)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
+		return
+	}
+
+	err = data.UpdateGroupLogo(p.ByName("id"), group.LogoData);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func uploadGroupImage(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var group models.Group
+	err := json.NewDecoder(r.Body).Decode(&group)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
+		return
+	}
+
+	err = data.UpdateGroupImage(p.ByName("id"), group.ImageData);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
