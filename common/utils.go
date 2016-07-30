@@ -8,6 +8,7 @@ import (
 	"golang.org/x/net/context"
 	"strings"
 	"log"
+	"math"
 )
 
 var (
@@ -111,4 +112,15 @@ func GetAccessToken(req *http.Request) string {
 		}
 	}
 	return "";
+}
+
+func DivisbleByPowerOf2(num int) bool {
+	var result = 5;
+	for i:=3; result <=num;i++ {
+		result = int (math.Pow(2, i));
+		if(num %  result == 0) {
+			return true;
+		}
+	}
+	return false;
 }

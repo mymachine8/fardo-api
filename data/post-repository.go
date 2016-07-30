@@ -18,7 +18,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if(err != nil) {
+	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this algorithm
@@ -48,15 +48,15 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	post.Id = bson.NewObjectId();
 
 
-	if(len(post.ImageData) > 0 ) {
-		fileName := "post_"  + post.Id.Hex();
+	if (len(post.ImageData) > 0 ) {
+		fileName := "post_" + post.Id.Hex();
 		imageReader := strings.NewReader(post.ImageData);
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-		res, err := common.SendItemToCloudStorage(common.PostImage,fileName, dec);
+		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, dec);
 
-		if(err != nil) {
+		if (err != nil) {
 			return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
 		}
 
@@ -68,20 +68,20 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-
-
 	post.IsActive = true;
 	post.CreatedOn = time.Now()
 
 	err = c.Insert(&post)
 
-	if(err != nil) {
+	if (err != nil) {
 		return "", models.FardoError{"Insert Post Error: " + err.Error()}
 	}
 
 	go addToCurrentPosts(post);
 
 	go addToRecentUserPosts(result.UserId, post.Id, "post");
+
+	go common.SendNearByNotification(post)
 
 	return post.Id.Hex(), err
 }
@@ -95,7 +95,7 @@ func addToRecentUserPosts(userId bson.ObjectId, postId bson.ObjectId, fieldType 
 		"postIds": postId,
 	}
 
-	if(fieldType == "comment") {
+	if (fieldType == "comment") {
 		ids = bson.M{
 			"commentPostIds": postId,
 		}
@@ -103,7 +103,7 @@ func addToRecentUserPosts(userId bson.ObjectId, postId bson.ObjectId, fieldType 
 	_, err := c.Upsert(bson.M{"userId": userId},
 		bson.M{"$push": ids})
 
-	if(err != nil) {
+	if (err != nil) {
 		log.Print(err.Error());
 	}
 }
@@ -116,7 +116,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if(err != nil) {
+	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 
@@ -219,7 +219,7 @@ func GetAllPosts() (posts []models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.Find(nil).All(&posts)
-	if(posts == nil) {
+	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
@@ -231,7 +231,7 @@ func GetLabelPosts(labelId string) (posts []models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.Find(bson.M{"labelId": bson.ObjectIdHex(labelId)}).All(&posts)
-	if(posts == nil) {
+	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
@@ -247,14 +247,14 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if(err != nil) {
+	if (err != nil) {
 		err = models.FardoError{"Get Access Token: " + err.Error()}
 		return
 	}
 
 	var userPosts models.UserPost
 	err = c.Find(bson.M{"userId": result.UserId}).One(&userPosts)
-	if(err != nil) {
+	if (err != nil) {
 		err = models.FardoError{"Get User Posts: " + err.Error()}
 		return
 	}
@@ -272,7 +272,7 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 
 	err = postCol.Find(bson.M{"_id": bson.M{"$in": postIds}}).All(&posts)
 
-	if(posts == nil) {
+	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
@@ -284,7 +284,7 @@ func GetGroupPosts(groupId string) (posts []models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&posts)
-	if(posts == nil) {
+	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
@@ -297,13 +297,13 @@ func GetCurrentPosts() (posts []models.PostLite, err error) {
 
 	err = c.Find(nil).All(&posts)
 
-	if(posts == nil) {
+	if (posts == nil) {
 		posts = []models.PostLite{}
 	}
 	return
 }
 
-func AddComment(token string,postId string, comment models.Comment) (string, error) {
+func AddComment(token string, postId string, comment models.Comment) (string, error) {
 	var err error
 	context := common.NewContext()
 	defer context.Close()
@@ -315,7 +315,7 @@ func AddComment(token string,postId string, comment models.Comment) (string, err
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
-	if(err != nil ) {
+	if (err != nil ) {
 		return "", err
 	}
 
@@ -327,15 +327,18 @@ func AddComment(token string,postId string, comment models.Comment) (string, err
 
 	err = c.Insert(&comment)
 
-
-	if(err == nil) {
+	if (err == nil) {
 		go addToRecentUserPosts(result.UserId, comment.PostId, "comment");
+		post, err := findPostById(postId);
+		if(err == nil ) {
+			go common.SendCommentNotification(post, comment)
+		}
 	}
 
 	return comment.Id.Hex(), err
 }
 
-func AddReply(token string,commentId string, reply models.Reply) (string, error) {
+func AddReply(token string, commentId string, reply models.Reply) (string, error) {
 	var err error
 	context := common.NewContext()
 	defer context.Close()
@@ -346,7 +349,7 @@ func AddReply(token string,commentId string, reply models.Reply) (string, error)
 	tokenCol := tokenContext.DbCollection("access_tokens")
 	var result models.AccessToken
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if(err != nil) {
+	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this algorithm
@@ -355,6 +358,12 @@ func AddReply(token string,commentId string, reply models.Reply) (string, error)
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
 		bson.M{"$push": bson.M{"replies": reply}})
+
+	if(err == nil) {
+		var comment models.Comment;
+		comment, err = findCommentById
+		common.SendReplyNotification(comment, reply)
+	}
 
 	return commentId, err
 }
@@ -368,19 +377,89 @@ func UpvoteComment(id string) (err error) {
 		bson.M{"$inc": bson.M{
 			"upvotes": 1,
 		}})
+	go checkVoteCount(id, true);
 	return
 }
 
 func DownvoteComment(id string) (err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("comments")
+	c := context.DbCollection("posts")
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
 		}})
+
+	go checkVoteCount(id, false);
 	return
+}
+
+func checkVoteCount(id string, isUpvote bool) (err error) {
+	post, err := findPostById(id);
+	votes := post.Upvotes - post.Downvotes;
+
+	if(isUpvote) {
+		if(post.Upvotes == 1) {
+			common.SendUpvoteNotification(post);
+		}
+		if(post.Upvotes == 2 || common.DivisbleByPowerOf2(post.Upvotes)) {
+			common.SendUpvoteNotification(post);
+		}
+	}
+
+	if(!isUpvote) {
+		if (votes >= models.NEGATIVE_VOTES_LIMIT) {
+			err = SuspendPost(id);
+		}
+	}
+	return;
+}
+
+func ReportSpam(id string, reason string) (err error) {
+	spamReason := bson.M{
+		"commentPostIds": reason,
+	}
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+		}, "spamCount": 1,
+			bson.M{"$push": spamReason}, })
+
+	return;
+}
+
+func checkSpamCountLimit(id string) (err error) {
+	post, err := findPostById(id);
+	if (post.SpamCount >= models.SPAM_COUNT_LIMIT) {
+		err = SuspendPost(id);
+		if(err != nil) {
+			common.SendDeletePostNotification(post);
+		}
+	}
+	return
+}
+
+func findPostById(id string) (post models.Post, err error, ) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	var post models.Post;
+	err = c.FindId(bson.ObjectIdHex(id)).One(&post);
+	return post, err
+}
+
+func findCommentById(id string) (comment models.Comment, err error, ) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	var post models.Post;
+	err = c.FindId(bson.ObjectIdHex(id)).One(&comment);
+	return post, err
 }
 
 func GetAllComments(postId string) (comments []models.Comment, err error) {
@@ -390,7 +469,7 @@ func GetAllComments(postId string) (comments []models.Comment, err error) {
 
 	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&comments)
 
-	if(comments == nil) {
+	if (comments == nil) {
 		comments = []models.Comment{}
 	}
 	return

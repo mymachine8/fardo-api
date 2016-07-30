@@ -3,11 +3,36 @@ package common
 import (
 	"github.com/NaySoftware/go-fcm"
 	"fmt"
+	"github.com/mymachine8/fardo-api/models"
 )
 
 const (
 	serverKey = "AIzaSyDcXHtO1YB-tCRwFAvaVqJDud8gR00VJs4"
 )
+
+func SendUpvoteNotification(post models.Post) {
+
+}
+
+func SendCommentNotification(post models.Post, comment models.Comment) {
+
+}
+
+func SendReplyNotification(comment models.Comment, reply models.Reply) {
+
+}
+
+func SendNearByNotification(post models.Post) {
+
+}
+
+func SendDeletePostNotification(post models.Post) {
+
+}
+
+func AppLocationReadyNotification() {
+
+}
 
 func sendGCMNotification() {
 	ids := []string{
