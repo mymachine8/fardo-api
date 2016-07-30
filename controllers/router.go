@@ -51,6 +51,7 @@ func InitRoutes() http.Handler {
 	r.POST("/api/admin/login", loginAdminHandler);
 	r.POST("/api/users", memberRegisterHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
+	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
 	r.GET("/api/my-recent-posts", recentUserPostsHandler);
 	r.GET("/api/my-recent-comments", recentUserCommentedPostsHandler);
 
@@ -423,6 +424,29 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	log.Print(isGroupLocked);
 
 	rw.Write(common.SuccessResponseJSON(response));
+}
+
+func updateUserFcmTokenHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var body struct {
+		FcmToken string `json:"fcmToken"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body)
+
+	token := common.GetAccessToken(r);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
+		return
+	}
+
+	err = data.SetUserFcmToken(token, body.FcmToken);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("SUCCESS"));
 }
 
 func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

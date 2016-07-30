@@ -7,6 +7,6 @@ import (
 
 type Reply struct {
 	Content   string `bson:"content" json:"content"`
-	CreatedOn time.Time `bson:"createdOn" json:"-"`
+	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
 	UserId    bson.ObjectId `bson:"userId" json:"-"`
 }

@@ -110,6 +110,19 @@ func SetUserToken(token string, userId string) error {
 	return err
 }
 
+func SetUserFcmToken(accessToken string, fcmToken string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("access_tokens")
+
+	err := c.Update(bson.M{"token": accessToken},
+		bson.M{"$set": bson.M{
+			"fcmToken": fcmToken,
+		}})
+
+	return err
+}
+
 func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( bool, error) {
 	isGroupLocked := true;
 	context := common.NewContext()

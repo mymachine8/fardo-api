@@ -22,7 +22,7 @@ type Post struct {
 	ImageData string `bson:"-" json:"imageData, omitempty"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
-	CreatedOn  time.Time `bson:"createdOn" json:"-"`
+	CreatedOn  time.Time `bson:"createdOn" json:"createdOn"`
 	UserId     bson.ObjectId `bson:"userId" json:"-"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`

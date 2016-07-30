@@ -67,6 +67,8 @@ func initConfig() {
 	if(err != nil) {
 		log.Print(err.Error())
 	}
+
+	sendGCMNotification();
 }
 
 func SuccessResponseJSON(result interface{}) []byte {
