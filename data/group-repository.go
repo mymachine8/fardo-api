@@ -7,13 +7,14 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"strings"
 	"encoding/base64"
+	"log"
 )
 
 //Based on Affinity
 //isLocal: So bring most of the local colleges to this group (Eg: Vignan's IIT, ANITS, GITAM)
 //isGlobal: So bring most of the same category global colleges to this group (NIT, IIT, MEDICAL COLLEGES, NIFT)
 //ismMixed: Don't know, maybe mix of local and global
-func GetFeaturedGroups(token string) (groups []models.Group, err error) {
+func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.Group, err error) {
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("access_tokens")
@@ -30,42 +31,55 @@ func GetFeaturedGroups(token string) (groups []models.Group, err error) {
 	c := context.DbCollection("groups")
 	err = c.FindId(result.GroupId).One(&group);
 
-	if (err != nil) {
-		return;
+	if err == nil && group.Affinity == models.CategoryAffinity {
+		 getFeaturedGroupsCategory(group.SubCategoryId) //50%
+	} else {
+		groups, err = GetNearByGroups(lat, lng); //50%
 	}
 
-	var similarGroups [] models.Group
-
-	if (group.Affinity == models.CategoryAffinity) {
-		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
-	}
-
-	switch group.Affinity {
-	case models.CategoryAffinity:
-		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&groups)
-	case models.LocalAffinity:
-		groups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
-	case models.MixedAffinity:
-		var nearGroups []models.Group
-		err = c.Find(bson.M{"subCategoryId": group.SubCategoryId}).Limit(30).All(&similarGroups)
-		nearGroups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
-		for _, grp := range nearGroups {
-			if (grp.SubCategoryId == group.SubCategoryId) {
-				groups = append(groups, grp)
-			}
-		}
-
-	default:
-		groups, err = GetNearByGroups(group.Loc[1], group.Loc[0]);
-	}
-
+	var popularGroups []models.Group;
+	var adminAreaGroups []models.Group;
+	groups, err = GetNearByGroups(lat, lng); //50% for local //20% for cateogry affinity
+	popularGroups, err = GetGlobalPopularGroups(); //20% for local //30% for category affinity
+	adminAreaGroups, err = GetAdminAreaPopularGroups("Andhra Pradesh");
+	log.Print(popularGroups)
+	log.Print(adminAreaGroups)
 	if (groups == nil) {
 		groups = []models.Group{}
 	}
 	return;
 }
 
+func getFeaturedGroupsCategory(subCategoryId bson.ObjectId) (groups []models.Group, err error) {
+	//TODO: Get popular groups from that category
+	return;
+}
+
+func GetGlobalPopularGroups() (groups []models.Group, err error) {
+	//TODO: Get popular groups from the country
+	return;
+}
+
+func GetAdminAreaPopularGroups(stateName string) (groups []models.Group, err error) {
+	//TODO: Get popular groups from the state
+	return;
+}
+
+
 func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("groups")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 10 / 3963.2} }}}).All(&groups);
+	return
+}
+
+func GetNearByPopularGroups(lat float64, lng float64) (groups []models.Group, err error) {
+	//TODO: Get popular groups from the nearby groups
 	context := common.NewContext()
 	defer context.Close()
 
@@ -85,15 +99,15 @@ func CreateGroup(group models.Group) (string, error) {
 	group.IsActive = true;
 	group.CreatedOn = time.Now().UTC()
 
-	if(len(group.ImageData) > 0 ) {
-		fileName := "group_image_"  + group.Id.Hex();
+	if (len(group.ImageData) > 0 ) {
+		fileName := "group_image_" + group.Id.Hex();
 		imageReader := strings.NewReader(group.ImageData);
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-		res, err := common.SendItemToCloudStorage(common.GroupImage,fileName, dec);
+		res, err := common.SendItemToCloudStorage(common.GroupImage, fileName, dec);
 
-		if(err != nil) {
+		if (err != nil) {
 			return "", models.FardoError{"Insert Group Image Error: " + err.Error()}
 		}
 
@@ -114,7 +128,7 @@ func UpdateGroup(id string, group models.Group) error {
 	return err
 }
 
-func UpdateGroupLogo(id string,groupLogo string) error {
+func UpdateGroupLogo(id string, groupLogo string) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
@@ -124,23 +138,22 @@ func UpdateGroupLogo(id string,groupLogo string) error {
 	return err
 }
 
-func UpdateGroupImage(id string,imageData string) error {
+func UpdateGroupImage(id string, imageData string) error {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
 
 	imageId := bson.NewObjectId()
-	fileName := "group_image_"  + imageId.Hex();
+	fileName := "group_image_" + imageId.Hex();
 	imageReader := strings.NewReader(imageData);
 
 	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-	res, err := common.SendItemToCloudStorage(common.GroupImage,fileName, dec);
+	res, err := common.SendItemToCloudStorage(common.GroupImage, fileName, dec);
 
-	if(err != nil) {
+	if (err != nil) {
 		return models.FardoError{"Insert Post Image Error: " + err.Error()}
 	}
-
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{"imageUrl": res}});

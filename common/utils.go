@@ -117,7 +117,7 @@ func GetAccessToken(req *http.Request) string {
 func DivisbleByPowerOf2(num int) bool {
 	var result = 5;
 	for i:=3; result <=num;i++ {
-		result = int (math.Pow(2, i));
+		result = int (math.Pow(2, float64(i)));
 		if(num %  result == 0) {
 			return true;
 		}

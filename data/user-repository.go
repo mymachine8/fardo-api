@@ -11,6 +11,16 @@ import (
 	"strings"
 )
 
+type ActionType int8
+
+const (
+	ActionCreate ActionType = 0
+	ActionDownvote ActionType = 1
+	ActionSpam ActionType = 2
+	ActionShare ActionType = 3
+	ActionUpvote ActionType = 4
+)
+
 func RegisterUser(user models.User) error {
 	context := common.NewContext()
 	defer context.Close()
@@ -54,7 +64,6 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 	c := context.DbCollection("users")
 
 	err = c.Find(bson.M{"imei": user.Imei}).One(&user)
-
 
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		user.Id = bson.NewObjectId()
@@ -123,7 +132,7 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 	return err
 }
 
-func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( bool, error) {
+func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bool, error) {
 	isGroupLocked := true;
 	context := common.NewContext()
 	tokenCol := context.DbCollection("access_tokens")
@@ -141,7 +150,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( b
 	err := tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	if (err != nil) {
-		return isGroupLocked,err
+		return isGroupLocked, err
 	}
 
 	var group models.Group
@@ -150,7 +159,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( b
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 1 / 3963.2} }}}).One(&group);
 
-	if(err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
+	if (err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
 		isGroupLocked = false;
 	}
 
@@ -161,7 +170,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( b
 		}})
 
 	if (err != nil) {
-		return isGroupLocked,err
+		return isGroupLocked, err
 	}
 
 	err = tokenCol.Update(bson.M{"userId": result.UserId},
@@ -169,5 +178,74 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) ( b
 			"groupId": bson.ObjectIdHex(groupId),
 		}})
 
-	return isGroupLocked,err
+	return isGroupLocked, err
+}
+
+func findUserById(userId string) (user models.User, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	err = c.FindId(bson.ObjectIdHex(userId)).One(&user);
+	return
+}
+
+func CalculateUserScore(post models.Post, actionType ActionType) {
+	var resultScore int;
+	switch actionType {
+	case ActionCreate:
+		resultScore = postCreateScore();
+		break;
+	case ActionDownvote:
+		resultScore = downvoteScore(post.Upvotes - post.Downvotes) * -1;
+		break;
+	case ActionSpam:
+		resultScore= spamScore(post.SpamCount) * -1;
+		break;
+	case ActionShare:
+		resultScore = shareScore();
+		break;
+	case ActionUpvote:
+		resultScore = upvoteScore();
+		break;
+	}
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	err := c.Update(bson.M{"_id": post.UserId},
+		bson.M{"$inc": bson.M{
+			"score": resultScore,
+		}})
+
+	if(err != nil) {
+		log.Print(err.Error())
+	}
+}
+
+func postCreateScore() int {
+	return 10;
+}
+
+func downvoteScore(votes int) int {
+	if (votes == 1 || votes == 2) {
+		return 5;
+	}
+	if (votes == 3) {
+		return 20;
+	}
+	return 0;
+}
+
+func spamScore(spamCount int) int {
+	return 10 * spamCount;
+}
+
+func shareScore() int {
+	return 10;
+}
+
+func upvoteScore() int {
+	return 5;
 }

@@ -83,6 +83,8 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	go common.SendNearByNotification(post)
 
+	go CalculateUserScore(post, ActionCreate);
+
 	return post.Id.Hex(), err
 }
 
@@ -186,6 +188,9 @@ func UpvotePost(id string) (err error) {
 		bson.M{"$inc": bson.M{
 			"upvotes": 1,
 		}})
+	if(err == nil) {
+		go updateUserScore(id, ActionUpvote);
+	}
 	return
 }
 
@@ -198,6 +203,9 @@ func DownvotePost(id string) (err error) {
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
 		}})
+	if(err == nil) {
+		go updateUserScore(id, ActionDownvote);
+	}
 	return
 }
 
@@ -213,6 +221,13 @@ func SuspendPost(id string) (err error) {
 	return
 }
 
+func updateUserScore(id string,actionType ActionType) {
+	post, err := findPostById(id);
+	if(err == nil) {
+		 CalculateUserScore(post, actionType);
+	}
+}
+
 func GetAllPosts() (posts []models.Post, err error) {
 	context := common.NewContext()
 	defer context.Close()
@@ -223,6 +238,34 @@ func GetAllPosts() (posts []models.Post, err error) {
 		posts = []models.Post{}
 	}
 	return
+}
+
+func GetPopularPosts(lat float64, lng float64) (posts []models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	getNearByPopularPosts(lat,lng); //50%
+	getGlobalPopularPosts(); //30%
+	getPopularPostsAdminArea(lat, lng); //20%
+
+	err = c.Find(nil).All(&posts)
+	if (posts == nil) {
+		posts = []models.Post{}
+	}
+	return
+}
+
+func getNearByPopularPosts(lat float64, lng float64) {
+	//TODO: Get NearBy popular posts
+}
+
+func getGlobalPopularPosts() {
+	//TODO: Get Global popular posts
+}
+
+func getPopularPostsAdminArea(lat float64, lng float64) {
+	//TODO: Get State popular posts
 }
 
 func GetLabelPosts(labelId string) (posts []models.Post, err error) {
@@ -361,7 +404,7 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 
 	if(err == nil) {
 		var comment models.Comment;
-		comment, err = findCommentById
+		comment, err = findCommentById(commentId);
 		common.SendReplyNotification(comment, reply)
 	}
 
@@ -425,8 +468,11 @@ func ReportSpam(id string, reason string) (err error) {
 	c := context.DbCollection("posts")
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-		}, "spamCount": 1,
-			bson.M{"$push": spamReason}, })
+			"spamCount": 1},
+			"$push": spamReason, })
+	if(err == nil) {
+		go updateUserScore(id, ActionSpam);
+	}
 
 	return;
 }
@@ -447,9 +493,8 @@ func findPostById(id string) (post models.Post, err error, ) {
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	var post models.Post;
 	err = c.FindId(bson.ObjectIdHex(id)).One(&post);
-	return post, err
+	return
 }
 
 func findCommentById(id string) (comment models.Comment, err error, ) {
@@ -457,9 +502,8 @@ func findCommentById(id string) (comment models.Comment, err error, ) {
 	defer context.Close()
 	c := context.DbCollection("comments")
 
-	var post models.Post;
 	err = c.FindId(bson.ObjectIdHex(id)).One(&comment);
-	return post, err
+	return
 }
 
 func GetAllComments(postId string) (comments []models.Comment, err error) {

@@ -3,11 +3,6 @@ package models
 import (
 	"time"
 	"gopkg.in/mgo.v2/bson"
-	"io/ioutil"
-	"path/filepath"
-	"fmt"
-	"os"
-	"encoding/json"
 )
 
 const (

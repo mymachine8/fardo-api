@@ -108,8 +108,17 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 }
 
 func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO:High! Write the logic for mycircle
-	result, err := data.GetAllPosts();
+
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	result, err := data.GetPopularPosts(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
@@ -119,9 +128,17 @@ func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 }
 
 func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO: Write algorithm to return featured groups
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
 	token := common.GetAccessToken(r);
-	result, err := data.GetFeaturedGroups(token);
+	result, err := data.GetFeaturedGroups(token, lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
