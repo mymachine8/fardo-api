@@ -54,7 +54,6 @@ func GenerateJWT(name, role string) (string, error) {
 
 	// set the expire time for JWT token
 
-	//TODO: For admin expire it for every day
 	t.Claims["exp"] = time.Now().Add(time.Hour * 800).Unix()
 	tokenString, err := t.SignedString(signKey)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 	"encoding/base64"
+	"math"
 )
 
 func CreatePostUser(token string, post models.Post) (string, error) {
@@ -21,7 +22,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
-	//TODO: Have to revisit this algorithm
+	//TODO: Have to revisit this code
 	post.GroupId = result.GroupId;
 	post.UserId = result.UserId;
 	if (len(post.GroupId) > 0 && post.IsGroup) {
@@ -70,6 +71,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	post.IsActive = true;
 	post.CreatedOn = time.Now()
+	post.Score = redditPostRankingAlgorithm(post);
 
 	err = c.Insert(&post)
 
@@ -148,6 +150,22 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 		}
 	}
 
+	if (len(post.ImageData) > 0 ) {
+		fileName := "post_" + post.Id.Hex();
+		imageReader := strings.NewReader(post.ImageData);
+
+		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
+
+		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, dec);
+
+		if (err != nil) {
+			return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
+		}
+
+		post.ImageUrl = res;
+
+	}
+
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
@@ -189,7 +207,7 @@ func UpvotePost(id string) (err error) {
 			"upvotes": 1,
 		}})
 	if(err == nil) {
-		go updateUserScore(id, ActionUpvote);
+		go updateUserAndPostScore(id, ActionUpvote);
 	}
 	return
 }
@@ -204,7 +222,7 @@ func DownvotePost(id string) (err error) {
 			"downvotes": 1,
 		}})
 	if(err == nil) {
-		go updateUserScore(id, ActionDownvote);
+		go updateUserAndPostScore(id, ActionDownvote);
 	}
 	return
 }
@@ -221,26 +239,81 @@ func SuspendPost(id string) (err error) {
 	return
 }
 
-func updateUserScore(id string,actionType ActionType) {
+func updatePostScore(id string, score int) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{
+			"score": score,
+		}})
+	return
+}
+
+func updateUserAndPostScore(id string,actionType ActionType) {
 	post, err := findPostById(id);
+	 updatePostScore(id, redditPostRankingAlgorithm(post));
+
 	if(err == nil) {
 		 CalculateUserScore(post, actionType);
 	}
 }
 
-func GetAllPosts() (posts []models.Post, err error) {
+func GetAllPosts(page int, postParams models.Post) (posts []models.Post, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	err = c.Find(nil).All(&posts)
+	skip := page*20;
+	params := make(map[string]interface{})
+	if(len(postParams.GroupName) > 0) {
+		params["groupName"] = bson.RegEx{Pattern: postParams.GroupName, Options: "i"};
+	}
+	if(len(postParams.City) > 0) {
+		params["city"] = bson.RegEx{Pattern: postParams.City, Options: "i"};
+	}
+	if(len(postParams.State) > 0) {
+		params["state"] = bson.RegEx{Pattern: postParams.State, Options: "i"};
+	}
+
+
+	err = c.Find(params).Sort("-createdOn").Skip(skip).Limit(20).All(&posts)
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
 }
 
-func GetPopularPosts(lat float64, lng float64) (posts []models.Post, err error) {
+func redditPostRankingAlgorithm(post models.Post) int {
+	timeDiff := common.GetTimeSeconds(post.CreatedOn) - common.GetZingCreationTimeSeconds();
+	votes := int64(post.Upvotes - post.Downvotes);
+	var y int64;
+	var z int64 = 1;
+	if votes > 0 {
+		y = 1
+		z = votes
+
+	}
+	if votes == 0 {
+		y = 0
+	}
+	if votes < 0 {
+		y = -1
+		z = votes * -1;
+	}
+
+	resultScore := math.Log10(float64(z)) + (float64(y) * float64(timeDiff))/45000;
+
+	return int(resultScore);
+}
+
+func GetMyCirclePosts(token string, lat float64, lng float64) (posts[]models.Post, err error) {
+ 	//TODO: Reddit Alogirthm
+	return;
+}
+
+func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Post, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
@@ -471,7 +544,7 @@ func ReportSpam(id string, reason string) (err error) {
 			"spamCount": 1},
 			"$push": spamReason, })
 	if(err == nil) {
-		go updateUserScore(id, ActionSpam);
+		go updateUserAndPostScore(id, ActionSpam);
 	}
 
 	return;

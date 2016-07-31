@@ -24,6 +24,10 @@ type Group struct {
 	CategoryId bson.ObjectId `bson:"categoryId" json:"categoryId"`
 	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
 	Radius int `bson:"radius" json:"radius"`
+	CurrentTrendingScore int `bson:"currentTrendingScore" json:"_"`
+	PreviousTrendingScore int `bson:"previousTrendingScore" json:"_"`
+	CurrentPostsCount int `bson:"currentPostsCount" json:"_"`
+	CurrentVotesCount int  `bson:"currentVotesCount" json:"_"`
 	Loc [2]float64 `bson:"loc" json:"loc"`
 	City string `bson:"city" json:"city"`
 	State string `bson:"state" json:"state"`

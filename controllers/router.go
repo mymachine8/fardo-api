@@ -97,10 +97,20 @@ func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 }
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO:High! Write the logic for mycircle
-	result, err := data.GetAllPosts();
+
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	token := common.GetAccessToken(r);
+
+	result, e := data.GetMyCirclePosts(token,lat,lng);
+	if (e != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
 	}
 	rw.Write(common.SuccessResponseJSON(result));
@@ -118,7 +128,10 @@ func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
-	result, err := data.GetPopularPosts(lat, lng);
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetPopularPosts(token, lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
@@ -253,7 +266,15 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 
 func allPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	result, err := data.GetAllPosts();
+	var queryParams models.Post;
+
+	queryParams.GroupName = r.URL.Query().Get("groupname_like");
+	queryParams.City = r.URL.Query().Get("city_like");
+	queryParams.State = r.URL.Query().Get("state_like");
+
+	var page int64
+	page, _ = strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
+	result, err := data.GetAllPosts(int(page), queryParams);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
@@ -516,7 +537,7 @@ func removeLabelHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 }
 
 func createLabelsBulkHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	//TODO: Create Labels for Bulk
+	//Defered for next release
 }
 
 func categoryListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -546,9 +567,17 @@ func subCategoryListHandler(rw http.ResponseWriter, r *http.Request, p httproute
 func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	var err error
+	var page int64
 	var result []models.Group
 
-	result, err = data.GetAllGroups();
+	var queryParams models.Group;
+
+	queryParams.Name = r.URL.Query().Get("name_like");
+	queryParams.City = r.URL.Query().Get("city_like");
+	queryParams.State = r.URL.Query().Get("state_like");
+
+	page, err = strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
+	result, err = data.GetGroups(int(page), queryParams);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);

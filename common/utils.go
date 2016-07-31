@@ -9,6 +9,7 @@ import (
 	"strings"
 	"log"
 	"math"
+	"time"
 )
 
 var (
@@ -123,4 +124,16 @@ func DivisbleByPowerOf2(num int) bool {
 		}
 	}
 	return false;
+}
+
+func GetTimeSeconds(t time.Time) int64 {
+return t.UnixNano() / int64(time.Second)
+}
+
+func GetZingCreationTimeSeconds() int64 {
+	t1, _ := time.Parse(
+		time.RFC3339,
+		"2016-07-01T00:00:00+00:00");
+
+	return t1.UnixNano()/ int64(time.Second)
 }

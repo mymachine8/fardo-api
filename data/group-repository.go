@@ -31,19 +31,19 @@ func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.G
 	c := context.DbCollection("groups")
 	err = c.FindId(result.GroupId).One(&group);
 
+	var featuredGroups []models.Group
 	if err == nil && group.Affinity == models.CategoryAffinity {
-		 getFeaturedGroupsCategory(group.SubCategoryId) //50%
-	} else {
-		groups, err = GetNearByGroups(lat, lng); //50%
+		 featuredGroups, err = getFeaturedGroupsCategory(group.SubCategoryId) //50%
 	}
 
 	var popularGroups []models.Group;
 	var adminAreaGroups []models.Group;
-	groups, err = GetNearByGroups(lat, lng); //50% for local //20% for cateogry affinity
+	groups, err = GetNearByPopularGroups(lat, lng); //50% for local //20% for cateogry affinity
 	popularGroups, err = GetGlobalPopularGroups(); //20% for local //30% for category affinity
 	adminAreaGroups, err = GetAdminAreaPopularGroups("Andhra Pradesh");
 	log.Print(popularGroups)
 	log.Print(adminAreaGroups)
+	log.Print(featuredGroups)
 	if (groups == nil) {
 		groups = []models.Group{}
 	}
@@ -51,17 +51,26 @@ func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.G
 }
 
 func getFeaturedGroupsCategory(subCategoryId bson.ObjectId) (groups []models.Group, err error) {
-	//TODO: Get popular groups from that category
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+	err = c.Find(bson.M{"subCategoryId": subCategoryId}).Sort("-previousTrendingScore").Limit(30).All(&groups)
 	return;
 }
 
 func GetGlobalPopularGroups() (groups []models.Group, err error) {
-	//TODO: Get popular groups from the country
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+	err = c.Find(nil).Sort("-previousTrendingScore").Limit(30).All(&groups)
 	return;
 }
 
 func GetAdminAreaPopularGroups(stateName string) (groups []models.Group, err error) {
-	//TODO: Get popular groups from the state
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+	err = c.Find(bson.M{"state": stateName}).Sort("-previousTrendingScore").Limit(30).All(&groups)
 	return;
 }
 
@@ -74,12 +83,11 @@ func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 10 / 3963.2} }}}).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).All(&groups);
 	return
 }
 
 func GetNearByPopularGroups(lat float64, lng float64) (groups []models.Group, err error) {
-	//TODO: Get popular groups from the nearby groups
 	context := common.NewContext()
 	defer context.Close()
 
@@ -87,7 +95,7 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.Group, er
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 10 / 3963.2} }}}).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-previousTrendingScore").All(&groups);
 	return
 }
 
@@ -172,12 +180,36 @@ func RemoveGroup(id string) error {
 	return err
 }
 
+func GetGroups(page int,groupParams models.Group) (groups []models.Group, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	skip := page*20;
+	params := make(map[string]interface{})
+	if(len(groupParams.Name) > 0) {
+		params["name"] = bson.RegEx{Pattern: groupParams.Name, Options: "i"};
+	}
+	if(len(groupParams.City) > 0) {
+		params["city"] = bson.RegEx{Pattern: groupParams.City, Options: "i"};
+	}
+	if(len(groupParams.State) > 0) {
+		params["state"] = bson.RegEx{Pattern: groupParams.State, Options: "i"};
+	}
+
+	err = c.Find(params).Sort("-createdOn").Skip(skip).Limit(20).All(&groups);
+	if (groups == nil) {
+		groups = []models.Group{}
+	}
+	return
+}
+
 func GetAllGroups() (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err = c.Find(nil).Sort("-createdOn").All(&groups);
+	err = c.Find(nil).All(&groups);
 	if (groups == nil) {
 		groups = []models.Group{}
 	}
@@ -269,5 +301,32 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	if (labels == nil) {
 		labels = []models.Label{}
 	}
+	return
+}
+
+
+
+func RecalculateTrendingScore() (err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	c := context.DbCollection("groups")
+
+	var groups []models.Group;
+	err = c.Find(nil).Select(bson.M{"id": 1, "currentTrendingScore":1, "previousTrendingScore" : 1}).All(&groups)
+
+	if(err!= nil) {
+		log.Print("Group Score Cron Error:", err.Error())
+		return;
+	}
+
+	for _,group := range groups {
+		_ = c.Update(bson.M{"_id": group.Id},
+			bson.M{"$set": bson.M{
+				"currentTrendingScore": 0,
+				"previousTrendingScore": group.CurrentTrendingScore,
+			}})
+	}
+
 	return
 }
