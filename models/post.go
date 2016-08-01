@@ -24,7 +24,7 @@ type Post struct {
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
 	SpamCount int  `bson:"spamCount" json:"spamCount"`
 	SpamReasons []string `bson:"spamReasons" json:"spamReasons"`
-	Score int  `bson:"score" json:"score"`
+	Score float64  `bson:"score" json:"score"`
 	CreatedOn  time.Time `bson:"createdOn" json:"createdOn"`
 	UserId     bson.ObjectId `bson:"userId" json:"-"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`

@@ -12,6 +12,7 @@ import (
 	"log"
 	"github.com/mymachine8/fardo-api/cors"
 	"strconv"
+	"time"
 )
 
 func InitRoutes() http.Handler {
@@ -102,13 +103,17 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	var lat, lng float64;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	layout := "2006-01-02T15:04:05.000Z"
+	last_updated , _ := time.Parse(
+		layout,
+		r.URL.Query().Get("last_updated"));
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token,lat,lng);
+	result, e := data.GetMyCirclePosts(token,lat,lng,last_updated);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return

@@ -70,7 +70,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	c := context.DbCollection("posts")
 
 	post.IsActive = true;
-	post.CreatedOn = time.Now()
+	post.CreatedOn = time.Now().UTC();
 	post.Score = redditPostRankingAlgorithm(post);
 
 	err = c.Insert(&post)
@@ -173,7 +173,8 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	obj_id := bson.NewObjectId()
 	post.Id = obj_id
 	post.IsActive = true;
-	post.CreatedOn = time.Now()
+	post.CreatedOn = time.Now().UTC();
+	post.Score = redditPostRankingAlgorithm(post);
 
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
@@ -239,7 +240,7 @@ func SuspendPost(id string) (err error) {
 	return
 }
 
-func updatePostScore(id string, score int) (err error) {
+func updatePostScore(id string, score float64) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
@@ -285,32 +286,47 @@ func GetAllPosts(page int, postParams models.Post) (posts []models.Post, err err
 	return
 }
 
-func redditPostRankingAlgorithm(post models.Post) int {
+func redditPostRankingAlgorithm(post models.Post) float64 {
 	timeDiff := common.GetTimeSeconds(post.CreatedOn) - common.GetZingCreationTimeSeconds();
 	votes := int64(post.Upvotes - post.Downvotes);
-	var y int64;
+	var sign int64;
 	var z int64 = 1;
 	if votes > 0 {
-		y = 1
+		sign = 1
 		z = votes
 
 	}
 	if votes == 0 {
-		y = 0
+		sign = 0
 	}
 	if votes < 0 {
-		y = -1
+		sign = -1
 		z = votes * -1;
 	}
 
-	resultScore := math.Log10(float64(z)) + (float64(y) * float64(timeDiff))/45000;
+	log.Print("diff:",timeDiff);
+	log.Print("z:", z);
+	log.Print("y:", sign);
 
-	return int(resultScore);
+	return float64(sign)*math.Log2(float64(z))  + float64(timeDiff)/45000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64) (posts[]models.Post, err error) {
- 	//TODO: Reddit Alogirthm
-	return;
+func GetMyCirclePosts(token string, lat float64, lng float64,lastUpdated time.Time) (posts[]models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	log.Print(lastUpdated);
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("posts")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
+	"createdOn": bson.M{"$gt": lastUpdated}}).Sort("-score").All(&posts);
+	if (posts == nil) {
+		posts = []models.Post{}
+	}
+	log.Print(len(posts))
+	return
 }
 
 func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Post, err error) {
@@ -329,16 +345,57 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	return
 }
 
-func getNearByPopularPosts(lat float64, lng float64) {
-	//TODO: Get NearBy popular posts
+func getNearByPopularPosts(lat float64, lng float64)(posts[]models.Post, err error) {
+
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("posts")
+	now := time.Now().UTC()
+	then := now.AddDate(0, -3, 0)
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }},
+		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+	if (posts == nil) {
+		posts = []models.Post{}
+	}
+	return;
 }
 
-func getGlobalPopularPosts() {
-	//TODO: Get Global popular posts
+func getGlobalPopularPosts()(posts[]models.Post, err error) {
+
+	context := common.NewContext()
+	defer context.Close()
+
+	now := time.Now().UTC()
+	then := now.AddDate(0, -7, 0)
+	c := context.DbCollection("posts")
+	err = c.Find(bson.M{
+		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+	if (posts == nil) {
+		posts = []models.Post{}
+	}
+	return;
 }
 
-func getPopularPostsAdminArea(lat float64, lng float64) {
-	//TODO: Get State popular posts
+func getPopularPostsAdminArea(lat float64, lng float64) (posts[]models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	now := time.Now().UTC()
+	then := now.AddDate(0, -4, 0)
+	c := context.DbCollection("posts")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 300 / 3963.2} }},
+		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+	if (posts == nil) {
+		posts = []models.Post{}
+	}
+	return;
 }
 
 func GetLabelPosts(labelId string) (posts []models.Post, err error) {
