@@ -40,7 +40,7 @@ func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.G
 	var adminAreaGroups []models.Group;
 	groups, err = GetNearByPopularGroups(lat, lng); //50% for local //20% for cateogry affinity
 	popularGroups, err = GetGlobalPopularGroups(); //20% for local //30% for category affinity
-	adminAreaGroups, err = GetAdminAreaPopularGroups("Andhra Pradesh");
+	adminAreaGroups, err = GetAdminAreaPopularGroups(lat,lng);
 	log.Print(popularGroups)
 	log.Print(adminAreaGroups)
 	log.Print(featuredGroups)
@@ -54,7 +54,7 @@ func getFeaturedGroupsCategory(subCategoryId bson.ObjectId) (groups []models.Gro
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
-	err = c.Find(bson.M{"subCategoryId": subCategoryId}).Sort("-previousTrendingScore").Limit(30).All(&groups)
+	err = c.Find(bson.M{"subCategoryId": subCategoryId}).Sort("-score").Limit(30).All(&groups)
 	return;
 }
 
@@ -62,16 +62,20 @@ func GetGlobalPopularGroups() (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
-	err = c.Find(nil).Sort("-previousTrendingScore").Limit(30).All(&groups)
+	err = c.Find(nil).Sort("-score").Limit(30).All(&groups)
 	return;
 }
 
-func GetAdminAreaPopularGroups(stateName string) (groups []models.Group, err error) {
+func GetAdminAreaPopularGroups(lat float64, lng float64) (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
-	err = c.Find(bson.M{"state": stateName}).Sort("-previousTrendingScore").Limit(30).All(&groups)
-	return;
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groups);
+	return
 }
 
 
@@ -95,8 +99,31 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.Group, er
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-previousTrendingScore").All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groups);
 	return
+}
+
+
+func GetNearByPopularGroupsScore(lat float64, lng float64) ( interface{}, error) {
+
+	context := common.NewContext()
+	defer context.Close()
+
+	var groupScores []struct {
+		Id string `json:"id"`
+		Score  int `json:"score"`
+	}
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("groups")
+	err := c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groupScores);
+	length := len(groupScores)
+	for _,group := range groupScores {
+		group.Score = length;
+		length--;
+	}
+	return groupScores, err
 }
 
 func CreateGroup(group models.Group) (string, error) {
@@ -310,22 +337,46 @@ func RecalculateTrendingScore() (err error) {
 	context := common.NewContext()
 	defer context.Close()
 
-	c := context.DbCollection("groups")
+	c := context.DbCollection("posts")
 
-	var groups []models.Group;
-	err = c.Find(nil).Select(bson.M{"id": 1, "currentTrendingScore":1, "previousTrendingScore" : 1}).All(&groups)
+
 
 	if(err!= nil) {
 		log.Print("Group Score Cron Error:", err.Error())
 		return;
 	}
 
-	for _,group := range groups {
-		_ = c.Update(bson.M{"_id": group.Id},
-			bson.M{"$set": bson.M{
-				"currentTrendingScore": 0,
-				"previousTrendingScore": group.CurrentTrendingScore,
-			}})
+	op := bson.M{
+		"$group": bson.M{
+			"_id": "$groupId",
+			"sum_score": bson.M{
+				"$sum": "$score",
+			},
+		},
+	}
+
+	operations := []bson.M{op}
+
+	pipe := c.Pipe(operations);
+
+	result := []bson.M{}
+	err = pipe.All(&result)
+	if err != nil {
+		return err
+	}
+
+	cnt := common.NewContext()
+	defer cnt.Close()
+
+	groupsCol := cnt.DbCollection("groups")
+
+	for _,res := range result {
+		if res["_id"] != nil {
+			_ = groupsCol.Update(bson.M{"_id": res["_id"]},
+				bson.M{"$set": bson.M{
+					"score": res["sum_score"],
+				}})
+		}
 	}
 
 	return

@@ -37,4 +37,5 @@ type Post struct {
 	IsGroup bool `bson:"isGroup" json:"isGroup"`
 	IsLocation bool `bson:"isLocation" json:"isLocation"`
 	IsActive   bool `bson:"isActive" json:"isActive"`
+	Scope string `bson:"-" json:"scope"`
 }

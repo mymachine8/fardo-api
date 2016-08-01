@@ -11,6 +11,16 @@ import (
 	"math"
 )
 
+const (
+	PopularPostsLimit int = 10
+
+	LocalPercent = 5
+
+	AdminAreaPercent = 2
+
+	GlobalPercent = 3
+)
+
 func CreatePostUser(token string, post models.Post) (string, error) {
 	var err error
 
@@ -330,19 +340,66 @@ func GetMyCirclePosts(token string, lat float64, lng float64,lastUpdated time.Ti
 }
 
 func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Post, err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("posts")
 
-	getNearByPopularPosts(lat,lng); //50%
-	getGlobalPopularPosts(); //30%
-	getPopularPostsAdminArea(lat, lng); //20%
+	nearByPosts,err := getNearByPopularPosts(lat,lng); //50%
+	globalPosts,_ := getGlobalPopularPosts(); //30%
+	adminAreaPosts, _ := getPopularPostsAdminArea(lat, lng); //20%
 
-	err = c.Find(nil).All(&posts)
+	nearByPostsLen := common.MinInt(len(nearByPosts), PopularPostsLimit);
+
+	if(nearByPostsLen <= LocalPercent) {
+		return nearByPosts,err
+	}
+
+	posts = nearByPosts[:LocalPercent]
+
+	log.Print(len(posts))
+
+	var count int = 0;
+	for _, glb := range globalPosts {
+		glb.Scope = "global"
+		if(!idInPosts(glb.Id.Hex(),posts) && count < GlobalPercent) {
+			posts = append(posts, glb)
+			count++;
+		}
+	}
+
+	log.Print(count);
+
+	count = 0;
+	for _, aa := range adminAreaPosts {
+		aa.Scope = "state"
+		if(!idInPosts(aa.Id.Hex(),posts) && count < AdminAreaPercent) {
+			posts = append(posts, aa)
+			count++;
+		}
+	}
+
+	log.Print(count);
+
+	resLen := PopularPostsLimit - len(posts)
+
+	j :=LocalPercent
+	for i:=0;i<resLen && j < nearByPostsLen ;i++ {
+		posts = append(posts,nearByPosts[j])
+		j++;
+	}
+
+	log.Print(len(posts))
+
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
 	return
+}
+
+func idInPosts(id string, list []models.Post) bool {
+	for _, b := range list {
+		if b.Id.Hex() == id {
+			return true
+		}
+	}
+	return false
 }
 
 func getNearByPopularPosts(lat float64, lng float64)(posts[]models.Post, err error) {
@@ -525,7 +582,7 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
-	//TODO: Have to revisit this algorithm
+	//TODO: Have to revisit this code
 	reply.UserId = result.UserId;
 	reply.CreatedOn = time.Now()
 
