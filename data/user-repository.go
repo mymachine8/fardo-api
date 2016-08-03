@@ -85,16 +85,14 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 	return user.Id.Hex(), err
 }
 
-func GetUserId(token string) (string, error) {
+func GetAccessTokenDetails(token string) (result models.AccessToken,err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("access_tokens")
 
-	var result struct{ userId bson.ObjectId `bson:"userId"` }
+	err = c.Find(bson.M{"token": token}).One(&result)
 
-	err := c.Find(bson.M{"token": token}).Select(bson.M{"userID": 1}).One(result)
-
-	return result.userId.Hex(), err
+	return
 
 }
 
@@ -125,6 +123,23 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 	c := context.DbCollection("access_tokens")
 
 	err := c.Update(bson.M{"token": accessToken},
+		bson.M{"$set": bson.M{
+			"fcmToken": fcmToken,
+		}})
+
+	if(err!=nil) {
+		log.Print(err.Error())
+		return err
+	}
+
+	var result models.AccessToken
+	err = c.Find(bson.M{"token": accessToken}).One(&result)
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err = userCol.Update(bson.M{"_id": result.UserId},
 		bson.M{"$set": bson.M{
 			"fcmToken": fcmToken,
 		}})
