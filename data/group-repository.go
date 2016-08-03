@@ -38,7 +38,7 @@ func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.G
 
 	var popularGroups []models.Group;
 	var adminAreaGroups []models.Group;
-	groups, err = GetNearByPopularGroups(lat, lng); //50% for local //20% for cateogry affinity
+
 	popularGroups, err = GetGlobalPopularGroups(); //20% for local //30% for category affinity
 	adminAreaGroups, err = GetAdminAreaPopularGroups(lat,lng);
 	log.Print(popularGroups)
@@ -91,26 +91,14 @@ func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error
 	return
 }
 
-func GetNearByPopularGroups(lat float64, lng float64) (groups []models.Group, err error) {
-	context := common.NewContext()
-	defer context.Close()
 
-	currentLatLng := [2]float64{lng, lat}
-	c := context.DbCollection("groups")
-	err = c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groups);
-	return
-}
-
-
-func GetNearByPopularGroupsScore(lat float64, lng float64) ( interface{}, error) {
+func GetNearByGroupsScore(lat float64, lng float64) ( interface{}, error) {
 
 	context := common.NewContext()
 	defer context.Close()
 
 	var groupScores []struct {
-		Id string `json:"id"`
+		Id bson.ObjectId `bson:"_id" json:"id"`
 		Score  int `json:"score"`
 	}
 	currentLatLng := [2]float64{lng, lat}
@@ -119,8 +107,9 @@ func GetNearByPopularGroupsScore(lat float64, lng float64) ( interface{}, error)
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groupScores);
 	length := len(groupScores)
-	for _,group := range groupScores {
-		group.Score = length;
+
+	for index,_ := range groupScores {
+		groupScores[index].Score = length;
 		length--;
 	}
 	return groupScores, err

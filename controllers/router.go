@@ -74,7 +74,9 @@ func InitRoutes() http.Handler {
 
 	//---------------  Main Endpoints -------------------------------
 
-	r.GET("/api/featured-groups", featuredGroupsHandler);
+
+	r.GET("/api/featured-groups-score", GetNearByGroupsScoreHandler);
+	r.GET("/api/featured-groups", GetNearByGroupsHandler);
 	r.GET("/api/my-circle", myCircleHandler);
 	r.GET("/api/popular", popularPostsHandler);
 
@@ -145,7 +147,7 @@ func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 }
 
-func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func GetNearByGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var err error;
 	var lat, lng float64;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
@@ -155,8 +157,27 @@ func featuredGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
-	token := common.GetAccessToken(r);
-	result, err := data.GetFeaturedGroups(token, lat, lng);
+
+	result, err := data.GetNearByGroups(lat, lng);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func GetNearByGroupsScoreHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	result, err := data.GetNearByGroupsScore(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
@@ -817,8 +838,8 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	log.Print(body);
 	var user models.User;
 	user.Imei = body.Imei;
-	user.LastKnowLocation[0] = body.Lng;
-	user.LastKnowLocation[1] = body.Lat;
+	user.Loc[0] = body.Lng;
+	user.Loc[1] = body.Lat;
 
 	log.Print(user);
 

@@ -216,9 +216,11 @@ func UpvotePost(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": 1,
-		}})
-	if(err == nil) {
+		}, "$set": bson.M{
+				"modifiedOn": time.Now().UTC()}})
+	if (err == nil) {
 		go updateUserAndPostScore(id, ActionUpvote);
+		go checkVoteCount(id, true);
 	}
 	return
 }
@@ -231,9 +233,11 @@ func DownvotePost(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
+			"modifiedOn": time.Now().UTC(),
 		}})
-	if(err == nil) {
+	if (err == nil) {
 		go updateUserAndPostScore(id, ActionDownvote);
+		go checkVoteCount(id, false);
 	}
 	return
 }
@@ -246,6 +250,20 @@ func SuspendPost(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"isActive": false,
+			"modifiedOn": time.Now().UTC(),
+		}})
+	return
+}
+
+func SuspendComment(id string) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{
+			"isActive": false,
+			"modifiedOn": time.Now().UTC(),
 		}})
 	return
 }
@@ -262,12 +280,12 @@ func updatePostScore(id string, score float64) (err error) {
 	return
 }
 
-func updateUserAndPostScore(id string,actionType ActionType) {
+func updateUserAndPostScore(id string, actionType ActionType) {
 	post, err := findPostById(id);
-	 updatePostScore(id, redditPostRankingAlgorithm(post));
+	updatePostScore(id, redditPostRankingAlgorithm(post));
 
-	if(err == nil) {
-		 CalculateUserScore(post, actionType);
+	if (err == nil) {
+		CalculateUserScore(post, actionType);
 	}
 }
 
@@ -276,18 +294,17 @@ func GetAllPosts(page int, postParams models.Post) (posts []models.Post, err err
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	skip := page*20;
+	skip := page * 20;
 	params := make(map[string]interface{})
-	if(len(postParams.GroupName) > 0) {
+	if (len(postParams.GroupName) > 0) {
 		params["groupName"] = bson.RegEx{Pattern: postParams.GroupName, Options: "i"};
 	}
-	if(len(postParams.City) > 0) {
+	if (len(postParams.City) > 0) {
 		params["city"] = bson.RegEx{Pattern: postParams.City, Options: "i"};
 	}
-	if(len(postParams.State) > 0) {
+	if (len(postParams.State) > 0) {
 		params["state"] = bson.RegEx{Pattern: postParams.State, Options: "i"};
 	}
-
 
 	err = c.Find(params).Sort("-createdOn").Skip(skip).Limit(20).All(&posts)
 	if (posts == nil) {
@@ -314,14 +331,14 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 		z = votes * -1;
 	}
 
-	log.Print("diff:",timeDiff);
+	log.Print("diff:", timeDiff);
 	log.Print("z:", z);
 	log.Print("y:", sign);
 
-	return float64(sign)*math.Log2(float64(z))  + float64(timeDiff)/45000;
+	return float64(sign) * math.Log2(float64(z)) + float64(timeDiff) / 45000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64,lastUpdated time.Time) (posts[]models.Post, err error) {
+func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time) (posts[]models.Post, err error) {
 	context := common.NewContext()
 	defer context.Close()
 
@@ -331,7 +348,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64,lastUpdated time.Ti
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
-	"createdOn": bson.M{"$gt": lastUpdated}}).Sort("-score").All(&posts);
+		"createdOn": bson.M{"$gt": lastUpdated}}).Sort("-score").All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -341,14 +358,14 @@ func GetMyCirclePosts(token string, lat float64, lng float64,lastUpdated time.Ti
 
 func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Post, err error) {
 
-	nearByPosts,err := getNearByPopularPosts(lat,lng); //50%
-	globalPosts,_ := getGlobalPopularPosts(); //30%
+	nearByPosts, err := getNearByPopularPosts(lat, lng); //50%
+	globalPosts, _ := getGlobalPopularPosts(); //30%
 	adminAreaPosts, _ := getPopularPostsAdminArea(lat, lng); //20%
 
 	nearByPostsLen := common.MinInt(len(nearByPosts), PopularPostsLimit);
 
-	if(nearByPostsLen <= LocalPercent) {
-		return nearByPosts,err
+	if (nearByPostsLen <= LocalPercent) {
+		return nearByPosts, err
 	}
 
 	posts = nearByPosts[:LocalPercent]
@@ -358,7 +375,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	var count int = 0;
 	for _, glb := range globalPosts {
 		glb.Scope = "global"
-		if(!idInPosts(glb.Id.Hex(),posts) && count < GlobalPercent) {
+		if (!idInPosts(glb.Id.Hex(), posts) && count < GlobalPercent) {
 			posts = append(posts, glb)
 			count++;
 		}
@@ -369,7 +386,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	count = 0;
 	for _, aa := range adminAreaPosts {
 		aa.Scope = "state"
-		if(!idInPosts(aa.Id.Hex(),posts) && count < AdminAreaPercent) {
+		if (!idInPosts(aa.Id.Hex(), posts) && count < AdminAreaPercent) {
 			posts = append(posts, aa)
 			count++;
 		}
@@ -379,9 +396,9 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 
 	resLen := PopularPostsLimit - len(posts)
 
-	j :=LocalPercent
-	for i:=0;i<resLen && j < nearByPostsLen ;i++ {
-		posts = append(posts,nearByPosts[j])
+	j := LocalPercent
+	for i := 0; i < resLen && j < nearByPostsLen; i++ {
+		posts = append(posts, nearByPosts[j])
 		j++;
 	}
 
@@ -402,7 +419,7 @@ func idInPosts(id string, list []models.Post) bool {
 	return false
 }
 
-func getNearByPopularPosts(lat float64, lng float64)(posts[]models.Post, err error) {
+func getNearByPopularPosts(lat float64, lng float64) (posts[]models.Post, err error) {
 
 	context := common.NewContext()
 	defer context.Close()
@@ -421,7 +438,7 @@ func getNearByPopularPosts(lat float64, lng float64)(posts[]models.Post, err err
 	return;
 }
 
-func getGlobalPopularPosts()(posts[]models.Post, err error) {
+func getGlobalPopularPosts() (posts[]models.Post, err error) {
 
 	context := common.NewContext()
 	defer context.Close()
@@ -560,7 +577,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	if (err == nil) {
 		go addToRecentUserPosts(result.UserId, comment.PostId, "comment");
 		post, err := findPostById(postId);
-		if(err == nil ) {
+		if (err == nil ) {
 			go common.SendCommentNotification(post, comment)
 		}
 	}
@@ -589,7 +606,7 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
 		bson.M{"$push": bson.M{"replies": reply}})
 
-	if(err == nil) {
+	if (err == nil) {
 		var comment models.Comment;
 		comment, err = findCommentById(commentId);
 		common.SendReplyNotification(comment, reply)
@@ -606,8 +623,9 @@ func UpvoteComment(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": 1,
+			"modifiedOn": time.Now().UTC(),
 		}})
-	go checkVoteCount(id, true);
+	go checkCommentVoteCount(id, true);
 	return
 }
 
@@ -619,26 +637,42 @@ func DownvoteComment(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
+			"modifiedOn": time.Now().UTC(),
 		}})
 
-	go checkVoteCount(id, false);
+	go checkCommentVoteCount(id, false);
 	return
+}
+
+func checkCommentVoteCount(id string, isUpvote bool) (err error) {
+	comment, err := findCommentById(id);
+	votes := comment.Upvotes - comment.Downvotes;
+
+	if (isUpvote) {
+		if (comment.Upvotes == 1 || common.DivisbleByPowerOf2(comment.Upvotes)) {
+			common.SendCommentUpvoteNotification(comment);
+		}
+	}
+
+	if (!isUpvote) {
+		if (votes >= models.NEGATIVE_VOTES_LIMIT) {
+			err = SuspendComment(id);
+		}
+	}
+	return;
 }
 
 func checkVoteCount(id string, isUpvote bool) (err error) {
 	post, err := findPostById(id);
 	votes := post.Upvotes - post.Downvotes;
 
-	if(isUpvote) {
-		if(post.Upvotes == 1) {
-			common.SendUpvoteNotification(post);
-		}
-		if(post.Upvotes == 2 || common.DivisbleByPowerOf2(post.Upvotes)) {
+	if (isUpvote) {
+		if (post.Upvotes == 1 || common.DivisbleByPowerOf2(post.Upvotes)) {
 			common.SendUpvoteNotification(post);
 		}
 	}
 
-	if(!isUpvote) {
+	if (!isUpvote) {
 		if (votes >= models.NEGATIVE_VOTES_LIMIT) {
 			err = SuspendPost(id);
 		}
@@ -657,7 +691,7 @@ func ReportSpam(id string, reason string) (err error) {
 		bson.M{"$inc": bson.M{
 			"spamCount": 1},
 			"$push": spamReason, })
-	if(err == nil) {
+	if (err == nil) {
 		go updateUserAndPostScore(id, ActionSpam);
 	}
 
@@ -668,7 +702,7 @@ func checkSpamCountLimit(id string) (err error) {
 	post, err := findPostById(id);
 	if (post.SpamCount >= models.SPAM_COUNT_LIMIT) {
 		err = SuspendPost(id);
-		if(err != nil) {
+		if (err != nil) {
 			common.SendDeletePostNotification(post);
 		}
 	}

@@ -58,7 +58,7 @@ func Login(user models.User) (u models.User, err error) {
 
 func RegisterAppUser(user models.User) (userId string, err error) {
 
-	lastLocation := user.LastKnowLocation;
+	lastLocation := user.Loc;
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("users")
@@ -179,15 +179,6 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 		}})
 
 	return isGroupLocked, err
-}
-
-func findUserById(userId string) (user models.User, err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("users")
-
-	err = c.FindId(bson.ObjectIdHex(userId)).One(&user);
-	return
 }
 
 func CalculateUserScore(post models.Post, actionType ActionType) {

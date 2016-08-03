@@ -10,6 +10,7 @@ type Comment struct {
 	PostId    bson.ObjectId `bson:"postId,omitempty" json:"postId,omitempty"`
 	Content   string `bson:"content" json:"content"`
 	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
+	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	Upvotes   int  `bson:"upvotes" json:"upvotes"`
 	Downvotes int  `bson:"downvotes" json:"downvotes"`
 	Replies []Reply `bson:"replies,omitempty" json:"replies,omitempty"`

@@ -69,8 +69,6 @@ func initConfig() {
 	if(err != nil) {
 		log.Print(err.Error())
 	}
-
-	sendGCMNotification();
 }
 
 func SuccessResponseJSON(result interface{}) []byte {
@@ -136,4 +134,22 @@ func GetZingCreationTimeSeconds() int64 {
 		"2016-07-01T00:00:00+00:00");
 
 	return t1.UnixNano()/ int64(time.Second)
+}
+
+func MinInt(a int, b int) int {
+	if(a < b) {
+		return a;
+	}
+	return b;
+}
+
+func IsPowerOf2(a int) bool {
+	if(a <= 1) {
+		return false;
+	}
+	if(a == 2) {
+		return true;
+	}
+
+	return IsPowerOf2(a/2)
 }
