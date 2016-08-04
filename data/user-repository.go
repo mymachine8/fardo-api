@@ -85,7 +85,7 @@ func RegisterAppUser(user models.User) (userId string, err error) {
 	return user.Id.Hex(), err
 }
 
-func GetAccessTokenDetails(token string) (result models.AccessToken,err error) {
+func GetAccessTokenDetails(token string) (result models.AccessToken, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("access_tokens")
@@ -127,7 +127,7 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 			"fcmToken": fcmToken,
 		}})
 
-	if(err!=nil) {
+	if (err != nil) {
 		log.Print(err.Error())
 		return err
 	}
@@ -142,6 +142,28 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 	err = userCol.Update(bson.M{"_id": result.UserId},
 		bson.M{"$set": bson.M{
 			"fcmToken": fcmToken,
+		}})
+
+	return err
+}
+
+func SetUserLocation(accessToken string, lat float64, lng float64) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("access_tokens")
+	var result models.AccessToken
+	err := c.Find(bson.M{"token": accessToken}).One(&result)
+	if (err != nil) {
+		return err;
+	}
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	LatLng := [2]float64{lng, lat}
+	err = userCol.Update(bson.M{"_id": result.UserId},
+		bson.M{"$set": bson.M{
+			"loc": LatLng,
 		}})
 
 	return err
@@ -196,6 +218,28 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 	return isGroupLocked, err
 }
 
+func GetUserInfo(token string) (user models.User, err error){
+	context := common.NewContext()
+	tokenCol := context.DbCollection("access_tokens")
+	defer context.Close()
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var result models.AccessToken
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	if (err != nil) {
+		return
+	}
+
+	err = userCol.Find(bson.M{"_id": result.UserId}).One(&user)
+
+	return
+
+}
+
 func CalculateUserScore(post models.Post, actionType ActionType) {
 	var resultScore int;
 	switch actionType {
@@ -206,7 +250,7 @@ func CalculateUserScore(post models.Post, actionType ActionType) {
 		resultScore = downvoteScore(post.Upvotes - post.Downvotes) * -1;
 		break;
 	case ActionSpam:
-		resultScore= spamScore(post.SpamCount) * -1;
+		resultScore = spamScore(post.SpamCount) * -1;
 		break;
 	case ActionShare:
 		resultScore = shareScore();
@@ -225,7 +269,7 @@ func CalculateUserScore(post models.Post, actionType ActionType) {
 			"score": resultScore,
 		}})
 
-	if(err != nil) {
+	if (err != nil) {
 		log.Print(err.Error())
 	}
 }

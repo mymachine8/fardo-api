@@ -23,13 +23,38 @@ func InitRoutes() http.Handler {
 	http.Handle("/", r);
 
 
+	//---------------  Main Endpoints -------------------------------
+
+
+	r.GET("/api/featured-groups-score", GetNearByGroupsScoreHandler);
+	r.GET("/api/featured-groups", GetNearByGroupsHandler);
+	r.GET("/api/my-circle", myCircleHandler);
+	r.GET("/api/popular", popularPostsHandler);
+
+	r.POST("/api/users", memberRegisterHandler);
+	r.GET("/api/users", getUserInfoHandler);
+	r.PUT("/api/users/group", updateUserGroupHandler);
+	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
+	r.PUT("/api/users/location", updateUserLocationTokenHandler);
+	r.GET("/api/my-recent-posts", recentUserPostsHandler);
+	r.GET("/api/my-recent-comments", recentUserCommentedPostsHandler);
+
+	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
+	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
+	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
+	r.GET("/api/posts/:id/comments", commentListHandler);
+	r.POST("/api/posts/:id/comments", createCommentHandler);
+	r.POST("/api/comments/:id/replies", createReplyHandler);
+	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
+	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
+
+	//----------------  End of main endpoints -----------------------
+
+
 	r.GET("/api/categories", common.BasicAuth(categoryListHandler));
 	r.GET("/api/categories/:id/sub-categories", common.BasicAuth(subCategoryListHandler));
 	r.POST("/api/sub-categories/bulk-insert", bulkInsertSubCategoryHandler);
-
-
 	r.GET("/api/groups", groupListHandler);
-	r.GET("/api/suggested-groups", suggestedGroupsHandler);
 	r.GET("/api/groups/:id", getGroupByIdHandler);
 	r.POST("/api/groups", createGroupHandler);
 	r.PUT("/api/groups/:id", updateGroupHandler);
@@ -50,11 +75,6 @@ func InitRoutes() http.Handler {
 
 	r.POST("/api/admin/register", registerAdminHandler);
 	r.POST("/api/admin/login", loginAdminHandler);
-	r.POST("/api/users", memberRegisterHandler);
-	r.PUT("/api/users/group", updateUserGroupHandler);
-	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
-	r.GET("/api/my-recent-posts", recentUserPostsHandler);
-	r.GET("/api/my-recent-comments", recentUserCommentedPostsHandler);
 
 	r.GET("/api/admin/posts", allPostsListHandler);
 	r.GET("/api/admin/solr-collection", solrCollectionHandler);
@@ -63,24 +83,6 @@ func InitRoutes() http.Handler {
 	r.POST("/api/posts", createPostHandler);
 	r.GET("/api/label-posts/:id", labelPostsListHandler);
 	r.GET("/api/group-posts/:id", groupPostsGroupHandler);
-	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
-	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
-	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
-	r.GET("/api/posts/:id/comments", commentListHandler);
-	r.POST("/api/posts/:id/comments", createCommentHandler);
-	r.POST("/api/comments/:id/replies", createReplyHandler);
-	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
-	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
-
-	//---------------  Main Endpoints -------------------------------
-
-
-	r.GET("/api/featured-groups-score", GetNearByGroupsScoreHandler);
-	r.GET("/api/featured-groups", GetNearByGroupsHandler);
-	r.GET("/api/my-circle", myCircleHandler);
-	r.GET("/api/popular", popularPostsHandler);
-
-	//----------------  End of main endpoints -----------------------
 
 
 	c := cors.New(cors.Options{
@@ -513,6 +515,30 @@ func updateUserFcmTokenHandler(rw http.ResponseWriter, r *http.Request, p httpro
 	rw.Write(common.SuccessResponseJSON("SUCCESS"));
 }
 
+func updateUserLocationTokenHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var body struct {
+		lat float64 `json:"lat"`
+		lng float64 `json:"lng"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body)
+
+	token := common.GetAccessToken(r);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
+		return
+	}
+
+	err = data.SetUserLocation(token, body.lat, body.lng);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("SUCCESS"));
+}
+
 func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var group models.Group
 	err := json.NewDecoder(r.Body).Decode(&group)
@@ -605,26 +631,6 @@ func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 	page, err = strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
 	result, err = data.GetGroups(int(page), queryParams);
 
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
-		return
-	}
-	rw.Write(common.SuccessResponseJSON(result));
-}
-
-func suggestedGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-
-	var err error
-	var lat, lng float64;
-	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
-	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
-		return
-	}
-	var result []models.Group
-	result, err = data.GetNearByGroups(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
@@ -874,14 +880,22 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	authUser := struct {
 		User            models.User `json:"user"`
 		Token           string `json:"token"`
-		SuggestedGroups []models.Group `json:"suggestedGroups"`
 	}{
 		user,
 		token,
-		groups,
 	}
 
 	rw.Write(common.SuccessResponseJSON(authUser));
+}
+
+func getUserInfoHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	token := common.GetAccessToken(r);
+	user, err := data.GetUserInfo(token);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(user));
 }
 
 func registerAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

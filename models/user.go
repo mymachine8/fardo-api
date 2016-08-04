@@ -12,7 +12,7 @@ type User struct {
 	HashPassword      []byte `bson:"hashPassword,omitempty" json:"hashPassword, omitempty"`
 	Imei              string `json:"imei,omitempty" bson:"imei,omitempty"`
 	Status            string `json:"status" bson:"status"`
-	FcmToken   string `bson:"fcmToken" json:"fcmToken"`
+	FcmToken          string `bson:"fcmToken" json:"fcmToken"`
 	Score             int `json:"score" bson:"score"`
 	SpamPostCount     int `json:"spamPostCount" bson:"spamPostCount"`
 	DownvotePostCount int `json:"downvotePostCount" bson:"downvotePostCount"`

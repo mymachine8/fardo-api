@@ -331,10 +331,6 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 		z = votes * -1;
 	}
 
-	log.Print("diff:", timeDiff);
-	log.Print("z:", z);
-	log.Print("y:", sign);
-
 	return float64(sign) * math.Log2(float64(z)) + float64(timeDiff) / 45000;
 }
 

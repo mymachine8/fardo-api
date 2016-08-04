@@ -24,15 +24,9 @@ func SendUpvoteNotification(post models.Post) {
 		"time": post.ModifiedOn.String(),
 	}
 
-	log.Print(data)
-
 	message := "You got " + string(post.Upvotes) + " for your post " + string(post.Content)
 
-	log.Print(message)
-
 	ids := []string{token.FcmToken}
-
-	log.Print(ids)
 
 	sendNotification(ids, message, data);
 }
@@ -180,6 +174,10 @@ func sendNotification(fcmTokens []string, message string, data map[string]string
 	c := fcm.NewFcmClient(serverKey)
 	log.Print("fcmTokens")
 	log.Print(fcmTokens)
+	log.Print("data")
+	log.Print(data)
+	log.Print("message:")
+	log.Print(message)
 	c.NewFcmRegIdsMsg(fcmTokens, data)
 	var notification fcm.NotificationPayload;
 	notification.Title = "Zing";
