@@ -169,6 +169,47 @@ func SetUserLocation(accessToken string, lat float64, lng float64) error {
 	return err
 }
 
+func isLocationInGroup(groupId string, lat float64, lng float64)(isNear bool) {
+	groupContext := common.NewContext()
+	groupCol := groupContext.DbCollection("groups")
+	defer groupContext.Close()
+	var group models.Group
+	err := groupCol.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 1 / 3963.2} }}}).One(&group);
+
+	if (err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
+		return true
+	}
+
+	return false
+}
+
+func LockUserGroup(token string, isLock bool) error {
+	context := common.NewContext()
+	tokenCol := context.DbCollection("access_tokens")
+	defer context.Close()
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+
+	var result models.AccessToken
+	err := tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	if(err !=nil) {
+		return err
+	}
+
+	err = userCol.Update(bson.M{"_id": result.UserId},
+		bson.M{"$set": bson.M{
+			"isGroupLocked" : isLock,
+		}})
+
+	return err;
+}
+
 func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bool, error) {
 	isGroupLocked := true;
 	context := common.NewContext()
@@ -179,9 +220,6 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	groupContext := common.NewContext()
-	groupCol := groupContext.DbCollection("groups")
-	defer groupContext.Close()
 
 	var result models.AccessToken
 	err := tokenCol.Find(bson.M{"token": token}).One(&result)
@@ -190,20 +228,12 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 		return isGroupLocked, err
 	}
 
-	var group models.Group
-
-	err = groupCol.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 1 / 3963.2} }}}).One(&group);
-
-	if (err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
-		isGroupLocked = false;
-	}
+	isNear := isLocationInGroup(groupId,lat,lng);
 
 	err = userCol.Update(bson.M{"_id": result.UserId},
 		bson.M{"$set": bson.M{
 			"groupId": bson.ObjectIdHex(groupId),
-			"isGroupLocked" : isGroupLocked,
+			"isGroupLocked" : !isNear,
 		}})
 
 	if (err != nil) {

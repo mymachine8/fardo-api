@@ -34,6 +34,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/users", memberRegisterHandler);
 	r.GET("/api/users", getUserInfoHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
+	r.PUT("/api/users/lock-group", lockUserGroupHandler);
+	r.PUT("/api/users/unlock-group", unlockUserGroupHandler);
 	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
 	r.PUT("/api/users/location", updateUserLocationTokenHandler);
 	r.GET("/api/my-recent-posts", recentUserPostsHandler);
@@ -490,6 +492,32 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	log.Print(isGroupLocked);
 
 	rw.Write(common.SuccessResponseJSON(response));
+}
+
+func lockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.LockUserGroup(token, true);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("SUCCESS"));
+}
+
+func unlockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.LockUserGroup(token, false);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("SUCCESS"));
 }
 
 func updateUserFcmTokenHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
