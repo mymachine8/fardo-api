@@ -152,6 +152,19 @@ func UpdateGroup(id string, group models.Group) error {
 	return err
 }
 
+func SuspendGroup(id string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{
+			"isActive": false,
+			"modifiedOn": time.Now().UTC(),
+		}})
+	return err
+}
+
 func UpdateGroupLogo(id string, groupLogo string) error {
 	context := common.NewContext()
 	defer context.Close()

@@ -60,6 +60,7 @@ func InitRoutes() http.Handler {
 	r.GET("/api/groups/:id", getGroupByIdHandler);
 	r.POST("/api/groups", createGroupHandler);
 	r.PUT("/api/groups/:id", updateGroupHandler);
+	r.PUT("/api/suspend-groups/:id", suspendGroupHandler);
 	r.PUT("/api/upload-group-icon/:id", uploadGroupIcon);
 	r.PUT("/api/upload-group-image/:id", uploadGroupImage);
 	r.DELETE("/api/groups/:id", removeGroupHandler);
@@ -723,6 +724,18 @@ func updateGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func suspendGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.SuspendGroup(p.ByName("id"));
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/mymachine8/fardo-api/models"
 	"gopkg.in/mgo.v2/bson"
 	"log"
+	"strconv"
 )
 
 const (
@@ -24,7 +25,7 @@ func SendUpvoteNotification(post models.Post) {
 		"time": post.ModifiedOn.String(),
 	}
 
-	message := "You got " + string(post.Upvotes) + " for your post " + string(post.Content)
+	message := "You got " + strconv.Itoa(post.Upvotes) + " for your post " + post.Content
 
 	ids := []string{token.FcmToken}
 
@@ -44,7 +45,7 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"time": comment.ModifiedOn.String(),
 	}
 
-	message := "You got " + string(comment.Upvotes) + " for your comment " + string(comment.Content)
+	message := "You got " + strconv.Itoa(comment.Upvotes) + " for your comment " + comment.Content
 
 	ids := []string{token.FcmToken}
 
