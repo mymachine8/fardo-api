@@ -147,6 +147,26 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 	return err
 }
 
+
+func SetUsernameToken(accessToken string , username string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("access_tokens")
+
+	var result models.AccessToken
+	err := c.Find(bson.M{"token": accessToken}).One(&result)
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err = userCol.Update(bson.M{"_id": result.UserId},
+		bson.M{"$set": bson.M{
+			"username": username,
+		}})
+
+	return err
+}
+
 func SetUserLocation(accessToken string, lat float64, lng float64) error {
 	context := common.NewContext()
 	defer context.Close()
