@@ -40,6 +40,16 @@ func GetAllCategories() (categories []models.GroupCategory,err error) {
 	return categories, err
 }
 
+func GetCategory(id string) (category models.GroupCategory,err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("group_categories")
+
+	err = c.FindId(bson.ObjectIdHex(id)).One(category)
+
+	return
+}
+
 func CreateSubCategories(categories []models.GroupSubCategory) (err error) {
 	context := common.NewContext()
 	defer context.Close()

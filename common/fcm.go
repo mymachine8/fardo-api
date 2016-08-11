@@ -14,7 +14,7 @@ const (
 )
 
 func SendUpvoteNotification(post models.Post) {
-	token, err := findUserToken(post.UserId.Hex());
+	token, err := findUserById(post.UserId.Hex());
 	if (err != nil) {
 		log.Print(err.Error())
 	}
@@ -33,7 +33,7 @@ func SendUpvoteNotification(post models.Post) {
 }
 
 func SendCommentUpvoteNotification(comment models.Comment) {
-	token, err := findUserToken(comment.UserId.Hex());
+	token, err := findUserById(comment.UserId.Hex());
 	if (err != nil) {
 		return;
 	}
@@ -58,15 +58,6 @@ func findUserById(userId string) (user models.User, err error) {
 	c := context.DbCollection("users")
 
 	err = c.FindId(bson.ObjectIdHex(userId)).One(&user);
-	return
-}
-
-func findUserToken(userId string)(token models.AccessToken, err error) {
-	context := NewContext()
-	defer context.Close()
-	c := context.DbCollection("access_tokens")
-
-	err = c.Find(bson.M{"userId": bson.ObjectIdHex(userId)}).One(&token);
 	return
 }
 
@@ -148,7 +139,7 @@ func SendNearByNotification(post models.Post) {
 }
 
 func SendDeletePostNotification(post models.Post) {
-	token, err := findUserToken(post.UserId.Hex());
+	token, err := findUserById(post.UserId.Hex());
 	if (err != nil) {
 		return;
 	}
@@ -167,6 +158,11 @@ func SendDeletePostNotification(post models.Post) {
 
 func AppLocationReadyNotification() {
 	//TODO: Send Ready Notification, when the app is ready
+	//message := "This App is now available in your location!!!"
+}
+
+func GroupUnlockedNotification() {
+	//TODO: Send Ready Notification, when the group is unocked for that user
 	//message := "This App is now available in your location!!!"
 }
 

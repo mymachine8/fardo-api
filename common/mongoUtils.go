@@ -45,7 +45,7 @@ func createDbSession() {
 func addIndexes() {
 	var err error
 	userIndex := mgo.Index{
-		Key:        []string{"imei"},
+		Key:        []string{"token"},
 		Unique:     true,
 		Background: true,
 		Sparse:     true,

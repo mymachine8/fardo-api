@@ -26,15 +26,15 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this code
 	post.GroupId = result.GroupId;
-	post.UserId = result.UserId;
+	post.UserId = result.Id;
 	if (len(post.GroupId) > 0 && post.IsGroup) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
@@ -91,7 +91,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	go addToCurrentPosts(post);
 
-	go addToRecentUserPosts(result.UserId, post.Id, "post");
+	go addToRecentUserPosts(result.Id, post.Id, "post");
 
 	go common.SendNearByNotification(post)
 
@@ -127,14 +127,14 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 
-	post.UserId = result.UserId;
+	post.UserId = result.Id;
 
 	if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
@@ -233,8 +233,8 @@ func DownvotePost(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
-			"modifiedOn": time.Now().UTC(),
-		}})
+		}, "$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionDownvote);
 		go checkVoteCount(id, false);
@@ -487,8 +487,8 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
 		err = models.FardoError{"Get Access Token: " + err.Error()}
@@ -496,7 +496,7 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 	}
 
 	var userPosts models.UserPost
-	err = c.Find(bson.M{"userId": result.UserId}).One(&userPosts)
+	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
 	if (err != nil) {
 		err = models.FardoError{"Get User Posts: " + err.Error()}
 		return
@@ -554,8 +554,8 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	if (err != nil ) {
@@ -566,12 +566,12 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	comment.IsActive = true;
 	comment.PostId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
-	comment.UserId = result.UserId;
+	comment.UserId = result.Id;
 
 	err = c.Insert(&comment)
 
 	if (err == nil) {
-		go addToRecentUserPosts(result.UserId, comment.PostId, "comment");
+		go addToRecentUserPosts(result.Id, comment.PostId, "comment");
 		post, err := findPostById(postId);
 		if (err == nil ) {
 			go common.SendCommentNotification(post, comment)
@@ -589,14 +589,14 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
 		return "", models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this code
-	reply.UserId = result.UserId;
+	reply.UserId = result.Id;
 	reply.CreatedOn = time.Now()
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
@@ -619,8 +619,8 @@ func UpvoteComment(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": 1,
-			"modifiedOn": time.Now().UTC(),
-		}})
+		},"$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
 	go checkCommentVoteCount(id, true);
 	return
 }
@@ -633,8 +633,8 @@ func DownvoteComment(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": 1,
-			"modifiedOn": time.Now().UTC(),
-		}})
+		},"$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
 
 	go checkCommentVoteCount(id, false);
 	return

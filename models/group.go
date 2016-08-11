@@ -22,7 +22,9 @@ type Group struct {
 	LogoData string `bson:"logoData" json:"logoData, omitempty"`
 	ImageData string `bson:"-" json:"imageData, omitempty"`
 	CategoryId bson.ObjectId `bson:"categoryId" json:"categoryId"`
+	CategoryName string `bson:"categoryName" json:"categoryName"`
 	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
+	SubCategoryName string `bson:"subCategoryName" json:"subCategoryName"`
 	Radius int `bson:"radius" json:"radius"`
 	Score float64 `bson:"score" json:"_"`
 	CurrentPostsCount int `bson:"currentPostsCount" json:"_"`

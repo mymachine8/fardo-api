@@ -3,7 +3,6 @@ package controllers
 import (
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"fmt"
 	"github.com/mymachine8/fardo-api/models"
 	"encoding/json"
 	"github.com/mymachine8/fardo-api/data"
@@ -102,7 +101,7 @@ func InitRoutes() http.Handler {
 }
 
 func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	fmt.Fprintln(rw, "Hello World")
+	rw.Write(common.SuccessResponseJSON("DONE"));
 }
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -861,30 +860,17 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 	var token string
 
-	// Authenticate the login user
-	//Return user
-	var loginUser models.User;
-	if loginUser, err = data.Login(user); err != nil {
-
-		return
-	}
-
-	// Generate JWT token
-	token, err = common.GenerateJWT(user.Username, "admin")
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
 
-	err = data.SetUserToken(token, loginUser.Id.Hex());
+	err = data.SetUserToken(token, user.Username);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
-
-	// Clean-up the hashpassword to eliminate it from response JSON
-	user.HashPassword = nil;
 
 	authUser := struct {
 		User  models.User `json:"user"`
@@ -898,24 +884,12 @@ func loginAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 }
 
 func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var body struct {
-		Imei string `json:"imei"`
-		Lat  float64 `json:"lat,omitempty"`
-		Lng  float64 `json:"lng,omitempty"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&body);
+	var user models.User;
+	err := json.NewDecoder(r.Body).Decode(&user);
 	if (err != nil) {
-		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
-
-	log.Print(body);
-	var user models.User;
-	user.Imei = body.Imei;
-	user.Loc[0] = body.Lng;
-	user.Loc[1] = body.Lat;
-
-	log.Print(user);
 
 	var userId string;
 	userId, err = data.RegisterAppUser(user);
@@ -925,35 +899,7 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	var groups []models.Group
-	groups, err = data.GetNearByGroups(body.Lat, body.Lng);
-	log.Print("Groups Length");
-	log.Print(len(groups));
-
-	var token string
-
-	token, err = common.GenerateJWT(user.Imei, "member")
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
-		return
-	}
-	err = data.SetUserToken(token, userId);
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
-		return
-	}
-
-	authUser := struct {
-		User            models.User `json:"user"`
-		Token           string `json:"token"`
-	}{
-		user,
-		token,
-	}
-
-	rw.Write(common.SuccessResponseJSON(authUser));
+	rw.Write(common.SuccessResponseJSON(userId));
 }
 
 func getUserInfoHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -982,8 +928,6 @@ func registerAdminHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
-
-	user.HashPassword = nil
 
 	rw.Write(common.SuccessResponseJSON(user));
 

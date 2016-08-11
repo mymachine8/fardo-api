@@ -17,8 +17,8 @@ import (
 func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.Group, err error) {
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("access_tokens")
-	var result models.AccessToken
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
 		return
@@ -138,7 +138,16 @@ func CreateGroup(group models.Group) (string, error) {
 		group.ImageUrl = res;
 
 	}
-	err := c.Insert(group)
+
+	category, err := GetCategory(group.CategoryId.Hex());
+
+	if(err != nil) {
+		return "", err
+	}
+
+	group.CategoryName = category.Name
+
+	err = c.Insert(group)
 	return group.Id.Hex(), err
 }
 
@@ -150,6 +159,51 @@ func UpdateGroup(id string, group models.Group) error {
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		group);
 	return err
+}
+
+
+func getCategoryName(id string, categories [] models.GroupCategory) string {
+	for i := 0; i < len(categories); i++ {
+		if(id == categories[i].Id.Hex()) {
+			return categories[i].Name;
+		}
+	}
+	return ""
+}
+
+func PopulateGroup() error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	var groups []models.Group
+	err := c.Find(nil).All(&groups)
+
+	if(err !=nil) {
+		return err
+	}
+
+	categories, er := GetAllCategories();
+
+	if(er != nil) {
+		return err
+	}
+
+	groupsLen := len(groups)
+
+	log.Print(groupsLen);
+
+	for i := 0; i < groupsLen; i++ {
+		groups[i].CategoryName = getCategoryName(groups[i].CategoryId.Hex(), categories);
+		err = c.Update(bson.M{"_id": groups[i].Id},
+			groups[i]);
+		if(err != nil) {
+			 log.Print(groups[i])
+			 log.Print(err.Error())
+		}
+	}
+
+	return err;
 }
 
 func SuspendGroup(id string) error {
