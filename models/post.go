@@ -26,7 +26,9 @@ type Post struct {
 	SpamReasons []string `bson:"spamReasons" json:"spamReasons"`
 	Score float64  `bson:"score" json:"score"`
 	CreatedOn  time.Time `bson:"createdOn" json:"createdOn"`
-	UserId     bson.ObjectId `bson:"userId" json:"-"`
+	UserId     bson.ObjectId `bson:"userId" json:"userId"`
+	Username string `bson:"username" json:"username"`
+	IsAnonymous bool `bson:"isAnonymous" json:"isAnonymous"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
 	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`

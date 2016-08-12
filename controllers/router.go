@@ -12,6 +12,7 @@ import (
 	"github.com/mymachine8/fardo-api/cors"
 	"strconv"
 	"time"
+	"errors"
 )
 
 func InitRoutes() http.Handler {
@@ -34,6 +35,8 @@ func InitRoutes() http.Handler {
 	r.GET("/api/users", getUserInfoHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
 	r.PUT("/api/users/username", updateUsernameHandler);
+	r.GET("/api/users/username-availability", checkUsernameAvailabilityHandler);
+	r.PUT("/api/users/phone", updateUserPhoneHandler);
 	r.PUT("/api/users/lock-group", lockUserGroupHandler);
 	r.PUT("/api/users/unlock-group", unlockUserGroupHandler);
 	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
@@ -53,8 +56,8 @@ func InitRoutes() http.Handler {
 	//----------------  End of main endpoints -----------------------
 
 
-	r.GET("/api/categories", common.BasicAuth(categoryListHandler));
-	r.GET("/api/categories/:id/sub-categories", common.BasicAuth(subCategoryListHandler));
+	r.GET("/api/categories", categoryListHandler);
+	r.GET("/api/categories/:id/sub-categories", subCategoryListHandler);
 	r.POST("/api/sub-categories/bulk-insert", bulkInsertSubCategoryHandler);
 	r.GET("/api/groups", groupListHandler);
 	r.GET("/api/groups/:id", getGroupByIdHandler);
@@ -111,7 +114,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
 	layout := "2006-01-02T15:04:05.000Z"
-	last_updated , _ := time.Parse(
+	last_updated, _ := time.Parse(
 		layout,
 		r.URL.Query().Get("last_updated"));
 	if (err != nil) {
@@ -120,7 +123,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token,lat,lng,last_updated);
+	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
@@ -244,7 +247,7 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	var err error
 	groups, err = data.GetAllGroups();
 
-	if(err!= nil) {
+	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
@@ -252,7 +255,7 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	var labels []models.Label
 	labels, err = data.GetAllLabels();
 
-	if(err!= nil) {
+	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return
 	}
@@ -270,7 +273,7 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 
 	for i = 0; i < groupsLen; i++ {
 		result := models.SolrSchema{Id: groups[i].Id, Name: groups[i].Name, ShortName:groups[i].ShortName, Type: "group"};
-		results = append(results,result)
+		results = append(results, result)
 	}
 
 	for i = 0; i < labelsLen; i++ {
@@ -495,8 +498,6 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	rw.Write(common.SuccessResponseJSON(response));
 }
 
-
-
 func lockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	token := common.GetAccessToken(r);
@@ -552,6 +553,51 @@ func updateUsernameHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	}
 	err := json.NewDecoder(r.Body).Decode(&body)
 
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	var result string;
+	result, err = data.SetUsernameToken(token, body.Username);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+		return
+	}
+
+	if (result == "success") {
+		rw.Write(common.SuccessResponseJSON("success"));
+	} else {
+		writeErrorResponse(rw, r, p, body, http.StatusPreconditionFailed, errors.New(result));
+	}
+}
+
+func checkUsernameAvailabilityHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	isAvailable, err := data.CheckUsernameAvailability(r.URL.Query().Get("username"));
+
+	log.Print(isAvailable)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, r.URL.Query().Get("username"), http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(isAvailable));
+}
+
+func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var body struct {
+		SessionId   uint64 `json:"sessionId"`
+		Token       string `json:"token"`
+		TokenSecret string `json:"tokenSecret"`
+		Phone       string `json:"phone"`
+		OldPhone    string `json:"oldPhone"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
@@ -560,7 +606,8 @@ func updateUsernameHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 
 	token := common.GetAccessToken(r);
 
-	err = data.SetUsernameToken(token, body.Username);
+
+	err = data.ChangeUserPhone(token, body.OldPhone, body.SessionId, body.Token, body.TokenSecret, body.Phone);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);

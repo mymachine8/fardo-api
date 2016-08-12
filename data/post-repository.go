@@ -35,6 +35,9 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	//TODO: Have to revisit this code
 	post.GroupId = result.GroupId;
 	post.UserId = result.Id;
+	if(!post.IsAnonymous) {
+		post.Username = result.Username;
+	}
 	if (len(post.GroupId) > 0 && post.IsGroup) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")

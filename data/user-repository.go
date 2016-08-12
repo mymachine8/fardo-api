@@ -92,15 +92,62 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 }
 
 
-func SetUsernameToken(accessToken string , username string) error {
+func SetUsernameToken(accessToken string , username string) (string, error) {
 
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	err := userCol.Update(bson.M{"token": accessToken},
+	var users []models.User
+	err := userCol.Find(bson.M{"username": username}).All(&users)
+
+	if(err != nil) {
+		return "", err
+	}
+
+	if(len(users) > 0) {
+		return "username already exists", err
+	}
+
+	err = userCol.Update(bson.M{"token": accessToken},
 		bson.M{"$set": bson.M{
 			"username": username,
+		}})
+
+	return "success", err
+}
+
+func CheckUsernameAvailability(username string) (bool, error) {
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var users []models.User
+	err := userCol.Find(bson.M{"username": username}).All(&users)
+
+	if(err != nil) {
+		return false, err
+	}
+
+	if(len(users) > 0) {
+		return false, err
+	}
+
+	return true, err
+}
+
+func ChangeUserPhone(accessToken string,oldPhone string, sessionId uint64, token string, tokenSecret string, phone string) error {
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err := userCol.Update(bson.M{"phone": oldPhone},
+		bson.M{"$set": bson.M{
+			"token": token,
+			"tokenSecret": tokenSecret,
+			"phone" : phone,
+			"sessionId" : sessionId,
 		}})
 
 	return err
