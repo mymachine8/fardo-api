@@ -10,7 +10,7 @@ TMP=$(mktemp -d -t gce-deploy-XXXXXX)
 
 # [START cross_compile]
 # Cross compile the app for linux/amd64
-GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ../app
+GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ./app
 # [END cross_compile]
 
 # [START tar]
