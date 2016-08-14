@@ -6,11 +6,6 @@
 
 set -ex
 
-if [ -z "$FARDO_DEPLOY_LOCATION" ]; then
-  echo "Must set \$FARDO_DEPLOY_LOCATION. For example: FARDO_DEPLOY_LOCATION=gs://my-bucket/FARDO-VERSION.tar"
-  exit 1
-fi
-
 TMP=$(mktemp -d -t gce-deploy-XXXXXX)
 
 # [START cross_compile]
