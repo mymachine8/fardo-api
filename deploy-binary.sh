@@ -6,11 +6,6 @@
 
 set -ex
 
-if [ ! $(dirname $0) = "." ]; then
-  echo "Must run $(basename $0) from the gce_deployment directory."
-  exit 1
-fi
-
 if [ -z "$FARDO_DEPLOY_LOCATION" ]; then
   echo "Must set \$FARDO_DEPLOY_LOCATION. For example: FARDO_DEPLOY_LOCATION=gs://my-bucket/FARDO-VERSION.tar"
   exit 1
@@ -20,7 +15,7 @@ TMP=$(mktemp -d -t gce-deploy-XXXXXX)
 
 # [START cross_compile]
 # Cross compile the app for linux/amd64
-GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ../app
+GOOS=linux GOARCH=amd64 godep go build -v -o $TMP/app ../app
 # [END cross_compile]
 
 # [START tar]
@@ -30,7 +25,7 @@ tar -c -f $TMP/bundle.tar -C $TMP app
 
 # [START gcs_push]
 # FARDO_DEPLOY_LOCATION is something like "gs://my-bucket/FARDO-VERSION.tar".
-gsutil cp $TMP/bundle.tar $FARDO_DEPLOY_LOCATION
+gsutil cp $TMP/bundle.tar "gs://go-server/fardo-beta.tar"
 # [END gcs_push]
 
 rm -rf $TMP
