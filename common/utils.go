@@ -60,10 +60,10 @@ var AppConfig configuration
 func initConfig() {
 
 	var err error
-	AppConfig.MongoDBHost = "104.155.143.185"
+	AppConfig.MongoDBHost = "104.155.206.253"
 	AppConfig.DBUser = ""
 	AppConfig.DBPwd = ""
-	AppConfig.Database = "fardo"
+	AppConfig.Database = "zing"
 	StorageBucketName = "go-server"
 	StorageBucket, err = configureStorage(StorageBucketName)
 	if(err != nil) {

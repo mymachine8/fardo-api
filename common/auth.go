@@ -1,10 +1,8 @@
 package common
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/julienschmidt/httprouter"
@@ -23,44 +21,6 @@ const (
 var (
 	verifyKey, signKey []byte
 )
-
-// Read the key files before starting http handlers
-func initKeys() {
-	var err error
-
-	signKey, err = ioutil.ReadFile(privKeyPath)
-	if err != nil {
-		log.Fatalf("[initKeys]: %s\n", err)
-	}
-
-	verifyKey, err = ioutil.ReadFile(pubKeyPath)
-	if err != nil {
-		log.Fatalf("[initKeys]: %s\n", err)
-		panic(err)
-	}
-}
-
-// Generate JWT token
-func GenerateJWT(name, role string) (string, error) {
-	// create a signer for rsa 256
-	t := jwt.New(jwt.GetSigningMethod("RS256"))
-
-	// set claims for JWT token
-	t.Claims["iss"] = "admin"
-	t.Claims["UserInfo"] = struct {
-		Name string
-		Role string
-	}{name, role}
-
-	// set the expire time for JWT token
-
-	t.Claims["exp"] = time.Now().Add(time.Hour * 800).Unix()
-	tokenString, err := t.SignedString(signKey)
-	if err != nil {
-		return "", err
-	}
-	return tokenString, nil
-}
 
 func BasicAuth(h httprouter.Handle) httprouter.Handle {
 	return func(rw http.ResponseWriter, r *http.Request, ps httprouter.Params) {
