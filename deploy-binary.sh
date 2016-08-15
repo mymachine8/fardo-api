@@ -15,12 +15,7 @@ GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ./app
 
 # [START tar]
 # Add the app binary
-tar -c -f $TMP/bundle.tar -C $TMP app
-# [END tar]
 
-# [START gcs_push]
-# FARDO_DEPLOY_LOCATION is something like "gs://my-bucket/FARDO-VERSION.tar".
-gsutil cp $TMP/bundle.tar "gs://go-server/fardo-beta.tar"
-# [END gcs_push]
+cp -p $TMP/* /app/
 
 rm -rf $TMP
