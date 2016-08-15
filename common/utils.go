@@ -63,7 +63,7 @@ func initConfig() {
 	AppConfig.MongoDBHost = "104.155.206.253"
 	AppConfig.DBUser = ""
 	AppConfig.DBPwd = ""
-	AppConfig.Database = "zing"
+	AppConfig.Database = "zing-prod"
 	StorageBucketName = "go-server"
 	StorageBucket, err = configureStorage(StorageBucketName)
 	if(err != nil) {
