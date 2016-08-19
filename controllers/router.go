@@ -1014,7 +1014,6 @@ func writeErrorResponse(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	errMsg += err.Error();
 
 	slack.Send(slack.ErrorLevel, errMsg)
-	log.Print(errMsg);
 	rw.WriteHeader(statusCode);
 	rw.Write(common.ResponseJson(nil, common.ResponseError(statusCode, err.Error())))
 }
