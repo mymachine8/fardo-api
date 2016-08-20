@@ -41,7 +41,7 @@ func Login(user models.User) (u models.User, err error) {
 	return
 }
 
-func RegisterAppUser(user models.User) (string,  error) {
+func RegisterAppUser(user models.User) (models.User,  error) {
 
 	context := common.NewContext()
 	defer context.Close()
@@ -51,16 +51,19 @@ func RegisterAppUser(user models.User) (string,  error) {
 	user.IsActive = true;
 	user.CreatedOn = time.Now().UTC()
 	user.ModifiedOn = time.Now().UTC()
+	user.Token = bson.NewObjectId().Hex();
 
-	changeInfo, err := c.Upsert(bson.M{"phone": user.Phone}, user);
+	changeInfo, err := c.Upsert(bson.M{"imei": user.Imei}, user);
 
 	if(err != nil) {
-		return "", err;
+		return user, err;
 	}
 
 	id, _ := changeInfo.UpsertedId.(bson.ObjectId)
 
-	return id.Hex(), err;
+	user.Id = id;
+
+	return user, err;
 }
 
 func SetUserToken(token string, username string) error {
@@ -137,12 +140,12 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone(accessToken string,oldPhone string, sessionId uint64, token string, tokenSecret string, phone string) error {
+func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) error {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	err := userCol.Update(bson.M{"phone": oldPhone},
+	err := userCol.Update(bson.M{"token": accessToken},
 		bson.M{"$set": bson.M{
 			"token": token,
 			"tokenSecret": tokenSecret,

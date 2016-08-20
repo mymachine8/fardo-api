@@ -595,7 +595,6 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		Token       string `json:"token"`
 		TokenSecret string `json:"tokenSecret"`
 		Phone       string `json:"phone"`
-		OldPhone    string `json:"oldPhone"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&body)
 
@@ -607,7 +606,7 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	token := common.GetAccessToken(r);
 
 
-	err = data.ChangeUserPhone(token, body.OldPhone, body.SessionId, body.Token, body.TokenSecret, body.Phone);
+	err = data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
@@ -938,15 +937,15 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	var userId string;
-	userId, err = data.RegisterAppUser(user);
+	var result models.User;
+	result, err = data.RegisterAppUser(user);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, user, http.StatusInternalServerError, err);
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON(userId));
+	rw.Write(common.SuccessResponseJSON(result.Token));
 }
 
 func getUserInfoHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
