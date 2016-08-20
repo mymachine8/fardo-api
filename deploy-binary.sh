@@ -16,6 +16,8 @@ GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ./app
 # [START tar]
 # Add the app binary
 
+supervisorctl stop;
+
 cp -r $TMP/* /app/
 
 rm -rf $TMP
