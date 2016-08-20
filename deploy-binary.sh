@@ -16,11 +16,9 @@ GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ./app
 # [START tar]
 # Add the app binary
 
-rm -rf /app
+rm -rf /app/app
 
-mkdir /app
-
-cp -r $TMP/* /app/
+cp $TMP/* /app/
 
 chmod +x /app/app
 
