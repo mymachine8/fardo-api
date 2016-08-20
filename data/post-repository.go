@@ -46,6 +46,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 		groupContext.Close()
 		if (err == nil) {
 			post.GroupName = group.ShortName;
+			post.GroupCategoryName = group.CategoryName
 		}
 	}
 	if (len(post.LabelId) > 0 && post.IsGroup) {
@@ -348,6 +349,16 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
 		"createdOn": bson.M{"$gt": lastUpdated}}).Sort("-score").All(&posts);
+
+	for index, _ := range posts {
+		if(len(posts[index].GroupName) > 0) {
+			posts[index].PlaceName = posts[index].GroupName;
+			posts[index].PlaceType = posts[index].PlaceType;
+		} else {
+			posts[index].PlaceName = posts[index].Locality;
+			posts[index].PlaceType = "location"
+		}
+	}
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -369,29 +380,45 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 
 	posts = nearByPosts[:LocalPercent]
 
-	log.Print(len(posts))
+	for index, _ := range posts {
+		if(len(posts[index].GroupName) > 0) {
+			posts[index].PlaceName = posts[index].GroupName;
+			posts[index].PlaceType = posts[index].PlaceType;
+		} else {
+			posts[index].PlaceName = posts[index].Locality;
+			posts[index].PlaceType = "location"
+		}
+	}
 
 	var count int = 0;
 	for _, glb := range globalPosts {
-		glb.Scope = "global"
+		if(len(glb.GroupName) > 0) {
+			glb.PlaceName = glb.GroupName;
+			glb.PlaceType = glb.PlaceType;
+		} else {
+			glb.PlaceName = glb.City;
+			glb.PlaceType = "location"
+		}
 		if (!idInPosts(glb.Id.Hex(), posts) && count < GlobalPercent) {
 			posts = append(posts, glb)
 			count++;
 		}
 	}
 
-	log.Print(count);
-
 	count = 0;
 	for _, aa := range adminAreaPosts {
-		aa.Scope = "state"
+		if(len(aa.GroupName) > 0) {
+			aa.PlaceName = aa.GroupName;
+			aa.PlaceType = aa.PlaceType;
+		} else {
+			aa.PlaceName = aa.City;
+			aa.PlaceType = "location"
+		}
 		if (!idInPosts(aa.Id.Hex(), posts) && count < AdminAreaPercent) {
 			posts = append(posts, aa)
 			count++;
 		}
 	}
-
-	log.Print(count);
 
 	resLen := PopularPostsLimit - len(posts)
 
@@ -400,8 +427,6 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 		posts = append(posts, nearByPosts[j])
 		j++;
 	}
-
-	log.Print(len(posts))
 
 	if (posts == nil) {
 		posts = []models.Post{}

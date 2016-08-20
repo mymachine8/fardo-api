@@ -32,6 +32,9 @@ type Post struct {
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
 	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`
+	GroupCategoryName string `bson:"groupCategoryName,omitempty" json:"-"`
+	PlaceName string `bson:"placeName,omitempty" json:"placeName,omitempty"`
+	PlaceType string `bson:"placeType,omitempty" json:"placeType,omitempty"`
 	Content    string `bson:"content" json:"content"`
 	ReplyCount int `bson:"replyCount" json:"replyCount"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
@@ -39,5 +42,4 @@ type Post struct {
 	IsGroup bool `bson:"isGroup" json:"isGroup"`
 	IsLocation bool `bson:"isLocation" json:"isLocation"`
 	IsActive   bool `bson:"isActive" json:"isActive"`
-	Scope string `bson:"-" json:"scope"`
 }
