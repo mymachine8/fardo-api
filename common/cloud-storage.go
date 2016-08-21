@@ -48,12 +48,12 @@ func getBucket(bucketType BucketType) *storage.BucketHandle {
 func getBucketName(bucketType BucketType) string {
 	switch bucketType {
 	case PostImage:
-		return "post-images"
+		return "zing-post-images"
 	case GroupImage:
 		bucket = groupImageBucket
-		return "group-images";
+		return "zing-group-images";
 	}
-	return "post-images"
+	return "zing-post-images"
 }
 
 func SendItemToCloudStorage(bucketType BucketType, fileName string,dec io.Reader) (string, error) {

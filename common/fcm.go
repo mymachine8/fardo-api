@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	serverKey = "AIzaSyDcXHtO1YB-tCRwFAvaVqJDud8gR00VJs4"
+	serverKey = "AIzaSyC-hh2lILygQ4rs157h9-4Qcwi8YosgzIo"
 )
 
 
@@ -396,7 +396,7 @@ func SendUpvoteNotification(post models.Post) {
 		"time": post.ModifiedOn.String(),
 	}
 
-	message := "You got " + strconv.Itoa(post.Upvotes) + " for your post " + post.Content
+	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post " + post.Content
 
 	ids := []string{token.FcmToken}
 
@@ -416,7 +416,7 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"time": comment.ModifiedOn.String(),
 	}
 
-	message := "You got " + strconv.Itoa(comment.Upvotes) + " for your comment " + comment.Content
+	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment " + comment.Content
 
 	ids := []string{token.FcmToken}
 
@@ -455,6 +455,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": comment.CreatedOn.String(),
+		"type": "comment",
 	}
 
 	message := "Someone commented on your post " + post.Content;
@@ -476,6 +477,7 @@ func SendReplyNotification(comment models.Comment, reply models.Reply) {
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": comment.CreatedOn.String(),
+		"type": "comment",
 	}
 
 	message := "Someone replied to your comment " + comment.Content;
