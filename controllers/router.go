@@ -360,15 +360,15 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 	token := common.GetAccessToken(r);
 
-	id, err := data.CreatePostUser(token, post);
+	result, err := data.CreatePostUser(token, post);
 
 	if (err != nil) {
-		post.ImageData = "";
+		result.ImageData = "";
 		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON(id));
+	rw.Write(common.SuccessResponseJSON(result));
 }
 
 func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

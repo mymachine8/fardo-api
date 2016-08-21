@@ -21,7 +21,7 @@ const (
 	GlobalPercent = 3
 )
 
-func CreatePostUser(token string, post models.Post) (string, error) {
+func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	var err error
 
 	tokenContext := common.NewContext()
@@ -30,7 +30,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
-		return "", models.FardoError{"Get Access Token: " + err.Error()}
+		return post, models.FardoError{"Get Access Token: " + err.Error()}
 	}
 	//TODO: Have to revisit this code
 	post.GroupId = result.GroupId;
@@ -72,7 +72,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, dec);
 
 		if (err != nil) {
-			return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
+			return post, models.FardoError{"Insert Post Image Error: " + err.Error()}
 		}
 
 		post.ImageUrl = res;
@@ -90,7 +90,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 	err = c.Insert(&post)
 
 	if (err != nil) {
-		return "", models.FardoError{"Insert Post Error: " + err.Error()}
+		return post, models.FardoError{"Insert Post Error: " + err.Error()}
 	}
 
 	go addToCurrentPosts(post);
@@ -101,7 +101,7 @@ func CreatePostUser(token string, post models.Post) (string, error) {
 
 	go CalculateUserScore(post, ActionCreate);
 
-	return post.Id.Hex(), err
+	return post, err
 }
 
 func addToRecentUserPosts(userId bson.ObjectId, postId bson.ObjectId, fieldType string) {
