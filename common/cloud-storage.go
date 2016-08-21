@@ -24,8 +24,8 @@ const (
 
 func InitCloudStorage() {
 	client, err := storage.NewClient(context.Background())
-	postImageBucket = client.Bucket("post-images");
-	groupImageBucket = client.Bucket("group-images");
+	postImageBucket = client.Bucket("zing-post-images");
+	groupImageBucket = client.Bucket("zing-group-images");
 
 	if err != nil {
 		slack.Send(slack.ErrorLevel, "New Client Creation Error: " + err.Error());
