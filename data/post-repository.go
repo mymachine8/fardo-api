@@ -374,21 +374,21 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 
 	nearByPostsLen := common.MinInt(len(nearByPosts), PopularPostsLimit);
 
+	for index, _ := range nearByPosts {
+		if(len(nearByPosts[index].GroupName) > 0) {
+			nearByPosts[index].PlaceName = nearByPosts[index].GroupName;
+			nearByPosts[index].PlaceType = nearByPosts[index].PlaceType;
+		} else {
+			nearByPosts[index].PlaceName = nearByPosts[index].Locality;
+			nearByPosts[index].PlaceType = "location"
+		}
+	}
+
 	if (nearByPostsLen <= LocalPercent) {
 		return nearByPosts, err
 	}
 
 	posts = nearByPosts[:LocalPercent]
-
-	for index, _ := range posts {
-		if(len(posts[index].GroupName) > 0) {
-			posts[index].PlaceName = posts[index].GroupName;
-			posts[index].PlaceType = posts[index].PlaceType;
-		} else {
-			posts[index].PlaceName = posts[index].Locality;
-			posts[index].PlaceType = "location"
-		}
-	}
 
 	var count int = 0;
 	for _, glb := range globalPosts {
