@@ -363,6 +363,7 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	id, err := data.CreatePostUser(token, post);
 
 	if (err != nil) {
+		post.ImageData = "";
 		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
@@ -652,6 +653,7 @@ func createGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	id, err := data.CreateGroup(group);
 
 	if (err != nil) {
+		group.ImageData = "";
 		writeErrorResponse(rw, r, p, group, http.StatusInternalServerError, err);
 		return
 	}
