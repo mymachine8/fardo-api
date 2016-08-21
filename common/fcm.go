@@ -394,6 +394,7 @@ func SendUpvoteNotification(post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": post.ModifiedOn.String(),
+		"type": "post_upvote",
 	}
 
 	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post " + post.Content
@@ -414,6 +415,7 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": comment.ModifiedOn.String(),
+		"type": "comment_upvote",
 	}
 
 	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment " + comment.Content
@@ -477,7 +479,7 @@ func SendReplyNotification(comment models.Comment, reply models.Reply) {
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": comment.CreatedOn.String(),
-		"type": "comment",
+		"type": "reply",
 	}
 
 	message := "Someone replied to your comment " + comment.Content;
@@ -504,6 +506,7 @@ func SendNearByNotification(post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": post.CreatedOn.String(),
+		"type": "post",
 	}
 
 	message := "Someone nearby posted " + post.Content;
@@ -521,6 +524,7 @@ func SendDeletePostNotification(post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": post.ModifiedOn.String(),
+		"type": "post_delete",
 	}
 
 	message :=  "Your Post " + post.Content + " has been suspended as people in your community downvoted or reported about it"
