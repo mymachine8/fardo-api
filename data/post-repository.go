@@ -612,11 +612,26 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 		go addToRecentUserPosts(result.Id, comment.PostId, "comment");
 		post, err := findPostById(postId);
 		if (err == nil ) {
+			go updateReplyCount(postId);
 			go common.SendCommentNotification(post, comment)
 		}
 	}
 
 	return comment.Id.Hex(), err
+}
+
+func updateReplyCount(id string) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"replyCount": 1,
+		},"$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
+
+	return
 }
 
 func AddReply(token string, commentId string, reply models.Reply) (string, error) {
