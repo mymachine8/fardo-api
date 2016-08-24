@@ -671,7 +671,7 @@ func UpvoteComment(id string, undo bool) (err error) {
 func DownvoteComment(id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("posts")
+	c := context.DbCollection("comments")
 
 	step := 1;
 	if(undo) {

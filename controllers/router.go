@@ -54,6 +54,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/comments/:id/replies", createReplyHandler);
 	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
+	r.PUT("/api/comments/:id/undo-upvote", undoUpvoteCommentHandler);
+	r.PUT("/api/comments/:id/undo-downvote", undoDownvoteCommentHandler);
 
 	//----------------  End of main endpoints -----------------------
 
