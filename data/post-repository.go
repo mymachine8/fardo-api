@@ -212,14 +212,19 @@ func addToCurrentPosts(post models.Post) {
 	}
 }
 
-func UpvotePost(id string) (err error) {
+func UpvotePost(id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	step := 1;
+	if(undo) {
+		step = -1;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-			"upvotes": 1,
+			"upvotes": step,
 		}, "$set": bson.M{
 				"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
@@ -229,14 +234,20 @@ func UpvotePost(id string) (err error) {
 	return
 }
 
-func DownvotePost(id string) (err error) {
+func DownvotePost(id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	step := 1;
+
+	if(undo) {
+		step = -1;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-			"downvotes": 1,
+			"downvotes": step,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
@@ -638,28 +649,38 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 	return commentId, err
 }
 
-func UpvoteComment(id string) (err error) {
+func UpvoteComment(id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
 
+	step := 1;
+	if(undo) {
+		step = -1;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-			"upvotes": 1,
+			"upvotes": step,
 		},"$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	go checkCommentVoteCount(id, true);
 	return
 }
 
-func DownvoteComment(id string) (err error) {
+func DownvoteComment(id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	step := 1;
+	if(undo) {
+		step = -1;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-			"downvotes": 1,
+			"downvotes": step,
 		},"$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 

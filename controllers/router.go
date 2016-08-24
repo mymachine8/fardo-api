@@ -46,6 +46,8 @@ func InitRoutes() http.Handler {
 
 	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
 	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
+	r.PUT("/api/posts/:id/undo-upvote", undoUpvotePostHandler);
+	r.PUT("/api/posts/:id/undo-downvote", undoDownvotePostHandler);
 	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
 	r.GET("/api/posts/:id/comments", commentListHandler);
 	r.POST("/api/posts/:id/comments", createCommentHandler);
@@ -415,7 +417,17 @@ func createReplyHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 func upvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.UpvotePost(p.ByName("id"));
+	err := data.UpvotePost(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoUpvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.UpvotePost(p.ByName("id"), true);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
@@ -425,7 +437,17 @@ func upvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 
 func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.DownvotePost(p.ByName("id"));
+	err := data.DownvotePost(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoDownvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.DownvotePost(p.ByName("id"), true);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
@@ -435,7 +457,17 @@ func downvotePostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 
 func upvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.UpvoteComment(p.ByName("id"));
+	err := data.UpvoteComment(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoUpvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.UpvoteComment(p.ByName("id"), true);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
@@ -445,7 +477,17 @@ func upvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 func downvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.DownvoteComment(p.ByName("id"));
+	err := data.DownvoteComment(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoDownvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.DownvoteComment(p.ByName("id"), true);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
