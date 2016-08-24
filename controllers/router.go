@@ -37,6 +37,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/users/username", updateUsernameHandler);
 	r.GET("/api/users/username-availability", checkUsernameAvailabilityHandler);
 	r.PUT("/api/users/phone", updateUserPhoneHandler);
+	r.GET("/api/users/score", getUserScoreHandler);
 	r.PUT("/api/users/lock-group", lockUserGroupHandler);
 	r.PUT("/api/users/unlock-group", unlockUserGroupHandler);
 	r.PUT("/api/users/fcm-token", updateUserFcmTokenHandler);
@@ -659,6 +660,21 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	rw.Write(common.SuccessResponseJSON("SUCCESS"));
+}
+
+func getUserScoreHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+
+
+	score, err := data.GetUserScore(token);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, score, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(score));
 }
 
 func updateUserLocationTokenHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

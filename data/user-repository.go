@@ -6,7 +6,6 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"log"
 	"time"
-	"strings"
 )
 
 type ActionType int8
@@ -156,6 +155,21 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 	return err
 }
 
+func GetUserScore(accessToken string) (score int, err error) {
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var user models.User;
+	err = userCol.Find(bson.M{"token": accessToken}).One(user)
+
+	if(err != nil) {
+		return score,err;
+	}
+
+	return user.Score, err
+}
+
 func SetUserLocation(accessToken string, lat float64, lng float64) error {
 
 	userContext := common.NewContext()
@@ -176,11 +190,9 @@ func isLocationInGroup(groupId string, lat float64, lng float64)(isNear bool) {
 	groupCol := groupContext.DbCollection("groups")
 	defer groupContext.Close()
 	var group models.Group
-	err := groupCol.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 1 / 3963.2} }}}).One(&group);
+	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group);
 
-	if (err == nil && (strings.Compare(group.Id.Hex(), groupId) == 0)) {
+	if (err == nil && common.DistanceLatLong(group.Loc[1],lat,group.Loc[0], lng) < float64(group.Radius)) {
 		return true
 	}
 

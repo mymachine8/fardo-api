@@ -66,7 +66,7 @@ func initConfig() {
 	AppConfig.Database = "zing-prod"
 	StorageBucketName = "go-server"
 	StorageBucket, err = configureStorage(StorageBucketName)
-	if(err != nil) {
+	if (err != nil) {
 		log.Print(err.Error())
 	}
 }
@@ -115,9 +115,9 @@ func GetAccessToken(req *http.Request) string {
 
 func DivisbleByPowerOf2(num int) bool {
 	var result = 5;
-	for i:=3; result <=num;i++ {
-		result = int (math.Pow(2, float64(i)));
-		if(num %  result == 0) {
+	for i := 3; result <= num; i++ {
+		result = int(math.Pow(2, float64(i)));
+		if (num % result == 0) {
 			return true;
 		}
 	}
@@ -125,7 +125,7 @@ func DivisbleByPowerOf2(num int) bool {
 }
 
 func GetTimeSeconds(t time.Time) int64 {
-return t.UnixNano() / int64(time.Second)
+	return t.UnixNano() / int64(time.Second)
 }
 
 func GetZingCreationTimeSeconds() int64 {
@@ -133,23 +133,44 @@ func GetZingCreationTimeSeconds() int64 {
 		time.RFC3339,
 		"2016-07-01T00:00:00+00:00");
 
-	return t1.UnixNano()/ int64(time.Second)
+	return t1.UnixNano() / int64(time.Second)
 }
 
 func MinInt(a int, b int) int {
-	if(a < b) {
+	if (a < b) {
 		return a;
 	}
 	return b;
 }
 
 func IsPowerOf2(a int) bool {
-	if(a <= 1) {
+	if (a <= 1) {
 		return false;
 	}
-	if(a == 2) {
+	if (a == 2) {
 		return true;
 	}
 
-	return IsPowerOf2(a/2)
+	return IsPowerOf2(a / 2)
+}
+
+func DistanceLatLong(lat1 float64, lat2 float64, lon1 float64, lon2 float64) float64 {
+
+	R := 6371; // Radius of the earth
+
+	latDistance := Radians(lat2 - lat1);
+	lonDistance := Radians(lon2 - lon1);
+	a := math.Sin(latDistance / 2) * math.Sin(latDistance / 2) + math.Cos(Radians(lat1)) * math.Cos(Radians(lat2)) * math.Sin(lonDistance / 2) * math.Sin(lonDistance / 2);
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1 - a));
+	distance := float64(R) * c * 1000; // convert to meters
+
+	distance = math.Pow(distance, 2);
+
+	return math.Sqrt(distance);
+
+}
+
+func Radians(d float64) float64 {
+	const x = math.Pi / 180;
+	return d * x;
 }
