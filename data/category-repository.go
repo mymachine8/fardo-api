@@ -45,7 +45,7 @@ func GetCategory(id string) (category models.GroupCategory,err error) {
 	defer context.Close()
 	c := context.DbCollection("group_categories")
 
-	err = c.FindId(bson.ObjectIdHex(id)).One(category)
+	err = c.FindId(bson.ObjectIdHex(id)).One(&category)
 
 	return
 }

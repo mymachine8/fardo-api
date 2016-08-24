@@ -147,7 +147,7 @@ func CreateGroup(group models.Group) (string, error) {
 
 	group.CategoryName = category.Name
 
-	err = c.Insert(group)
+	err = c.Insert(&group)
 	return group.Id.Hex(), err
 }
 

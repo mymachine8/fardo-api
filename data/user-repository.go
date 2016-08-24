@@ -161,7 +161,7 @@ func GetUserScore(accessToken string) (score int, err error) {
 	defer userContext.Close()
 
 	var user models.User;
-	err = userCol.Find(bson.M{"token": accessToken}).One(user)
+	err = userCol.Find(bson.M{"token": accessToken}).One(&user)
 
 	if(err != nil) {
 		return score,err;
