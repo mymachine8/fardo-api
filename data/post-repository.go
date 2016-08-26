@@ -328,6 +328,8 @@ func GetAllPosts(page int, postParams models.Post) (posts []models.Post, err err
 		params["state"] = bson.RegEx{Pattern: postParams.State, Options: "i"};
 	}
 
+	params["isActive"] = true;
+
 	err = c.Find(params).Sort("-createdOn").Skip(skip).Limit(20).All(&posts)
 	if (posts == nil) {
 		posts = []models.Post{}
