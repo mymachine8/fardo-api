@@ -92,6 +92,14 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		return post, models.FardoError{"Insert Post Error: " + err.Error()}
 	}
 
+	if(post.IsGroup) {
+		post.PlaceName = post.GroupName
+		post.PlaceType = post.GroupCategoryName
+	} else {
+		post.PlaceName = post.Locality
+		post.PlaceType = "location"
+	}
+
 	go addToCurrentPosts(post);
 
 	go addToRecentUserPosts(result.Id, post.Id, "post");
@@ -362,7 +370,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	for index, _ := range posts {
 		if(len(posts[index].GroupName) > 0) {
 			posts[index].PlaceName = posts[index].GroupName;
-			posts[index].PlaceType = posts[index].PlaceType;
+			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
 			posts[index].PlaceName = posts[index].Locality;
 			posts[index].PlaceType = "location"
@@ -372,6 +380,28 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		posts = []models.Post{}
 	}
 	log.Print(len(posts))
+	return
+}
+
+func GetMyCircleUpdates(token string, lat float64, lng float64, lastUpdated time.Time, fromDate time.Time) (posts[]models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("posts")
+
+	var result []struct {
+		Id         bson.ObjectId `bson:"_id" json:"id"`
+		Upvotes    int  `bson:"upvotes" json:"upvotes"`
+		Downvotes  int  `bson:"downvotes" json:"downvotes"`
+		ReplyCount int `bson:"replyCount" json:"replyCount"`
+		IsActive   bool `bson:"isActive" json:"isActive"`
+	}
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
+		"createdOn": bson.M{"$gt": fromDate, "$lt": lastUpdated},
+		}).Sort("score").All(&result);
 	return
 }
 
@@ -386,7 +416,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	for index, _ := range nearByPosts {
 		if(len(nearByPosts[index].GroupName) > 0) {
 			nearByPosts[index].PlaceName = nearByPosts[index].GroupName;
-			nearByPosts[index].PlaceType = nearByPosts[index].PlaceType;
+			nearByPosts[index].PlaceType = nearByPosts[index].GroupCategoryName;
 		} else {
 			nearByPosts[index].PlaceName = nearByPosts[index].Locality;
 			nearByPosts[index].PlaceType = "location"
@@ -403,7 +433,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	for _, glb := range globalPosts {
 		if(len(glb.GroupName) > 0) {
 			glb.PlaceName = glb.GroupName;
-			glb.PlaceType = glb.PlaceType;
+			glb.PlaceType = glb.GroupCategoryName;
 		} else {
 			glb.PlaceName = glb.City;
 			glb.PlaceType = "location"
@@ -418,7 +448,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	for _, aa := range adminAreaPosts {
 		if(len(aa.GroupName) > 0) {
 			aa.PlaceName = aa.GroupName;
-			aa.PlaceType = aa.PlaceType;
+			aa.PlaceType = aa.GroupCategoryName;
 		} else {
 			aa.PlaceName = aa.City;
 			aa.PlaceType = "location"
@@ -653,12 +683,6 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
 		bson.M{"$push": bson.M{"replies": reply}})
-
-	if (err == nil) {
-		var comment models.Comment;
-		comment, err = findCommentById(commentId);
-		common.SendReplyNotification(comment, reply)
-	}
 
 	return commentId, err
 }

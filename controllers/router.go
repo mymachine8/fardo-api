@@ -26,9 +26,11 @@ func InitRoutes() http.Handler {
 	//---------------  Main Endpoints -------------------------------
 
 
-	r.GET("/api/featured-groups-score", GetNearByGroupsScoreHandler);
-	r.GET("/api/featured-groups", GetNearByGroupsHandler);
+	r.GET("/api/near-groups", GetNearByGroupsHandler);
+	r.GET("/api/near-groups-score", GetNearByGroupsScoreHandler);
 	r.GET("/api/my-circle", myCircleHandler);
+	r.GET("/api/my-circle-updates", myCircleUpdatesHandler);
+	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/popular", popularPostsHandler);
 
 	r.POST("/api/users", memberRegisterHandler);
@@ -57,6 +59,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 	r.PUT("/api/comments/:id/undo-upvote", undoUpvoteCommentHandler);
 	r.PUT("/api/comments/:id/undo-downvote", undoDownvoteCommentHandler);
+	r.POST("/api/posts", createPostHandler);
 
 	//----------------  End of main endpoints -----------------------
 
@@ -65,6 +68,7 @@ func InitRoutes() http.Handler {
 	r.GET("/api/categories/:id/sub-categories", subCategoryListHandler);
 	r.POST("/api/sub-categories/bulk-insert", bulkInsertSubCategoryHandler);
 	r.GET("/api/groups", groupListHandler);
+	r.GET("/api/groups-search", getAllGroupsHandler);
 	r.GET("/api/groups/:id", getGroupByIdHandler);
 	r.POST("/api/groups", createGroupHandler);
 	r.PUT("/api/groups/:id", updateGroupHandler);
@@ -91,7 +95,6 @@ func InitRoutes() http.Handler {
 	r.GET("/api/admin/solr-collection", solrCollectionHandler);
 	r.GET("/api/admin/posts/current", currentPostsListHandler);
 	r.POST("/api/admin/posts", createAdminPostHandler);
-	r.POST("/api/posts", createPostHandler);
 	r.GET("/api/label-posts/:id", labelPostsListHandler);
 	r.GET("/api/group-posts/:id", groupPostsGroupHandler);
 
@@ -129,6 +132,34 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	token := common.GetAccessToken(r);
 
 	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
+	if (e != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func myCircleUpdatesHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	layout := "2006-01-02T15:04:05.000Z"
+	last_updated, _ := time.Parse(
+		layout,
+		r.URL.Query().Get("last_updated"));
+	from_date, _ := time.Parse(
+		layout,
+		r.URL.Query().Get("from_date"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	token := common.GetAccessToken(r);
+
+	result, e := data.GetMyCircleUpdates(token, lat, lng, last_updated, from_date);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
@@ -198,6 +229,27 @@ func GetNearByGroupsScoreHandler(rw http.ResponseWriter, r *http.Request, p http
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
+func GetPopularGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetPopularGroups(token, lat, lng);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
 func labelPostsListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	result, err := data.GetLabelPosts(p.ByName("id"));
@@ -250,7 +302,7 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 
 	var groups []models.Group
 	var err error
-	groups, err = data.GetAllGroups();
+	groups, err = data.GetAllGroups("");
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
@@ -792,7 +844,28 @@ func groupListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Para
 	queryParams.State = r.URL.Query().Get("state_like");
 
 	page, err = strconv.ParseInt(r.URL.Query().Get("page"), 10, 32)
-	result, err = data.GetGroups(int(page), queryParams);
+
+	searchStr := r.URL.Query().Get("name");
+
+	if (len(searchStr) > 0) {
+		result, err = data.GetAllGroups(searchStr);
+	} else {
+		result, err = data.GetGroups(int(page), queryParams);
+	}
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func getAllGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	searchStr := r.URL.Query().Get("name");
+	var err error
+	var result []models.Group
+	result, err = data.GetAllGroups(searchStr);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);

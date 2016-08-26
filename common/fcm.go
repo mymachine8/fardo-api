@@ -447,7 +447,12 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 }
 
 func SendCommentNotification(post models.Post, comment models.Comment) {
+	if(post.UserId == comment.UserId) {
+		return;
+	}
+
 	user, err := findUserById(post.UserId.Hex());
+
 	if (err != nil) {
 		return;
 	}
@@ -456,37 +461,23 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
-		"time": comment.CreatedOn.String(),
+		"time": time.Now().UTC().String(),
 		"type": "comment",
 	}
 
-	message := "Someone commented on your post " + post.Content;
+	var content string;
 
-	ids := []string{user.Id.Hex()}
+	if(len(post.Content) > 20) {
+		content = post.Content[0:20]
+		content += "..."
+	}
+
+	message := "Someone commented on your post \"" + content + "\"";
+
+	ids := []string{user.FcmToken}
 
 	sendNotification(ids, message, data);
 
-}
-
-func SendReplyNotification(comment models.Comment, reply models.Reply) {
-	user, err := findUserById(comment.UserId.Hex());
-	if (err != nil) {
-		return;
-	}
-
-	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
-		"postId": comment.PostId.Hex(),
-		"commentId": comment.Id.Hex(),
-		"time": comment.CreatedOn.String(),
-		"type": "reply",
-	}
-
-	message := "Someone replied to your comment " + comment.Content;
-
-	ids := []string{user.Id.Hex()}
-
-	sendNotification(ids, message, data);
 }
 
 func SendNearByNotification(post models.Post) {
@@ -505,7 +496,7 @@ func SendNearByNotification(post models.Post) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": post.CreatedOn.String(),
+		"time": time.Now().UTC().String(),
 		"type": "post",
 	}
 
@@ -523,7 +514,7 @@ func SendDeletePostNotification(post models.Post) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": post.ModifiedOn.String(),
+		"time": time.Now().UTC().String(),
 		"type": "post_delete",
 	}
 
@@ -538,9 +529,47 @@ func AppLocationReadyNotification() {
 	//message := "This App is now available in your location!!!"
 }
 
-func GroupUnlockedNotification() {
+func GroupUnlockedNotification(user models.User) {
 	//TODO: Send Ready Notification, when the group is unocked for that user
-	//message := "This App is now available in your location!!!"
+	message :=  "You have unlocked your college, you can now share the happening to your college even when you're away from it"
+	data := map[string]string{
+		"id": bson.NewObjectId().Hex(),
+		"time": time.Now().UTC().String(),
+		"type": "general",
+	}
+
+	ids := []string{user.FcmToken}
+
+	sendNotification(ids, message, data);
+}
+
+func LocationAvailableNotification(city string) {
+	//TODO: We can have a look at this function later
+	message := "This App is now available in your location!!!"
+	context := NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	var users []models.User
+	err := c.Find(bson.M{"city": city, "IsActive" : false}).All(&users);
+
+	if(err != nil) {
+		return;
+	}
+
+	data := map[string]string{
+		"id": bson.NewObjectId().Hex(),
+		"time": time.Now().UTC().String(),
+		"type": "general",
+	}
+
+	var ids  []string;
+
+	for _, user :=range users {
+		ids = append(ids, user.FcmToken)
+	}
+
+	sendNotification(ids, message, data);
 }
 
 func sendNotification(fcmTokens []string, message string, data map[string]string) {

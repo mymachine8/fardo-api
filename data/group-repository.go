@@ -14,7 +14,7 @@ import (
 //isLocal: So bring most of the local colleges to this group (Eg: Vignan's IIT, ANITS, GITAM)
 //isGlobal: So bring most of the same category global colleges to this group (NIT, IIT, MEDICAL COLLEGES, NIFT)
 //ismMixed: Don't know, maybe mix of local and global
-func GetFeaturedGroups(token string,lat float64, lng float64) (groups []models.Group, err error) {
+func GetPopularGroups(token string,lat float64, lng float64) (groups []models.Group, err error) {
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("users")
@@ -287,12 +287,14 @@ func GetGroups(page int,groupParams models.Group) (groups []models.Group, err er
 	return
 }
 
-func GetAllGroups() (groups []models.Group, err error) {
+func GetAllGroups(name string) (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err = c.Find(nil).All(&groups);
+	name = "/" + name + "/";
+	err = c.Find(bson.M{"$text": bson.M{"$search": name}}).All(&groups)
+
 	if (groups == nil) {
 		groups = []models.Group{}
 	}
