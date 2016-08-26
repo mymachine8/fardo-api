@@ -192,6 +192,8 @@ func isLocationInGroup(groupId string, lat float64, lng float64)(isNear bool) {
 	var group models.Group
 	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group);
 
+	log.Print(common.DistanceLatLong(group.Loc[1],lat,group.Loc[0], lng));
+
 	if (err == nil && common.DistanceLatLong(group.Loc[1],lat,group.Loc[0], lng) < float64(group.Radius)) {
 		return true
 	}
@@ -220,7 +222,6 @@ func LockUserGroup(token string, isLock bool) error {
 }
 
 func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bool, error) {
-	isGroupLocked := true;
 
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
@@ -234,7 +235,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 			"isGroupLocked" : !isNear,
 		}})
 
-	return isGroupLocked, err
+	return !isNear, err
 }
 
 func GetUserInfo(token string) (user models.User, err error){
