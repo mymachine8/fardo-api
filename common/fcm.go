@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"encoding/json"
+	"github.com/mymachine8/fardo-api/slack"
 )
 
 const (
@@ -393,7 +394,7 @@ func SendUpvoteNotification(post models.Post) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": post.ModifiedOn.String(),
+		"time": time.Now().UTC().String(),
 		"type": "post_upvote",
 	}
 
@@ -414,7 +415,7 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
-		"time": comment.ModifiedOn.String(),
+		"time": time.Now().UTC().String(),
 		"type": "comment_upvote",
 	}
 
@@ -575,12 +576,6 @@ func LocationAvailableNotification(city string) {
 func sendNotification(fcmTokens []string, message string, data map[string]string) {
 
 	c := NewFcmClient(serverKey)
-	log.Print("fcmTokens")
-	log.Print(fcmTokens)
-	log.Print("data")
-	log.Print(data)
-	log.Print("message:")
-	log.Print(message)
 	c.NewFcmRegIdsMsg(fcmTokens, data)
 	var notification NotificationPayload;
 	notification.Title = "Zing";
@@ -592,6 +587,7 @@ func sendNotification(fcmTokens []string, message string, data map[string]string
 	if err == nil {
 		status.PrintResults()
 	} else {
+		slack.Send(slack.ErrorLevel, err.Error())
 		fmt.Println("FCM Error: " + err.Error());
 	}
 }
