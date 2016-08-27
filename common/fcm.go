@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	serverKey = "AIzaSyC-hh2lILygQ4rs157h9-4Qcwi8YosgzIo"
+	serverKey = "AIzaSyCwq8rOk4n96o3cS1mnFL1bGcfky4CL9es"
 )
 
 
