@@ -391,11 +391,18 @@ func SendUpvoteNotification(post models.Post) {
 		log.Print(err.Error())
 	}
 
+	var postType string
+	if(len(post.ImageUrl) > 0) {
+		postType = "image_post_upvote";
+	}else {
+		postType = "post_upvote";
+	}
+
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().String(),
-		"type": "post_upvote",
+		"type": postType,
 	}
 
 	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post " + post.Content
@@ -471,6 +478,8 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	if(len(post.Content) > 20) {
 		content = post.Content[0:20]
 		content += "..."
+	}else {
+		content = post.Content
 	}
 
 	message := "Someone commented on your post \"" + content + "\"";
@@ -501,7 +510,16 @@ func SendNearByNotification(post models.Post) {
 		"type": "post",
 	}
 
-	message := "Someone nearby posted " + post.Content;
+	var content string;
+
+	if(len(post.Content) > 30) {
+		content = post.Content[0:20]
+		content += "..."
+	}else {
+		content = post.Content
+	}
+
+	message := "Someone nearby posted \"" + content + "\"";
 
 	sendNotification(ids, message, data);
 }
@@ -519,15 +537,19 @@ func SendDeletePostNotification(post models.Post) {
 		"type": "post_delete",
 	}
 
-	message :=  "Your Post " + post.Content + " has been suspended as people in your community downvoted or reported about it"
+	var content string;
+
+	if(len(post.Content) > 20) {
+		content = post.Content[0:20]
+		content += "..."
+	}else {
+		content = post.Content
+	}
+
+	message :=  "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
 	ids := []string{token.FcmToken}
 
 	sendNotification(ids, message, data);
-}
-
-func AppLocationReadyNotification() {
-	//TODO: Send Ready Notification, when the app is ready
-	//message := "This App is now available in your location!!!"
 }
 
 func GroupUnlockedNotification(user models.User) {
@@ -544,7 +566,7 @@ func GroupUnlockedNotification(user models.User) {
 	sendNotification(ids, message, data);
 }
 
-func LocationAvailableNotification(city string) {
+func AppAvailableNotification(city string) {
 	//TODO: We can have a look at this function later
 	message := "This App is now available in your location!!!"
 	context := NewContext()
