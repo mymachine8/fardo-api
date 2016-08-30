@@ -7,58 +7,48 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"strings"
 	"encoding/base64"
-	"log"
 )
 
-//Based on Affinity
-//isLocal: So bring most of the local colleges to this group (Eg: Vignan's IIT, ANITS, GITAM)
-//isGlobal: So bring most of the same category global colleges to this group (NIT, IIT, MEDICAL COLLEGES, NIFT)
-//ismMixed: Don't know, maybe mix of local and global
-func GetPopularGroups(token string,lat float64, lng float64) (groups []models.Group, err error) {
-	tokenContext := common.NewContext()
-	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("users")
-	var result models.User
-	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if (err != nil) {
-		return
+func GetPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err error) {
+	//TODO: Get based on number of posts in the last 2 days
+	//TODO: Maintain Global popular groups in a buffer
+
+	var localGroups []models.GroupLite;
+	var globalGroups []models.GroupLite;
+
+	localGroups, err = GetNearByPopularGroups(lat,lng);
+	globalGroups, err = GetGlobalPopularGroups();
+
+	var i int;
+	for i=0;i<3 && i < len(localGroups);i++ {
+		groups = append(groups, localGroups[i]);
 	}
 
-	context := common.NewContext()
-	defer context.Close()
+	remaining := 3 - i;
 
-	var group models.Group;
-	c := context.DbCollection("groups")
-	err = c.FindId(result.GroupId).One(&group);
-
-	var featuredGroups []models.Group
-	if err == nil && group.Affinity == models.CategoryAffinity {
-		 featuredGroups, err = getFeaturedGroupsCategory(group.SubCategoryId) //50%
+	for i = 0; i< 3 + remaining && i < len(globalGroups); i++ {
+		if(!idInGroups(globalGroups[i].Id.Hex(), groups)) {
+			groups = append(groups, globalGroups[i]);
+		}
 	}
 
-	var popularGroups []models.Group;
-	var adminAreaGroups []models.Group;
 
-	popularGroups, err = GetGlobalPopularGroups(); //20% for local //30% for category affinity
-	adminAreaGroups, err = GetAdminAreaPopularGroups(lat,lng);
-	log.Print(popularGroups)
-	log.Print(adminAreaGroups)
-	log.Print(featuredGroups)
 	if (groups == nil) {
-		groups = []models.Group{}
+		groups = []models.GroupLite{}
 	}
 	return;
 }
 
-func getFeaturedGroupsCategory(subCategoryId bson.ObjectId) (groups []models.Group, err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("groups")
-	err = c.Find(bson.M{"subCategoryId": subCategoryId}).Sort("-score").Limit(30).All(&groups)
-	return;
+func idInGroups(id string, list []models.GroupLite) bool {
+	for _, b := range list {
+		if b.Id.Hex() == id {
+			return true
+		}
+	}
+	return false
 }
 
-func GetGlobalPopularGroups() (groups []models.Group, err error) {
+func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
@@ -66,7 +56,7 @@ func GetGlobalPopularGroups() (groups []models.Group, err error) {
 	return;
 }
 
-func GetAdminAreaPopularGroups(lat float64, lng float64) (groups []models.Group, err error) {
+func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
 
@@ -74,7 +64,7 @@ func GetAdminAreaPopularGroups(lat float64, lng float64) (groups []models.Group,
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Select(bson.M{"name": 1, "shortName": 1}).Limit(6).All(&groups);
 	return
 }
 
@@ -89,30 +79,6 @@ func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).All(&groups);
 	return
-}
-
-
-func GetNearByGroupsScore(lat float64, lng float64) ( interface{}, error) {
-
-	context := common.NewContext()
-	defer context.Close()
-
-	var groupScores []struct {
-		Id bson.ObjectId `bson:"_id" json:"id"`
-		Score  int `json:"score"`
-	}
-	currentLatLng := [2]float64{lng, lat}
-	c := context.DbCollection("groups")
-	err := c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Sort("-score").All(&groupScores);
-	length := len(groupScores)
-
-	for index,_ := range groupScores {
-		groupScores[index].Score = length;
-		length--;
-	}
-	return groupScores, err
 }
 
 func CreateGroup(group models.Group) (string, error) {
@@ -159,51 +125,6 @@ func UpdateGroup(id string, group models.Group) error {
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		group);
 	return err
-}
-
-
-func getCategoryName(id string, categories [] models.GroupCategory) string {
-	for i := 0; i < len(categories); i++ {
-		if(id == categories[i].Id.Hex()) {
-			return categories[i].Name;
-		}
-	}
-	return ""
-}
-
-func PopulateGroup() error {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("groups")
-
-	var groups []models.Group
-	err := c.Find(nil).All(&groups)
-
-	if(err !=nil) {
-		return err
-	}
-
-	categories, er := GetAllCategories();
-
-	if(er != nil) {
-		return err
-	}
-
-	groupsLen := len(groups)
-
-	log.Print(groupsLen);
-
-	for i := 0; i < groupsLen; i++ {
-		groups[i].CategoryName = getCategoryName(groups[i].CategoryId.Hex(), categories);
-		err = c.Update(bson.M{"_id": groups[i].Id},
-			groups[i]);
-		if(err != nil) {
-			 log.Print(groups[i])
-			 log.Print(err.Error())
-		}
-	}
-
-	return err;
 }
 
 func SuspendGroup(id string) error {
@@ -386,56 +307,5 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	if (labels == nil) {
 		labels = []models.Label{}
 	}
-	return
-}
-
-
-
-func RecalculateTrendingScore() (err error) {
-	context := common.NewContext()
-	defer context.Close()
-
-	c := context.DbCollection("posts")
-
-
-
-	if(err!= nil) {
-		log.Print("Group Score Cron Error:", err.Error())
-		return;
-	}
-
-	op := bson.M{
-		"$group": bson.M{
-			"_id": "$groupId",
-			"sum_score": bson.M{
-				"$sum": "$score",
-			},
-		},
-	}
-
-	operations := []bson.M{op}
-
-	pipe := c.Pipe(operations);
-
-	result := []bson.M{}
-	err = pipe.All(&result)
-	if err != nil {
-		return err
-	}
-
-	cnt := common.NewContext()
-	defer cnt.Close()
-
-	groupsCol := cnt.DbCollection("groups")
-
-	for _,res := range result {
-		if res["_id"] != nil {
-			_ = groupsCol.Update(bson.M{"_id": res["_id"]},
-				bson.M{"$set": bson.M{
-					"score": res["sum_score"],
-				}})
-		}
-	}
-
 	return
 }

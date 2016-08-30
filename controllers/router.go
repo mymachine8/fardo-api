@@ -27,10 +27,9 @@ func InitRoutes() http.Handler {
 
 
 	r.GET("/api/near-groups", GetNearByGroupsHandler);
-	r.GET("/api/near-groups-score", GetNearByGroupsScoreHandler);
+	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/my-circle", myCircleHandler);
 	r.GET("/api/my-circle-updates", myCircleUpdatesHandler);
-	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/popular", popularPostsHandler);
 
 	r.POST("/api/users", memberRegisterHandler);
@@ -121,6 +120,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	var lat, lng float64;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	groupId := r.URL.Query().Get("groupId");
 	layout := "2006-01-02T15:04:05.000Z"
 	last_updated, _ := time.Parse(
 		layout,
@@ -131,7 +131,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
+	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated, groupId);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
@@ -210,25 +210,6 @@ func GetNearByGroupsHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
-func GetNearByGroupsScoreHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var err error;
-	var lat, lng float64;
-	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
-	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
-		return
-	}
-
-	result, err := data.GetNearByGroupsScore(lat, lng);
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
-		return
-	}
-	rw.Write(common.SuccessResponseJSON(result));
-}
-
 func GetPopularGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var err error;
 	var lat, lng float64;
@@ -240,9 +221,7 @@ func GetPopularGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprout
 		return
 	}
 
-	token := common.GetAccessToken(r);
-
-	result, err := data.GetPopularGroups(token, lat, lng);
+	result, err := data.GetPopularGroups(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return

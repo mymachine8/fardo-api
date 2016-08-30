@@ -358,19 +358,45 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 	return float64(sign) * math.Log2(float64(z)) + float64(timeDiff) / 45000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time) (posts[]models.Post, err error) {
+func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
+	//TODO: Location context is missing
 	context := common.NewContext()
+	c := context.DbCollection("posts")
 	defer context.Close()
 
-	currentLatLng := [2]float64{lng, lat}
-	c := context.DbCollection("posts")
-	err = c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
-		"createdOn": bson.M{"$gt": lastUpdated}}).Sort("score").All(&posts);
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	if (err != nil) {
+		err = models.FardoError{"Get Access Token: " + err.Error()}
+		return
+	}
+
+	if(len(groupId) > 0) {
+		params := make(map[string]interface{})
+		params["groupId"] = result.GroupId;
+		err = c.Find(params).Limit(150).Sort("score").All(&posts);
+
+	}else {
+		currentLatLng := [2]float64{lng, lat}
+
+
+		params := make(map[string]interface{});
+		params = bson.M{"loc":
+		bson.M{"$geoWithin":
+		bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
+			"createdOn": bson.M{"$gt": lastUpdated}};
+		if (len(result.GroupId) > 0) {
+			params["groupId"] = result.GroupId;
+		}
+
+		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(150).Sort("score").All(&posts);
+	}
 
 	for index, _ := range posts {
-		if(len(posts[index].GroupName) > 0) {
+		if((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex())) {
 			posts[index].PlaceName = posts[index].GroupName;
 			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
@@ -378,10 +404,11 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 			posts[index].PlaceType = "location"
 		}
 	}
+
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
-	log.Print(len(posts))
+
 	return
 }
 
@@ -403,7 +430,7 @@ func GetMyCircleUpdates(token string, lat float64, lng float64, lastUpdated time
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
 		"createdOn": bson.M{"$gt": fromDate, "$lt": lastUpdated},
-		}).Sort("score").All(&result);
+		}).Sort("score").Limit(150).All(&result);
 	return
 }
 
