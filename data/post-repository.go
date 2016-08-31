@@ -117,6 +117,15 @@ func GetPostById(id string) (post models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.FindId(bson.ObjectIdHex(id)).One(&post)
+	if(err == nil) {
+		if(post.IsGroup) {
+			post.PlaceName = post.GroupName
+			post.PlaceType = post.GroupCategoryName
+		} else {
+			post.PlaceName = post.Locality
+			post.PlaceType = "location"
+		}
+	}
 	return
 }
 
@@ -622,6 +631,16 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 
 	if (posts == nil) {
 		posts = []models.Post{}
+	}
+
+	for index,_ := range posts {
+		if (posts[index].IsGroup) {
+			posts[index].PlaceName = posts[index].GroupName;
+			posts[index].PlaceType = posts[index].GroupCategoryName;
+		} else {
+			posts[index].PlaceName = posts[index].Locality;
+			posts[index].PlaceType = "location"
+		}
 	}
 	return
 }
