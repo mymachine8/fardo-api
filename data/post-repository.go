@@ -111,6 +111,15 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	return post, err
 }
 
+func GetPostById(id string) (post models.Post, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("posts")
+
+	err = c.FindId(bson.ObjectIdHex(id)).One(&post)
+	return
+}
+
 func addToRecentUserPosts(userId bson.ObjectId, postId bson.ObjectId, fieldType string) {
 	context := common.NewContext()
 	defer context.Close()

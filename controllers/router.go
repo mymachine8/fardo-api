@@ -46,6 +46,7 @@ func InitRoutes() http.Handler {
 	r.GET("/api/my-recent-posts", recentUserPostsHandler);
 	r.GET("/api/my-recent-comments", recentUserCommentedPostsHandler);
 
+	r.GET("/api/posts/:id", getPostByIdHandler);
 	r.PUT("/api/posts/:id/upvote", upvotePostHandler);
 	r.PUT("/api/posts/:id/downvote", downvotePostHandler);
 	r.PUT("/api/posts/:id/undo-upvote", undoUpvotePostHandler);
@@ -877,6 +878,17 @@ func commentListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 func getGroupByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result, err := data.GetGroupById(p.ByName("id"));
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func getPostByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	result, err := data.GetPostById(p.ByName("id"));
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);

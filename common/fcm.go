@@ -558,7 +558,7 @@ func GroupUnlockedNotification(user models.User) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"time": time.Now().UTC().String(),
-		"type": "general",
+		"type": "unlock",
 	}
 
 	ids := []string{user.FcmToken}
