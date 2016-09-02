@@ -16,22 +16,21 @@ func GetPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err 
 	var localGroups []models.GroupLite;
 	var globalGroups []models.GroupLite;
 
-	localGroups, err = GetNearByPopularGroups(lat,lng);
+	localGroups, err = GetNearByPopularGroups(lat, lng);
 	globalGroups, err = GetGlobalPopularGroups();
 
 	var i int;
-	for i=0;i<3 && i < len(localGroups);i++ {
+	for i = 0; i < 3 && i < len(localGroups); i++ {
 		groups = append(groups, localGroups[i]);
 	}
 
 	remaining := 3 - i;
 
-	for i = 0; i< 3 + remaining && i < len(globalGroups); i++ {
-		if(!idInGroups(globalGroups[i].Id.Hex(), groups)) {
+	for i = 0; i < 3 + remaining && i < len(globalGroups); i++ {
+		if (!idInGroups(globalGroups[i].Id.Hex(), groups)) {
 			groups = append(groups, globalGroups[i]);
 		}
 	}
-
 
 	if (groups == nil) {
 		groups = []models.GroupLite{}
@@ -67,7 +66,6 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Select(bson.M{"name": 1, "shortName": 1}).Limit(6).All(&groups);
 	return
 }
-
 
 func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error) {
 	context := common.NewContext()
@@ -107,7 +105,7 @@ func CreateGroup(group models.Group) (string, error) {
 
 	category, err := GetCategory(group.CategoryId.Hex());
 
-	if(err != nil) {
+	if (err != nil) {
 		return "", err
 	}
 
@@ -184,20 +182,20 @@ func RemoveGroup(id string) error {
 	return err
 }
 
-func GetGroups(page int,groupParams models.Group) (groups []models.Group, err error) {
+func GetGroups(page int, groupParams models.Group) (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	skip := page*20;
+	skip := page * 20;
 	params := make(map[string]interface{})
-	if(len(groupParams.Name) > 0) {
+	if (len(groupParams.Name) > 0) {
 		params["name"] = bson.RegEx{Pattern: groupParams.Name, Options: "i"};
 	}
-	if(len(groupParams.City) > 0) {
+	if (len(groupParams.City) > 0) {
 		params["city"] = bson.RegEx{Pattern: groupParams.City, Options: "i"};
 	}
-	if(len(groupParams.State) > 0) {
+	if (len(groupParams.State) > 0) {
 		params["state"] = bson.RegEx{Pattern: groupParams.State, Options: "i"};
 	}
 
@@ -308,4 +306,62 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 		labels = []models.Label{}
 	}
 	return
+}
+
+func CalculatePlacesTrendingScore() (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	postsContext := common.NewContext()
+	defer postsContext.Close()
+	postsCol := postsContext.DbCollection("posts")
+
+	pipe := c.Pipe([]bson.M{{"$project": bson.M{"scoreLastUpdated": 1, "scoreCount": bson.M{"$size": "$scores" }}}})
+
+	var result []struct {
+		Id               bson.ObjectId `bson:"_id" json:"id"`
+		ScoreCount       int `bson:"scoreCount" json:"scoreCount"`
+		ScoreLastUpdated time.Time `bson:"scoreLastUpdated" json:"scoreLastUpdated,omitempty"`
+	}
+
+	err = pipe.All(&result);
+
+	now := time.Now().UTC()
+
+	then := now.AddDate(0, 0, -1)
+
+	pipe = postsCol.Pipe([]bson.M{{"$match": bson.M{"createdOn":bson.M{"$gt" : then, "$lt": now}}}, {"$group": bson.M{"_id": "$groupId", "count": bson.M{"$sum": 1 }}}})
+
+	var postsResult []struct {
+		Id    bson.ObjectId `bson:"_id" json:"id"`
+		Count int `bson:"count" json:"count"`
+	}
+
+	err = pipe.All(&postsResult);
+
+	for _, group := range result {
+		count := 0
+		for _, grp := range postsResult {
+			if (grp.Id.Hex() == group.Id.Hex()) {
+				count = grp.Count
+			}
+		}
+		if (count > 0) {
+			if (now.Day() != group.ScoreLastUpdated.Day()) {
+				c.Update(bson.M{"_id": group.Id},
+					bson.M{"$pop": bson.M{"scores": -1 } });
+			} else {
+				c.Update(bson.M{"_id": group.Id},
+					bson.M{"$pop": bson.M{"scores": 1 } });
+			}
+			c.Update(bson.M{"_id": group.Id},
+				bson.M{"$push": bson.M{"scores": count },
+					"$set": bson.M{"scoreLastUpdated" : now }});
+		}
+	}
+
+	//TODO: Calculate z-index
+
+	return err
 }

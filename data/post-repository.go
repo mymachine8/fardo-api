@@ -392,10 +392,15 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		return
 	}
 
+	var prevPosts []models.Post;
+
 	if(len(groupId) > 0) {
 		params := make(map[string]interface{})
 		params["groupId"] = result.GroupId;
-		err = c.Find(params).Limit(150).Sort("score").All(&posts);
+		params["createdOn"] = bson.M{"$gt": lastUpdated}
+		err = c.Find(params).Limit(50).Sort("-score").All(&posts);
+		params["createdOn"] = bson.M{"$lt": lastUpdated}
+		err = c.Find(params).Limit(50).Sort("-score").All(&prevPosts);
 
 	}else {
 		currentLatLng := [2]float64{lng, lat}
@@ -410,11 +415,18 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 			params["groupId"] = result.GroupId;
 		}
 
-		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(150).Sort("score").All(&posts);
+		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(50).Sort("-score").All(&posts);
+		params["createdOn"] = bson.M{"$lt": lastUpdated}
+		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(50).Sort("-score").All(&prevPosts);
+	}
+
+	log.Print(len(prevPosts))
+	for index, _ := range prevPosts {
+		posts = append(posts, prevPosts[index]);
 	}
 
 	for index, _ := range posts {
-		if((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex())) {
+		if((len(groupId) > 0 || len(result.GroupId) > 0) && ((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex()))) {
 			posts[index].PlaceName = posts[index].GroupName;
 			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
@@ -427,28 +439,6 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		posts = []models.Post{}
 	}
 
-	return
-}
-
-func GetMyCircleUpdates(token string, lat float64, lng float64, lastUpdated time.Time, fromDate time.Time) (posts[]models.Post, err error) {
-	context := common.NewContext()
-	defer context.Close()
-
-	currentLatLng := [2]float64{lng, lat}
-	c := context.DbCollection("posts")
-
-	var result []struct {
-		Id         bson.ObjectId `bson:"_id" json:"id"`
-		Upvotes    int  `bson:"upvotes" json:"upvotes"`
-		Downvotes  int  `bson:"downvotes" json:"downvotes"`
-		ReplyCount int `bson:"replyCount" json:"replyCount"`
-		IsActive   bool `bson:"isActive" json:"isActive"`
-	}
-	err = c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
-		"createdOn": bson.M{"$gt": fromDate, "$lt": lastUpdated},
-		}).Sort("score").Limit(150).All(&result);
 	return
 }
 

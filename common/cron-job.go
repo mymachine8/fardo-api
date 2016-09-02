@@ -13,12 +13,3 @@ func InitCronJobs() {
 	//c.AddFunc("@every 48h", resetGroupTrendingScore)
 	c.Start()
 }
-
-/*
-func resetGroupTrendingScore() {
-	err := data.RecalculateTrendingScore();
-
-	if(err!= nil) {
-		log.Print(err.Error())
-	}
-}*/

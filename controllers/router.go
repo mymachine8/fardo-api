@@ -29,7 +29,6 @@ func InitRoutes() http.Handler {
 	r.GET("/api/near-groups", GetNearByGroupsHandler);
 	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/my-circle", myCircleHandler);
-	r.GET("/api/my-circle-updates", myCircleUpdatesHandler);
 	r.GET("/api/popular", popularPostsHandler);
 
 	r.POST("/api/users", memberRegisterHandler);
@@ -97,6 +96,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/admin/posts", createAdminPostHandler);
 	r.GET("/api/label-posts/:id", labelPostsListHandler);
 	r.GET("/api/group-posts/:id", groupPostsGroupHandler);
+	r.GET("/api/compute-score", groupTrendingScore);
+
 
 
 	c := cors.New(cors.Options{
@@ -114,6 +115,17 @@ func InitRoutes() http.Handler {
 func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	rw.Write(common.SuccessResponseJSON("DONE"));
 }
+
+func groupTrendingScore(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	err := data.CalculatePlacesTrendingScore();
+
+	if(err!= nil) {
+		log.Print(err.Error())
+	}
+
+	rw.Write(common.SuccessResponseJSON("DONE"));
+}
+
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
@@ -133,34 +145,6 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	token := common.GetAccessToken(r);
 
 	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated, groupId);
-	if (e != nil) {
-		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
-		return
-	}
-	rw.Write(common.SuccessResponseJSON(result));
-
-}
-
-func myCircleUpdatesHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-
-	var err error;
-	var lat, lng float64;
-	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
-	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	layout := "2006-01-02T15:04:05.000Z"
-	last_updated, _ := time.Parse(
-		layout,
-		r.URL.Query().Get("last_updated"));
-	from_date, _ := time.Parse(
-		layout,
-		r.URL.Query().Get("from_date"));
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
-		return
-	}
-	token := common.GetAccessToken(r);
-
-	result, e := data.GetMyCircleUpdates(token, lat, lng, last_updated, from_date);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
