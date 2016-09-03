@@ -20,11 +20,11 @@ func GetPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err 
 	globalGroups, err = GetGlobalPopularGroups();
 
 	var i int;
-	for i = 0; i < 3 && i < len(localGroups); i++ {
+	for i = 0; i < 2 && i < len(localGroups); i++ {
 		groups = append(groups, localGroups[i]);
 	}
 
-	remaining := 3 - i;
+	remaining := 2 - i;
 
 	for i = 0; i < 3 + remaining && i < len(globalGroups); i++ {
 		if (!idInGroups(globalGroups[i].Id.Hex(), groups)) {
