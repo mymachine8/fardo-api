@@ -402,10 +402,20 @@ func SendUpvoteNotification(post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"emphasis" : strconv.Itoa(post.Upvotes) + " upvotes",
 		"type": postType,
 	}
 
-	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post " + post.Content
+	var content string;
+
+	if(len(post.Content) > 30) {
+		content = post.Content[0:30]
+		content += "..."
+	}else {
+		content = post.Content
+	}
+
+	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post \"" + content + "\"";
 
 	ids := []string{token.FcmToken}
 
@@ -423,10 +433,21 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"emphasis": strconv.Itoa(comment.Upvotes) + " upvotes",
 		"type": "comment_upvote",
 	}
 
-	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment " + comment.Content
+	var content string;
+
+	if(len(comment.Content) > 30) {
+		content = comment.Content[0:30]
+		content += "..."
+	}else {
+		content = comment.Content
+	}
+
+	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment \"" + content + "\"";
+
 
 	ids := []string{token.FcmToken}
 
