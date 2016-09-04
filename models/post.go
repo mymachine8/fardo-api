@@ -22,12 +22,13 @@ type Post struct {
 	ImageData string `bson:"-" json:"imageData, omitempty"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
-	SpamCount int  `bson:"spamCount" json:"spamCount"`
-	SpamReasons []string `bson:"spamReasons" json:"spamReasons"`
+	SpamCount int  `bson:"spamCount" json:"-"`
+	SpamReasons []string `bson:"spamReasons" json:"-"`
 	Score float64  `bson:"score" json:"score"`
 	CreatedOn  time.Time `bson:"createdOn" json:"createdOn"`
 	UserId     bson.ObjectId `bson:"userId" json:"userId"`
 	Username string `bson:"username" json:"username"`
+	VoteClicked string `bson:"_" json:"voteClicked,omitempty"`
 	IsAnonymous bool `bson:"isAnonymous" json:"isAnonymous"`
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`

@@ -34,7 +34,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	}
 	//TODO: Have to revisit this code
 	post.UserId = result.Id;
-	if(!post.IsAnonymous) {
+	if (!post.IsAnonymous) {
 		post.Username = result.Username;
 	}
 	if (post.IsGroup) {
@@ -92,7 +92,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		return post, models.FardoError{"Insert Post Error: " + err.Error()}
 	}
 
-	if(post.IsGroup) {
+	if (post.IsGroup) {
 		post.PlaceName = post.GroupName
 		post.PlaceType = post.GroupCategoryName
 	} else {
@@ -117,8 +117,8 @@ func GetPostById(id string) (post models.Post, err error) {
 	c := context.DbCollection("posts")
 
 	err = c.FindId(bson.ObjectIdHex(id)).One(&post)
-	if(err == nil) {
-		if(post.IsGroup) {
+	if (err == nil) {
+		if (post.IsGroup) {
 			post.PlaceName = post.GroupName
 			post.PlaceType = post.GroupCategoryName
 		} else {
@@ -144,6 +144,47 @@ func addToRecentUserPosts(userId bson.ObjectId, postId bson.ObjectId, fieldType 
 		}
 	}
 	_, err := c.Upsert(bson.M{"userId": userId},
+		bson.M{"$push": ids})
+
+	if (err != nil) {
+		log.Print(err.Error());
+	}
+}
+
+func addToRecentUserVotes(userId bson.ObjectId, id bson.ObjectId, isUpvote bool, isUndo bool, fieldType string) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_posts")
+
+	ids := bson.M{};
+	if (fieldType == "comment") {
+		ids = bson.M{
+			"$pull": bson.M{"commentVotes" : bson.M{"_id" : id}}}
+	} else {
+		ids = bson.M{
+			"$pull": bson.M{"postVotes" : bson.M{"_id" : id}}}
+	}
+	err := c.Update(bson.M{"userId": userId},
+		ids)
+
+	if (isUndo) {
+		return;
+	}
+
+	var userVote models.UserVote;
+	userVote.Id = id;
+	userVote.IsUpvote = isUpvote;
+
+	ids = bson.M{
+		"postVotes": userVote,
+	}
+
+	if (fieldType == "comment") {
+		ids = bson.M{
+			"commentVotes": userVote,
+		}
+	}
+	_, err = c.Upsert(bson.M{"userId": userId},
 		bson.M{"$push": ids})
 
 	if (err != nil) {
@@ -237,13 +278,19 @@ func addToCurrentPosts(post models.Post) {
 	}
 }
 
-func UpvotePost(id string, undo bool) (err error) {
+func UpvotePost(token string, id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+
 	step := 1;
-	if(undo) {
+	if (undo) {
 		step = -1;
 	}
 
@@ -251,22 +298,29 @@ func UpvotePost(id string, undo bool) (err error) {
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
 		}, "$set": bson.M{
-				"modifiedOn": time.Now().UTC()}})
+			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionUpvote);
 		go checkVoteCount(id, true);
+		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "post");
 	}
 	return
 }
 
-func DownvotePost(id string, undo bool) (err error) {
+func DownvotePost(token string, id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+
 	step := 1;
 
-	if(undo) {
+	if (undo) {
 		step = -1;
 	}
 
@@ -278,6 +332,7 @@ func DownvotePost(id string, undo bool) (err error) {
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionDownvote);
 		go checkVoteCount(id, false);
+		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
 	}
 	return
 }
@@ -394,7 +449,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 
 	var prevPosts []models.Post;
 
-	if(len(groupId) > 0) {
+	if (len(groupId) > 0) {
 		params := make(map[string]interface{})
 		params["groupId"] = result.GroupId;
 		params["createdOn"] = bson.M{"$gt": lastUpdated}
@@ -402,9 +457,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		params["createdOn"] = bson.M{"$lt": lastUpdated}
 		err = c.Find(params).Limit(50).Sort("-score").All(&prevPosts);
 
-	}else {
+	} else {
 		currentLatLng := [2]float64{lng, lat}
-
 
 		params := make(map[string]interface{});
 		params = bson.M{"loc":
@@ -415,9 +469,9 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 			params["groupId"] = result.GroupId;
 		}
 
-		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(50).Sort("-score").All(&posts);
+		err = c.Find(bson.M{"$or":[]bson.M{params}}).Limit(50).Sort("-score").All(&posts);
 		params["createdOn"] = bson.M{"$lt": lastUpdated}
-		err = c.Find( bson.M{"$or":[]bson.M {params}}).Limit(50).Sort("-score").All(&prevPosts);
+		err = c.Find(bson.M{"$or":[]bson.M{params}}).Limit(50).Sort("-score").All(&prevPosts);
 	}
 
 	log.Print(len(prevPosts))
@@ -426,7 +480,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	}
 
 	for index, _ := range posts {
-		if((len(groupId) > 0 || len(result.GroupId) > 0) && ((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex()))) {
+		if ((len(groupId) > 0 || len(result.GroupId) > 0) && ((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex()))) {
 			posts[index].PlaceName = posts[index].GroupName;
 			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
@@ -439,7 +493,99 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		posts = []models.Post{}
 	}
 
+	posts = addUserVotes(token, posts);
+
 	return
+}
+
+func addUserVotes(token string, posts []models.Post) []models.Post {
+
+	if (posts == nil) {
+		return posts;
+	}
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_posts")
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err := tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	var userPosts models.UserPost
+	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
+	if (err != nil) {
+		err = models.FardoError{"Get User Posts: " + err.Error()}
+		return posts;
+	}
+
+	m := make(map[string]string)
+
+	for i := 0; i < len(userPosts.PostVotes); i++ {
+		if (userPosts.PostVotes[i].IsUpvote) {
+			m[userPosts.PostVotes[i].Id.Hex()] = "upvote";
+		} else {
+			m[userPosts.PostVotes[i].Id.Hex()] = "downvote";
+		}
+	}
+
+	for i := 0; i < len(posts); i++ {
+		voteType := m[posts[i].Id.Hex()];
+		if(len(voteType) == 0) {
+			posts[i].VoteClicked = "none";
+		} else {
+			posts[i].VoteClicked = voteType;
+		}
+	}
+
+	return posts;
+}
+
+func addUserCommentVotes(token string, comments []models.Comment) []models.Comment {
+
+	if (comments == nil) {
+		return comments;
+	}
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_posts")
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err := tokenCol.Find(bson.M{"token": token}).One(&result)
+
+	var userPosts models.UserPost
+	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
+	if (err != nil) {
+		err = models.FardoError{"Get User Posts: " + err.Error()}
+		return comments;
+	}
+
+	m := make(map[string]string)
+
+	for i := 0; i < len(userPosts.CommentVotes); i++ {
+		if (userPosts.CommentVotes[i].IsUpvote) {
+			m[userPosts.CommentVotes[i].Id.Hex()] = "upvote";
+		} else {
+			m[userPosts.CommentVotes[i].Id.Hex()] = "downvote";
+		}
+	}
+
+	for i := 0; i < len(comments); i++ {
+		voteType := m[comments[i].Id.Hex()];
+		if(len(voteType) == 0) {
+			comments[i].VoteClicked = "none";
+		} else {
+			comments[i].VoteClicked = voteType;
+		}
+	}
+
+	return comments;
 }
 
 func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Post, err error) {
@@ -451,7 +597,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	nearByPostsLen := common.MinInt(len(nearByPosts), PopularPostsLimit);
 
 	for index, _ := range nearByPosts {
-		if(len(nearByPosts[index].GroupName) > 0) {
+		if (len(nearByPosts[index].GroupName) > 0) {
 			nearByPosts[index].PlaceName = nearByPosts[index].GroupName;
 			nearByPosts[index].PlaceType = nearByPosts[index].GroupCategoryName;
 		} else {
@@ -468,7 +614,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 
 	var count int = 0;
 	for _, glb := range globalPosts {
-		if(len(glb.GroupName) > 0) {
+		if (len(glb.GroupName) > 0) {
 			glb.PlaceName = glb.GroupName;
 			glb.PlaceType = glb.GroupCategoryName;
 		} else {
@@ -483,7 +629,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 
 	count = 0;
 	for _, aa := range adminAreaPosts {
-		if(len(aa.GroupName) > 0) {
+		if (len(aa.GroupName) > 0) {
 			aa.PlaceName = aa.GroupName;
 			aa.PlaceType = aa.GroupCategoryName;
 		} else {
@@ -623,7 +769,7 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 		posts = []models.Post{}
 	}
 
-	for index,_ := range posts {
+	for index, _ := range posts {
 		if (posts[index].IsGroup) {
 			posts[index].PlaceName = posts[index].GroupName;
 			posts[index].PlaceType = posts[index].GroupCategoryName;
@@ -704,7 +850,7 @@ func updateReplyCount(id string) (err error) {
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"replyCount": 1,
-		},"$set": bson.M{
+		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 
 	return
@@ -734,42 +880,56 @@ func AddReply(token string, commentId string, reply models.Reply) (string, error
 	return commentId, err
 }
 
-func UpvoteComment(id string, undo bool) (err error) {
+func UpvoteComment(token string, id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
 
 	step := 1;
-	if(undo) {
+	if (undo) {
 		step = -1;
 	}
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
-		},"$set": bson.M{
+		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	go checkCommentVoteCount(id, true);
+	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "comment");
 	return
 }
 
-func DownvoteComment(id string, undo bool) (err error) {
+func DownvoteComment(token string, id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
 
 	step := 1;
-	if(undo) {
+	if (undo) {
 		step = -1;
 	}
+
+	tokenContext := common.NewContext()
+	defer tokenContext.Close()
+	tokenCol := tokenContext.DbCollection("users")
+	var result models.User
+	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"downvotes": step,
-		},"$set": bson.M{
+		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 
 	go checkCommentVoteCount(id, false);
+	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "comment");
 	return
 }
 
@@ -856,7 +1016,7 @@ func findCommentById(id string) (comment models.Comment, err error, ) {
 	return
 }
 
-func GetAllComments(postId string) (comments []models.Comment, err error) {
+func GetAllComments(token string, postId string) (comments []models.Comment, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("comments")
@@ -866,6 +1026,8 @@ func GetAllComments(postId string) (comments []models.Comment, err error) {
 	if (comments == nil) {
 		comments = []models.Comment{}
 	}
+
+	comments = addUserCommentVotes(token, comments);
 	return
 }
 
