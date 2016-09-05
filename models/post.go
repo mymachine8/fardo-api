@@ -19,7 +19,9 @@ type Post struct {
 	FullAddress string `bson:"fullAddress" json:"fullAddress"`
 	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
 	ImageType string `bson:"imageType" json:"imageType"`
-	ImageData string `bson:"-" json:"imageData, omitempty"`
+	ImageData string `bson:"-" json:"imageData,omitempty"`
+	ImageWidth int `bson:"imageWidth,omitempty" json:"imageWidth,omitempty"`
+	ImageHeight int `bson:"imageHeight,omitempty" json:"imageHeight,omitempty"`
 	Upvotes    int  `bson:"upvotes" json:"upvotes"`
 	Downvotes  int  `bson:"downvotes" json:"downvotes"`
 	SpamCount int  `bson:"spamCount" json:"-"`
