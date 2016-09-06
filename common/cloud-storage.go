@@ -13,6 +13,7 @@ var (
 	bucket *storage.BucketHandle
 	postImageBucket *storage.BucketHandle
 	groupImageBucket *storage.BucketHandle
+	groupLogoBucket *storage.BucketHandle
 )
 
 type BucketType uint8
@@ -20,12 +21,14 @@ type BucketType uint8
 const (
 	PostImage BucketType = iota
 	GroupImage
+	GroupLogo
 )
 
 func InitCloudStorage() {
 	client, err := storage.NewClient(context.Background())
 	postImageBucket = client.Bucket("zing-post-images");
 	groupImageBucket = client.Bucket("zing-group-images");
+	groupLogoBucket = client.Bucket("zing-group-logos");
 
 	if err != nil {
 		slack.Send(slack.ErrorLevel, "New Client Creation Error: " + err.Error());
@@ -41,6 +44,9 @@ func getBucket(bucketType BucketType) *storage.BucketHandle {
 	case GroupImage:
 		bucket = groupImageBucket
 		return bucket;
+	case GroupLogo:
+		bucket = groupLogoBucket
+		return bucket;
 	}
 	return bucket;
 }
@@ -52,6 +58,9 @@ func getBucketName(bucketType BucketType) string {
 	case GroupImage:
 		bucket = groupImageBucket
 		return "zing-group-images";
+	case GroupLogo:
+		bucket = groupLogoBucket
+		return "zing-group-logos";
 	}
 	return "zing-post-images"
 }
@@ -76,13 +85,3 @@ func SendItemToCloudStorage(bucketType BucketType, fileName string,dec io.Reader
 	const publicURL = "https://storage.googleapis.com/%s/%s"
 	return fmt.Sprintf(publicURL, getBucketName(bucketType), fileName), err
 }
-
-/*func GetObjectFromCloudStorage(fileName string) (*storage.Object, error) {
-	// Get an object from a bucket.
-	res, err := service.Objects.Get(*bucketName, fileName).Do();
-	if (err != nil) {
-		return nil, err
-	}
-	fmt.Printf("The media download link for %v/%v is %v.\n\n", *bucketName, res.Name, res.MediaLink)
-	return res, nil
-}*/

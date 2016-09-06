@@ -374,8 +374,9 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	var post models.Post
 	err := json.NewDecoder(r.Body).Decode(&post)
 
+
 	if (err != nil) {
-		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, errors.New("this is test"));
 		return
 	}
 

@@ -7,6 +7,7 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"strings"
 	"encoding/base64"
+	"math"
 )
 
 func GetPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err error) {
@@ -317,11 +318,12 @@ func CalculatePlacesTrendingScore() (err error) {
 	defer postsContext.Close()
 	postsCol := postsContext.DbCollection("posts")
 
-	pipe := c.Pipe([]bson.M{{"$project": bson.M{"scoreLastUpdated": 1, "scoreCount": bson.M{"$size": "$scores" }}}})
+	pipe := c.Pipe([]bson.M{{"$project": bson.M{"scoreLastUpdated": 1, "scores": 1, "scoreCount": bson.M{"$size": "$scores" }}}})
 
 	var result []struct {
 		Id               bson.ObjectId `bson:"_id" json:"id"`
 		ScoreCount       int `bson:"scoreCount" json:"scoreCount"`
+		Scores           []int `bson:"scores" json:"_"`
 		ScoreLastUpdated time.Time `bson:"scoreLastUpdated" json:"scoreLastUpdated,omitempty"`
 	}
 
@@ -347,21 +349,52 @@ func CalculatePlacesTrendingScore() (err error) {
 				count = grp.Count
 			}
 		}
-		if (count > 0) {
-			if (now.Day() != group.ScoreLastUpdated.Day()) {
-				c.Update(bson.M{"_id": group.Id},
-					bson.M{"$pop": bson.M{"scores": -1 } });
-			} else {
-				c.Update(bson.M{"_id": group.Id},
-					bson.M{"$pop": bson.M{"scores": 1 } });
-			}
+		trendingScore := calculateZIndex(count, group.Scores)
+
+		if (now.Day() != group.ScoreLastUpdated.Day()) {
 			c.Update(bson.M{"_id": group.Id},
-				bson.M{"$push": bson.M{"scores": count },
-					"$set": bson.M{"scoreLastUpdated" : now }});
+				bson.M{"$pop": bson.M{"scores": -1 } });
+		} else {
+			c.Update(bson.M{"_id": group.Id},
+				bson.M{"$pop": bson.M{"scores": 1 } });
 		}
+		c.Update(bson.M{"_id": group.Id},
+			bson.M{"$push": bson.M{"scores": count },
+				"$set": bson.M{"scoreLastUpdated" : now, "trendingScore" : trendingScore }});
 	}
 
-	//TODO: Calculate z-index
-
 	return err
+}
+
+func calculateZIndex(currentScore int, prevScores [] int) float64 {
+	n := len(prevScores)
+
+	var sum float64
+
+	sum = 0
+
+	for i := 0; i < n; i++ {
+		sum = sum + float64(prevScores[i])
+	}
+
+	var avg float64
+	avg = float64(sum / float64(n))
+
+	if (avg == 0) {
+		return -999999
+	}
+
+	sum = 0
+
+	for i := 0; i < n; i++ {
+		sum += math.Pow((float64(prevScores[i]) - avg), 2)
+	}
+
+	variance := sum / float64(n)
+
+	standardDeviation := math.Sqrt(variance)
+
+	zScore := (float64(currentScore) - avg) / standardDeviation
+
+	return zScore
 }

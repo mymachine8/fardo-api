@@ -11,15 +11,17 @@ type Group struct {
 	ShortName string `bson:"shortName" json:"shortName"`
 	Description string `bson:"description" json:"description"`
 	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
-	LogoData string `bson:"logoData" json:"logoData, omitempty"`
-	ImageData string `bson:"-" json:"imageData, omitempty"`
+	LogoData string `bson:"-" json:"logoData,omitempty"`
+	LogoUrl string `bson:"logoUrl" json:"logoUrl,omitempty"`
+	ImageData string `bson:"-" json:"imageData,omitempty"`
 	CategoryId bson.ObjectId `bson:"categoryId" json:"categoryId"`
 	CategoryName string `bson:"categoryName" json:"categoryName"`
 	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
 	SubCategoryName string `bson:"subCategoryName" json:"subCategoryName"`
 	Radius int `bson:"radius" json:"radius"`
-	Scores []float64 `bson:"scores" json:"_"`
+	Scores []int `bson:"scores" json:"_"`
 	ScoreLastUpdated time.Time `bson:"scoreLastUpdated" json:"scoreLastUpdated"`
+	TrendingScore int `bson:"trendingScore" json:"trendingScore"`
 	Loc [2]float64 `bson:"loc" json:"loc"`
 	City string `bson:"city" json:"city"`
 	State string `bson:"state" json:"state"`
