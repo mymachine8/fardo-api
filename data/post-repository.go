@@ -480,7 +480,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	}
 
 	for index, _ := range posts {
-		if ((len(groupId) > 0 || len(result.GroupId) > 0) && ((posts[index].GroupId.Hex() == groupId) || (posts[index].GroupId.Hex() == result.GroupId.Hex()))) {
+		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
 			posts[index].PlaceName = posts[index].GroupName;
 			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
@@ -533,7 +533,7 @@ func addUserVotes(token string, posts []models.Post) []models.Post {
 
 	for i := 0; i < len(posts); i++ {
 		voteType := m[posts[i].Id.Hex()];
-		if(len(voteType) == 0) {
+		if (len(voteType) == 0) {
 			posts[i].VoteClicked = "none";
 		} else {
 			posts[i].VoteClicked = voteType;
@@ -578,7 +578,7 @@ func addUserCommentVotes(token string, comments []models.Comment) []models.Comme
 
 	for i := 0; i < len(comments); i++ {
 		voteType := m[comments[i].Id.Hex()];
-		if(len(voteType) == 0) {
+		if (len(voteType) == 0) {
 			comments[i].VoteClicked = "none";
 		} else {
 			comments[i].VoteClicked = voteType;
@@ -941,7 +941,7 @@ func checkCommentVoteCount(id string, isUpvote bool) (err error) {
 		if (comment.Upvotes == 1 || common.DivisbleByPowerOf2(comment.Upvotes)) {
 			var post models.Post
 			post, err = findPostById(comment.PostId.Hex());
-			if(err != nil) {
+			if (err != nil) {
 				return;
 			}
 			common.SendCommentUpvoteNotification(comment, post);
