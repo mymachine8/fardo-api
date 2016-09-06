@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"time"
 	"errors"
-	"bytes"
 )
 
 func InitRoutes() http.Handler {
@@ -375,15 +374,8 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	var post models.Post
 	err := json.NewDecoder(r.Body).Decode(&post)
 
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r.Body)
-	s := buf.String()
-
-	writeErrorResponse(rw, r, p, s, http.StatusInternalServerError, errors.New("this is string"));
-	writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, errors.New("this is post"));
-
 	if (err != nil) {
-		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, errors.New("this is test"));
+		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
 

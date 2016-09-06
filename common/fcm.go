@@ -418,7 +418,12 @@ func SendUpvoteNotification(post models.Post) {
 		content = post.Content
 	}
 
-	message := "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post \"" + content + "\"";
+	var message string
+	if(len(content) == 0) {
+		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post";
+	} else {
+		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post \"" + content + "\"";
+	}
 
 	ids := []string{token.FcmToken}
 
@@ -573,7 +578,12 @@ func SendNearByNotification(post models.Post) {
 		content = post.Content
 	}
 
-	message := "Someone nearby posted \"" + content + "\"";
+	var message string
+	if(len(content) == 0) {
+		message = "Someone nearby just posted";
+	} else {
+		message = "Someone nearby posted \"" + content + "\"";
+	}
 
 	sendNotification(ids, message, data);
 }
