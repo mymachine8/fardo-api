@@ -13,7 +13,7 @@ type Comment struct {
 	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
 	Upvotes   int  `bson:"upvotes" json:"upvotes"`
 	Downvotes int  `bson:"downvotes" json:"downvotes"`
-	VoteClicked string `bson:"_" json:"voteClicked,omitempty"`
+	VoteClicked string `bson:"-" json:"voteClicked,omitempty"`
 	Replies []Reply `bson:"replies,omitempty" json:"replies,omitempty"`
 	UserId    bson.ObjectId `bson:"userId" json:"-"`
 	IsPrivate  bool `bson:"isPrivate" json:"isPrivate"`

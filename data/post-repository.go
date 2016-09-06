@@ -902,7 +902,7 @@ func UpvoteComment(token string, id string, undo bool) (err error) {
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	go checkCommentVoteCount(id, true);
-	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "comment");
+	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "comment");
 	return
 }
 
