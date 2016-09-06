@@ -939,7 +939,12 @@ func checkCommentVoteCount(id string, isUpvote bool) (err error) {
 
 	if (isUpvote) {
 		if (comment.Upvotes == 1 || common.DivisbleByPowerOf2(comment.Upvotes)) {
-			common.SendCommentUpvoteNotification(comment);
+			var post models.Post
+			post, err = findPostById(comment.PostId.Hex());
+			if(err != nil) {
+				return;
+			}
+			common.SendCommentUpvoteNotification(comment, post);
 		}
 	}
 

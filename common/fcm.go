@@ -391,19 +391,20 @@ func SendUpvoteNotification(post models.Post) {
 		log.Print(err.Error())
 	}
 
-	var postType string
-	if(len(post.ImageUrl) > 0) {
-		postType = "image_post_upvote";
-	}else {
-		postType = "post_upvote";
-	}
-
-	data := map[string]string{
+	notificationData := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"upvotes" : strconv.Itoa(post.Upvotes),
+		"downvotes" : strconv.Itoa(post.Downvotes),
+		"content" : post.Content,
+		"replyCount" : strconv.Itoa(post.ReplyCount),
+		"placeName" : post.PlaceName,
+		"placeType" : post.PlaceType,
+		"imageUrl" : post.ImageUrl,
+		"createdOn" : post.CreatedOn.String(),
 		"emphasis" : strconv.Itoa(post.Upvotes) + " upvotes",
-		"type": postType,
+		"type": "post_upvote",
 	}
 
 	var content string;
@@ -419,10 +420,10 @@ func SendUpvoteNotification(post models.Post) {
 
 	ids := []string{token.FcmToken}
 
-	sendNotification(ids, message, data);
+	sendNotification(ids, message, notificationData);
 }
 
-func SendCommentUpvoteNotification(comment models.Comment) {
+func SendCommentUpvoteNotification(comment models.Comment, post models.Post) {
 	token, err := findUserById(comment.UserId.Hex());
 	if (err != nil) {
 		return;
@@ -433,6 +434,14 @@ func SendCommentUpvoteNotification(comment models.Comment) {
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"upvotes" : strconv.Itoa(post.Upvotes),
+		"downvotes" : strconv.Itoa(post.Downvotes),
+		"content" : post.Content,
+		"replyCount" : strconv.Itoa(post.ReplyCount),
+		"placeName" : post.PlaceName,
+		"placeType" : post.PlaceType,
+		"imageUrl" : post.ImageUrl,
+		"createdOn" : post.CreatedOn.String(),
 		"emphasis": strconv.Itoa(comment.Upvotes) + " upvotes",
 		"type": "comment_upvote",
 	}
@@ -491,6 +500,14 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"upvotes" : strconv.Itoa(post.Upvotes),
+		"downvotes" : strconv.Itoa(post.Downvotes),
+		"content" : post.Content,
+		"replyCount" : strconv.Itoa(post.ReplyCount),
+		"placeName" : post.PlaceName,
+		"placeType" : post.PlaceType,
+		"imageUrl" : post.ImageUrl,
+		"createdOn" : post.CreatedOn.String(),
 		"type": "comment",
 	}
 
@@ -528,6 +545,14 @@ func SendNearByNotification(post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().String(),
+		"upvotes" : strconv.Itoa(post.Upvotes),
+		"downvotes" : strconv.Itoa(post.Downvotes),
+		"content" : post.Content,
+		"replyCount" : strconv.Itoa(post.ReplyCount),
+		"placeName" : post.PlaceName,
+		"placeType" : post.PlaceType,
+		"imageUrl" : post.ImageUrl,
+		"createdOn" : post.CreatedOn.String(),
 		"type": "post",
 	}
 
