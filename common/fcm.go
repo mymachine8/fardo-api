@@ -630,7 +630,7 @@ func sendNotification(fcmTokens []string, message string, data map[string]string
 	if err == nil {
 		status.PrintResults()
 	} else {
-		slack.Send(slack.ErrorLevel, err.Error())
+		slack.Send(slack.ErrorLevel,"FCM Error: " +  err.Error())
 		fmt.Println("FCM Error: " + err.Error());
 	}
 }
