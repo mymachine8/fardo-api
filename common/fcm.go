@@ -402,7 +402,7 @@ func SendUpvoteNotification(post models.Post) {
 		"imageWidth" : strconv.Itoa(post.ImageWidth),
 		"imageHeight" : strconv.Itoa(post.ImageHeight),
 		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.String(),
+		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"emphasis" : strconv.Itoa(post.Upvotes) + " upvotes",
 		"type": "post_upvote",
 	}
@@ -438,7 +438,7 @@ func SendCommentUpvoteNotification(comment models.Comment, post models.Post) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
 		"downvotes" : strconv.Itoa(post.Downvotes),
 		"content" : post.Content,
@@ -448,7 +448,7 @@ func SendCommentUpvoteNotification(comment models.Comment, post models.Post) {
 		"placeName" : post.PlaceName,
 		"placeType" : post.PlaceType,
 		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.String(),
+		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"emphasis": strconv.Itoa(comment.Upvotes) + " upvotes",
 		"type": "comment_upvote",
 	}
@@ -506,7 +506,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
 		"downvotes" : strconv.Itoa(post.Downvotes),
 		"content" : post.Content,
@@ -516,7 +516,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"placeName" : post.PlaceName,
 		"placeType" : post.PlaceType,
 		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.String(),
+		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"type": "comment",
 	}
 
@@ -553,7 +553,7 @@ func SendNearByNotification(post models.Post) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
 		"downvotes" : strconv.Itoa(post.Downvotes),
 		"content" : post.Content,
@@ -563,7 +563,7 @@ func SendNearByNotification(post models.Post) {
 		"placeName" : post.PlaceName,
 		"placeType" : post.PlaceType,
 		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.String(),
+		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"type": "post",
 	}
 
@@ -595,7 +595,7 @@ func SendDeletePostNotification(post models.Post) {
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "post_delete",
 	}
 
@@ -619,7 +619,7 @@ func GroupUnlockedNotification(user models.User) {
 	message := "You have unlocked your college, you can now share the happening to your college even when you're away from it"
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "unlock",
 	}
 
@@ -644,7 +644,7 @@ func AppAvailableNotification(city string) {
 
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "general",
 	}
 
