@@ -460,18 +460,18 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	} else {
 		currentLatLng := [2]float64{lng, lat}
 
-		params := make(map[string]interface{});
-		params = bson.M{"loc":
-		bson.M{"$geoWithin":
-		bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2} }},
-			"createdOn": bson.M{"$gt": lastUpdated}};
+		options := []bson.M{}
+
+		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2}}}})
+
 		if (len(result.GroupId) > 0) {
-			params["groupId"] = result.GroupId;
+			options = append(options, bson.M{"groupId" : result.GroupId});
 		}
 
-		err = c.Find(bson.M{"$or":[]bson.M{params}}).Limit(50).Sort("-score").All(&posts);
-		params["createdOn"] = bson.M{"$lt": lastUpdated}
-		err = c.Find(bson.M{"$or":[]bson.M{params}}).Limit(50).Sort("-score").All(&prevPosts);
+		log.Print(options)
+
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}}).Limit(50).Sort("-score").All(&posts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}}).Limit(50).Sort("-score").All(&prevPosts);
 	}
 
 	log.Print(len(prevPosts))
