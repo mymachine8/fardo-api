@@ -18,20 +18,19 @@ const (
 	serverKey = "AIzaSyCwq8rOk4n96o3cS1mnFL1bGcfky4CL9es"
 )
 
-
 const (
 	// fcm_server_url fcm server url
-	fcm_server_url     = "https://fcm.googleapis.com/fcm/send"
+	fcm_server_url = "https://fcm.googleapis.com/fcm/send"
 	// MAX_TTL the default ttl for a notification
-	MAX_TTL            = 2419200
+	MAX_TTL = 2419200
 	// Priority_HIGH notification priority
-	Priority_HIGH      = "high"
+	Priority_HIGH = "high"
 	// Priority_NORMAL notification priority
-	Priority_NORMAL    = "normal"
+	Priority_NORMAL = "normal"
 	// retry_after_header header name
 	retry_after_header = "Retry-After"
 	// error_key readable error caching !
-	error_key          = "error"
+	error_key = "error"
 )
 
 var (
@@ -384,7 +383,6 @@ func (this *FcmClient) SetCondition(condition string) *FcmClient {
 	return this
 }
 
-
 func SendUpvoteNotification(post models.Post) {
 	token, err := findUserById(post.UserId.Hex());
 	if (err != nil) {
@@ -394,7 +392,7 @@ func SendUpvoteNotification(post models.Post) {
 	notificationData := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
-		"time": time.Now().UTC().String(),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
 		"downvotes" : strconv.Itoa(post.Downvotes),
 		"content" : post.Content,
@@ -411,15 +409,15 @@ func SendUpvoteNotification(post models.Post) {
 
 	var content string;
 
-	if(len(post.Content) > 30) {
+	if (len(post.Content) > 30) {
 		content = post.Content[0:30]
 		content += "..."
-	}else {
+	} else {
 		content = post.Content
 	}
 
 	var message string
-	if(len(content) == 0) {
+	if (len(content) == 0) {
 		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post";
 	} else {
 		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post \"" + content + "\"";
@@ -457,10 +455,10 @@ func SendCommentUpvoteNotification(comment models.Comment, post models.Post) {
 
 	var content string;
 
-	if(len(comment.Content) > 30) {
+	if (len(comment.Content) > 30) {
 		content = comment.Content[0:30]
 		content += "..."
-	}else {
+	} else {
 		content = comment.Content
 	}
 
@@ -494,7 +492,7 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 }
 
 func SendCommentNotification(post models.Post, comment models.Comment) {
-	if(post.UserId == comment.UserId) {
+	if (post.UserId == comment.UserId) {
 		return;
 	}
 
@@ -524,10 +522,10 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	var content string;
 
-	if(len(post.Content) > 20) {
+	if (len(post.Content) > 20) {
 		content = post.Content[0:20]
 		content += "..."
-	}else {
+	} else {
 		content = post.Content
 	}
 
@@ -571,15 +569,15 @@ func SendNearByNotification(post models.Post) {
 
 	var content string;
 
-	if(len(post.Content) > 30) {
+	if (len(post.Content) > 30) {
 		content = post.Content[0:20]
 		content += "..."
-	}else {
+	} else {
 		content = post.Content
 	}
 
 	var message string
-	if(len(content) == 0) {
+	if (len(content) == 0) {
 		message = "Someone nearby just posted";
 	} else {
 		message = "Someone nearby posted \"" + content + "\"";
@@ -603,14 +601,14 @@ func SendDeletePostNotification(post models.Post) {
 
 	var content string;
 
-	if(len(post.Content) > 20) {
+	if (len(post.Content) > 20) {
 		content = post.Content[0:20]
 		content += "..."
-	}else {
+	} else {
 		content = post.Content
 	}
 
-	message :=  "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
+	message := "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
 	ids := []string{token.FcmToken}
 
 	sendNotification(ids, message, data);
@@ -618,7 +616,7 @@ func SendDeletePostNotification(post models.Post) {
 
 func GroupUnlockedNotification(user models.User) {
 	//TODO: Send Ready Notification, when the group is unocked for that user
-	message :=  "You have unlocked your college, you can now share the happening to your college even when you're away from it"
+	message := "You have unlocked your college, you can now share the happening to your college even when you're away from it"
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"time": time.Now().UTC().String(),
@@ -640,7 +638,7 @@ func AppAvailableNotification(city string) {
 	var users []models.User
 	err := c.Find(bson.M{"city": city, "IsActive" : false}).All(&users);
 
-	if(err != nil) {
+	if (err != nil) {
 		return;
 	}
 
@@ -652,7 +650,7 @@ func AppAvailableNotification(city string) {
 
 	var ids  []string;
 
-	for _, user :=range users {
+	for _, user := range users {
 		ids = append(ids, user.FcmToken)
 	}
 
@@ -673,7 +671,7 @@ func sendNotification(fcmTokens []string, message string, data map[string]string
 	if err == nil {
 		status.PrintResults()
 	} else {
-		slack.Send(slack.ErrorLevel,"FCM Error: " +  err.Error())
+		slack.Send(slack.ErrorLevel, "FCM Error: " + err.Error())
 		fmt.Println("FCM Error: " + err.Error());
 	}
 }
