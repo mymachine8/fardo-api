@@ -253,7 +253,9 @@ func recentUserPostsHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 func groupPostsGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	result, err := data.GetGroupPosts(p.ByName("id"));
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetGroupPosts(token, p.ByName("id"));
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return

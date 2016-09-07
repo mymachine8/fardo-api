@@ -778,10 +778,13 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 			posts[index].PlaceType = "location"
 		}
 	}
+	//TODO: Optimize this to send user id if possible
+	posts = addUserVotes(token, posts);
+
 	return
 }
 
-func GetGroupPosts(groupId string) (posts []models.Post, err error) {
+func GetGroupPosts(token string, groupId string) (posts []models.Post, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
@@ -790,6 +793,9 @@ func GetGroupPosts(groupId string) (posts []models.Post, err error) {
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
+
+	posts = addUserVotes(token, posts);
+
 	return
 }
 
