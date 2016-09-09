@@ -68,15 +68,20 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	return
 }
 
-func GetNearByGroups(lat float64, lng float64) (groups []models.Group, err error) {
+func GetNearByGroups(lat float64, lng float64,limit int64) (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 
 	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
-	err = c.Find(bson.M{"loc":
+	query := c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}});
+	if(limit > 0) {
+		err = query.Limit(int(limit)).All(&groups);
+	} else {
+		err = query.All(&groups);
+	}
 	return
 }
 
