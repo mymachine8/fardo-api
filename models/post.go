@@ -46,3 +46,9 @@ type Post struct {
 	IsLocation bool `bson:"isLocation" json:"isLocation"`
 	IsActive   bool `bson:"isActive" json:"isActive"`
 }
+
+type ScoreSorter []Post
+
+func (a ScoreSorter) Len() int           { return len(a) }
+func (a ScoreSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ScoreSorter) Less(i, j int) bool { return a[i].Score > a[j].Score }

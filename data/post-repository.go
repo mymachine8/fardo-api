@@ -9,6 +9,7 @@ import (
 	"strings"
 	"encoding/base64"
 	"math"
+	"sort"
 )
 
 const (
@@ -462,7 +463,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 
 		options := []bson.M{}
 
-		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2 / 3963.2}}}})
+		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2.5 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
@@ -487,7 +488,19 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 			posts[index].PlaceName = posts[index].Locality;
 			posts[index].PlaceType = "location"
 		}
+		distance := common.DistanceLatLong(posts[index].Loc[1],lat, posts[index].Loc[0], lng)
+		if(distance < 500) {
+			posts[index].Score += 0.1;
+		} else if(distance < 1000) {
+			posts[index].Score += 0.08;
+		} else if(distance < 1500) {
+			posts[index].Score += 0.05;
+		} else if(distance < 2000) {
+			posts[index].Score += 0.02;
+		}
 	}
+
+	sort.Sort(models.ScoreSorter(posts))
 
 	if (posts == nil) {
 		posts = []models.Post{}

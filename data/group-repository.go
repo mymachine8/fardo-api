@@ -64,7 +64,7 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}}).Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}}).Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
 	return
 }
 
@@ -76,7 +76,7 @@ func GetNearByGroups(lat float64, lng float64,limit int64) (groups []models.Grou
 	c := context.DbCollection("groups")
 	query := c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }}});
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}});
 	if(limit > 0) {
 		err = query.Limit(int(limit)).All(&groups);
 	} else {
