@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"github.com/facebookgo/grace/gracehttp"
 	"github.com/mymachine8/fardo-api/common"
+	"github.com/mymachine8/fardo-api/cron"
 )
 
 func main() {
 
 	common.StartUp();
 	handler := controllers.InitRoutes()
+	cron.InitCronJobs();
 	var port string = "8082"//os.Getenv("PORT")
 	fmt.Println("Starting server on :8082");
 

@@ -10,10 +10,12 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"github.com/mymachine8/fardo-api/controllers"
 	"google.golang.org/appengine"
+	"github.com/mymachine8/fardo-api/cron"
 )
 
 func main() {
 	common.StartUp();
+	cron.InitCronJobs();
 	controllers.InitRoutes()
 	appengine.Main()
 }

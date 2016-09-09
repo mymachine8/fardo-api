@@ -9,6 +9,4 @@ func StartUp() {
 
 	InitCloudStorage()
 
-	InitCronJobs()
-
 }

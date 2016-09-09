@@ -429,11 +429,10 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 		z = votes * -1;
 	}
 
-	return float64(sign) * math.Log2(float64(z)) + float64(timeDiff) / 45000;
+	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 45000;
 }
 
 func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
-	//TODO: Location context is missing
 	context := common.NewContext()
 	c := context.DbCollection("posts")
 	defer context.Close()

@@ -354,6 +354,7 @@ func CalculatePlacesTrendingScore() (err error) {
 				count = grp.Count
 			}
 		}
+
 		trendingScore := calculateZIndex(count, group.Scores)
 
 		if (now.Day() != group.ScoreLastUpdated.Day()) {
@@ -396,6 +397,10 @@ func calculateZIndex(currentScore int, prevScores [] int) float64 {
 	}
 
 	variance := sum / float64(n)
+
+	if(variance == 0) {
+		return 0
+	}
 
 	standardDeviation := math.Sqrt(variance)
 
