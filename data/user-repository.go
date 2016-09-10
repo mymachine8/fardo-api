@@ -155,6 +155,21 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 	return err
 }
 
+func ChangeUserHomeLocation(accessToken string, homeAddress string, lat float64, lng float64) error {
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	LatLng := [2]float64{lng, lat}
+	err := userCol.Update(bson.M{"token": accessToken},
+		bson.M{"$set": bson.M{
+			"homeLoc": LatLng,
+			"homeAddress" : homeAddress,
+		}})
+
+	return err
+}
+
 func GetUserScore(accessToken string) (score int, err error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")

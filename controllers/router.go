@@ -37,6 +37,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/users/username", updateUsernameHandler);
 	r.GET("/api/users/username-availability", checkUsernameAvailabilityHandler);
 	r.PUT("/api/users/phone", updateUserPhoneHandler);
+	r.PUT("/api/users/home", updateUserHomeLocationHandler);
 	r.GET("/api/users/score", getUserScoreHandler);
 	r.PUT("/api/users/lock-group", lockUserGroupHandler);
 	r.PUT("/api/users/unlock-group", unlockUserGroupHandler);
@@ -681,6 +682,32 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 
 	err = data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("SUCCESS"));
+}
+
+func updateUserHomeLocationHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var body struct {
+		HomeAddress string `json:"homeAddress"`
+		Lat     float64 `json:"lat,omitempty"`
+		Lng     float64 `json:"lng,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&body)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusBadRequest, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+
+	err = data.ChangeUserHomeLocation(token, body.HomeAddress, body.Lat, body.Lng);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);

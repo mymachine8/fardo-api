@@ -27,6 +27,8 @@ type User struct {
 	SpamPostCount     int `json:"spamPostCount" bson:"spamPostCount"`
 	DownvotePostCount int `json:"downvotePostCount" bson:"downvotePostCount"`
 	Loc               [2]float64 `bson:"loc" json:"loc"`
+	HomeLoc           [2]float64 `bson:"homeLoc" json:"homeLoc"`
+	HomeAddress       string `json:"homeAddress,omitempty" bson:"homeAddress,omitempty"`
 	Phone             string `json:"phone,omitempty" bson:"phone,omitempty"`
 	GroupId           bson.ObjectId `json:"groupId,omitempty" bson:"groupId,omitempty"`
 	IsGroupLocked     bool `json:"isGroupLocked,omitempty" bson:"isGroupLocked,omitempty"`
