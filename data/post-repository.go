@@ -465,7 +465,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2.5 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
-			options = append(options, bson.M{"groupId" : bson.ObjectIdHex(result.GroupId)});
+			options = append(options, bson.M{"groupId" : result.GroupId});
 		}
 
 		if(homeLat > 0 && homeLng > 0) {
