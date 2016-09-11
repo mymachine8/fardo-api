@@ -134,6 +134,8 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	var lat, lng float64;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	homeLat, _ := strconv.ParseFloat(r.URL.Query().Get("homeLat"), 64)
+	homeLng, _ := strconv.ParseFloat(r.URL.Query().Get("homeLng"), 64)
 	groupId := r.URL.Query().Get("groupId");
 	layout := "2006-01-02T15:04:05.000Z"
 	last_updated, _ := time.Parse(
@@ -145,7 +147,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated, groupId);
+	result, e := data.GetMyCirclePosts(token, lat, lng,homeLat, homeLng, last_updated, groupId);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return

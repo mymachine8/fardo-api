@@ -432,7 +432,7 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 45000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
+func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, homeLng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
 	context := common.NewContext()
 	c := context.DbCollection("posts")
 	defer context.Close()
@@ -451,7 +451,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 
 	if (len(groupId) > 0) {
 		params := make(map[string]interface{})
-		params["groupId"] = result.GroupId;
+		params["groupId"] = bson.ObjectIdHex(groupId);
 		params["createdOn"] = bson.M{"$gt": lastUpdated}
 		err = c.Find(params).Limit(50).Sort("-score").All(&posts);
 		params["createdOn"] = bson.M{"$lt": lastUpdated}
@@ -465,7 +465,14 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2.5 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
-			options = append(options, bson.M{"groupId" : result.GroupId});
+			options = append(options, bson.M{"groupId" : bson.ObjectIdHex(result.GroupId)});
+		}
+
+		if(homeLat > 0 && homeLng > 0) {
+			log.Print(homeLat)
+			log.Print(homeLng)
+			homeLatLng := [2]float64{homeLng, homeLat}
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
 
 		log.Print(options)
@@ -480,15 +487,10 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	}
 
 	for index, _ := range posts {
-		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
-			posts[index].PlaceName = posts[index].GroupName;
-			posts[index].PlaceType = posts[index].GroupCategoryName;
-		} else {
-			posts[index].PlaceName = posts[index].Locality;
-			posts[index].PlaceType = "location"
-		}
 		distance := common.DistanceLatLong(posts[index].Loc[1],lat, posts[index].Loc[0], lng)
-		if(distance < 500) {
+		if ((len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())) {
+			posts[index].Score += 0.1;
+		} else if(distance < 500) {
 			posts[index].Score += 0.1;
 		} else if(distance < 1000) {
 			posts[index].Score += 0.08;
@@ -496,7 +498,18 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 			posts[index].Score += 0.05;
 		} else if(distance < 2000) {
 			posts[index].Score += 0.02;
+		} else if(distance > 2600) {
+			posts[index].Score += 0.1;
 		}
+
+		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
+			posts[index].PlaceName = posts[index].GroupName;
+			posts[index].PlaceType = posts[index].GroupCategoryName;
+		} else {
+			posts[index].PlaceName = posts[index].Locality;
+			posts[index].PlaceType = "location"
+		}
+
 	}
 
 	sort.Sort(models.ScoreSorter(posts))
