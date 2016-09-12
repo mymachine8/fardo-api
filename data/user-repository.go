@@ -299,6 +299,47 @@ func CalculateUserScore(post models.Post, actionType ActionType) {
 	}
 }
 
+func SetUserFeedback(token string, content string, phone string, email string) error {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_feedback")
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var user models.User;
+
+	err := userCol.Find(bson.M{"token": token}).One(&user)
+
+	if(err != nil) {
+		return err;
+	}
+
+	params := bson.M{};
+
+	params["_id"] = bson.NewObjectId()
+	params["userId"] = user.Id;
+	params["content"] = content;
+	params["createdOn"] = time.Now().UTC();
+
+	if(len(phone) > 0 ) {
+		params["phone"] = phone;
+	}
+
+	if(len(email) > 0) {
+		params["email"] = email;
+	}
+
+	err = c.Insert(params)
+
+	if (err != nil) {
+		log.Print(err.Error())
+	}
+
+	return err
+}
+
 func postCreateScore() int {
 	return 10;
 }

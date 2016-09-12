@@ -60,6 +60,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/comments/:id/undo-upvote", undoUpvoteCommentHandler);
 	r.PUT("/api/comments/:id/undo-downvote", undoDownvoteCommentHandler);
 	r.POST("/api/posts", createPostHandler);
+	r.POST("/api/feedback", submitFeedbackHandler);
 
 	//----------------  End of main endpoints -----------------------
 
@@ -100,7 +101,6 @@ func InitRoutes() http.Handler {
 	r.GET("/api/compute-score", groupTrendingScore);
 
 
-
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://fardo.krishnakommanapalli.in", "http://localhost:9003"},
 		AllowCredentials: true,
@@ -120,13 +120,12 @@ func helloWorldHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 func groupTrendingScore(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	err := data.CalculatePlacesTrendingScore();
 
-	if(err!= nil) {
+	if (err != nil) {
 		log.Print(err.Error())
 	}
 
 	rw.Write(common.SuccessResponseJSON("DONE"));
 }
-
 
 func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
@@ -147,7 +146,7 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token, lat, lng,homeLat, homeLng, last_updated, groupId);
+	result, e := data.GetMyCirclePosts(token, lat, lng, homeLat, homeLng, last_updated, groupId);
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
@@ -696,8 +695,8 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 func updateUserHomeLocationHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var body struct {
 		HomeAddress string `json:"homeAddress"`
-		Lat     float64 `json:"lat,omitempty"`
-		Lng     float64 `json:"lng,omitempty"`
+		Lat         float64 `json:"lat,omitempty"`
+		Lng         float64 `json:"lng,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&body)
 
@@ -1146,6 +1145,31 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 		writeErrorResponse(rw, r, p, subCategories, http.StatusInternalServerError, err);
 		return
 	}
+}
+
+func submitFeedbackHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var feedback struct {
+		Phone string `json:"phone,omitempty" bson:"phone,omitempty"`
+		Email string `json:"email,omitempty" bson:"email,omitempty"`
+		Content string `json:"content,omitempty" bson:"content,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&feedback)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	err = data.SetUserFeedback(token, feedback.Content, feedback.Phone, feedback.Email);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
 }
 
 func writeErrorResponse(rw http.ResponseWriter, r *http.Request, p httprouter.Params, body interface{}, statusCode int, err error) {
