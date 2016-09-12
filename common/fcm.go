@@ -383,8 +383,14 @@ func (this *FcmClient) SetCondition(condition string) *FcmClient {
 	return this
 }
 
-func SendUpvoteNotification(post models.Post) {
+func SendUpvoteNotification(userId string, post models.Post) {
+
+	if(post.UserId.Hex() == userId) {
+		return;
+	}
+
 	token, err := findUserById(post.UserId.Hex());
+
 	if (err != nil) {
 		log.Print(err.Error())
 	}
@@ -428,7 +434,12 @@ func SendUpvoteNotification(post models.Post) {
 	sendNotification(ids, message, notificationData);
 }
 
-func SendCommentUpvoteNotification(comment models.Comment, post models.Post) {
+func SendCommentUpvoteNotification(userId string, comment models.Comment, post models.Post) {
+
+	if(comment.UserId.Hex() == userId) {
+		return;
+	}
+
 	token, err := findUserById(comment.UserId.Hex());
 	if (err != nil) {
 		return;
@@ -479,6 +490,20 @@ func findUserById(userId string) (user models.User, err error) {
 	return
 }
 
+func GetCommentsForPost(postId string) (comments []models.Comment, err error) {
+	context := NewContext()
+	defer context.Close()
+	c := context.DbCollection("comments")
+
+	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&comments)
+
+	if (comments == nil) {
+		comments = []models.Comment{}
+	}
+
+	return
+}
+
 func findNearByUsers(lat float64, lng float64) (users []models.User, err error) {
 	context := NewContext()
 	defer context.Close()
@@ -492,6 +517,7 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 }
 
 func SendCommentNotification(post models.Post, comment models.Comment) {
+
 	if (post.UserId == comment.UserId) {
 		return;
 	}
@@ -502,7 +528,37 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		return;
 	}
 
-	data := map[string]string{
+	comments, e := GetCommentsForPost(post.Id.Hex())
+
+	if(e != nil) {
+		return;
+	}
+
+	var userIds []bson.ObjectId;
+	for i :=0 ; i< len(comments) ; i++ {
+		userIds = append(userIds, comments[i].UserId)
+	}
+
+	options := bson.M {}
+
+	options["$in"] = userIds;
+
+	context := NewContext()
+	defer context.Close()
+	c := context.DbCollection("users")
+
+	var users []models.User
+	err = c.Find(options).All(&users);
+
+	var fcmIds []string
+
+	for i:=0;i<len(users);i++ {
+		fcmIds = append(fcmIds, users[i].FcmToken)
+	}
+
+
+
+	notficationData := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
@@ -522,19 +578,46 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	var content string;
 
-	if (len(post.Content) > 20) {
-		content = post.Content[0:20]
+	if (len(post.Content) > 15) {
+		content = post.Content[0:15]
 		content += "..."
 	} else {
 		content = post.Content
 	}
 
-	message := "Someone commented on your post \"" + content + "\"";
+	var commentContent string;
+
+	if (len(comment.Content) > 20) {
+		commentContent = comment.Content[0:20]
+		commentContent += "..."
+	} else {
+		commentContent = comment.Content
+	}
+
+	message := "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
+
+	sendNotification(fcmIds, message, notficationData);
+
+	for i:=0;i<len(users);i++ {
+		fcmIds = append(fcmIds, users[i].FcmToken)
+	}
+
+	found := false;
+	for i:=0;i<len(users);i++ {
+		if(users[i].Id.Hex() == user.Id.Hex()) {
+			found = true;
+		}
+	}
+
+	if (found) {
+		return;
+	}
 
 	ids := []string{user.FcmToken}
 
-	sendNotification(ids, message, data);
+	message = "Someone commented \"" + commentContent + "\"" + " on your post \"" + content + "\"";
 
+	sendNotification(ids, message, notficationData);
 }
 
 func SendNearByNotification(post models.Post) {

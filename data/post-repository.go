@@ -302,7 +302,7 @@ func UpvotePost(token string, id string, undo bool) (err error) {
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionUpvote);
-		go checkVoteCount(id, true);
+		go checkVoteCount(result.Id.Hex(), id, true);
 		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "post");
 	}
 	return
@@ -332,7 +332,7 @@ func DownvotePost(token string, id string, undo bool) (err error) {
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionDownvote);
-		go checkVoteCount(id, false);
+		go checkVoteCount(result.Id.Hex(), id, false);
 		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
 	}
 	return
@@ -932,7 +932,7 @@ func UpvoteComment(token string, id string, undo bool) (err error) {
 			"upvotes": step,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
-	go checkCommentVoteCount(id, true);
+	go checkCommentVoteCount(result.Id.Hex(), id, true);
 	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "comment");
 	return
 }
@@ -959,23 +959,23 @@ func DownvoteComment(token string, id string, undo bool) (err error) {
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 
-	go checkCommentVoteCount(id, false);
+	go checkCommentVoteCount(result.Id.Hex(), id, false);
 	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "comment");
 	return
 }
 
-func checkCommentVoteCount(id string, isUpvote bool) (err error) {
+func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) {
 	comment, err := findCommentById(id);
 	votes := comment.Upvotes - comment.Downvotes;
 
 	if (isUpvote) {
-		if (comment.Upvotes == 1 || common.DivisbleByPowerOf2(comment.Upvotes)) {
+		if (comment.Upvotes == 1 || comment.Upvotes == 4 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
 			var post models.Post
 			post, err = findPostById(comment.PostId.Hex());
 			if (err != nil) {
 				return;
 			}
-			common.SendCommentUpvoteNotification(comment, post);
+			common.SendCommentUpvoteNotification(userId, comment, post);
 		}
 	}
 
@@ -987,13 +987,13 @@ func checkCommentVoteCount(id string, isUpvote bool) (err error) {
 	return;
 }
 
-func checkVoteCount(id string, isUpvote bool) (err error) {
+func checkVoteCount(userId string, id string, isUpvote bool) (err error) {
 	post, err := findPostById(id);
 	votes := post.Upvotes - post.Downvotes;
 
 	if (isUpvote) {
-		if (post.Upvotes == 1 || common.DivisbleByPowerOf2(post.Upvotes)) {
-			common.SendUpvoteNotification(post);
+		if (post.Upvotes == 1 || post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
+			common.SendUpvoteNotification(userId, post);
 		}
 	}
 
