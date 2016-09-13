@@ -69,7 +69,14 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, dec);
+		var fileType string
+		if(len(post.ImageType) > 0) {
+			fileType = post.ImageType
+		} else {
+			fileType = "jpeg"
+		}
+
+		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, fileType, dec);
 
 		if (err != nil) {
 			return post, models.FardoError{"Insert Post Image Error: " + err.Error()}
@@ -237,7 +244,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, dec);
+		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, "jpeg", dec);
 
 		if (err != nil) {
 			return "", models.FardoError{"Insert Post Image Error: " + err.Error()}
@@ -429,7 +436,7 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 		z = votes * -1;
 	}
 
-	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 45000;
+	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 40000;
 }
 
 func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, homeLng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {

@@ -99,7 +99,7 @@ func CreateGroup(group models.Group) (string, error) {
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-		res, err := common.SendItemToCloudStorage(common.GroupImage, fileName, dec);
+		res, err := common.SendItemToCloudStorage(common.GroupImage, fileName,"jpeg", dec);
 
 		if (err != nil) {
 			return "", models.FardoError{"Insert Group Image Error: " + err.Error()}
@@ -165,7 +165,7 @@ func UpdateGroupImage(id string, imageData string) error {
 
 	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
-	res, err := common.SendItemToCloudStorage(common.GroupImage, fileName, dec);
+	res, err := common.SendItemToCloudStorage(common.GroupImage, fileName,"jpeg", dec);
 
 	if (err != nil) {
 		return models.FardoError{"Insert Post Image Error: " + err.Error()}

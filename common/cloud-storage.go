@@ -65,20 +65,21 @@ func getBucketName(bucketType BucketType) string {
 	return "zing-post-images"
 }
 
-func SendItemToCloudStorage(bucketType BucketType, fileName string,dec io.Reader) (string, error) {
+func SendItemToCloudStorage(bucketType BucketType, fileName string, fileType string, dec io.Reader) (string, error) {
 	// Insert an object into a bucket.
 
 	obj := getBucket(bucketType).Object(fileName);
 	w := obj.NewWriter(context.Background());
-	w.ContentType = "image/jpeg"
+	w.ContentType = "image/"
+	w.ContentType += fileType
 	w.ACL = []storage.ACLRule{{Entity: storage.AllUsers, Role: storage.RoleReader}}
-	_,err := io.Copy(w, dec);
+	_, err := io.Copy(w, dec);
 	if (err != nil) {
 		slack.Send(slack.ErrorLevel, err.Error());
 		return "", err
 	}
 	err = w.Close();
-	if(err != nil) {
+	if (err != nil) {
 		slack.Send(slack.ErrorLevel, err.Error());
 		return "", err
 	}
