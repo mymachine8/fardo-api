@@ -1097,7 +1097,7 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON(result.Token));
+	rw.Write(common.SuccessResponseJSON(result));
 }
 
 func getUserInfoHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
