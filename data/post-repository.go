@@ -459,6 +459,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 	if (len(groupId) > 0) {
 		params := make(map[string]interface{})
 		params["groupId"] = bson.ObjectIdHex(groupId);
+		params["active"] = true;
 		params["createdOn"] = bson.M{"$gt": lastUpdated}
 		err = c.Find(params).Limit(50).Sort("-score").All(&posts);
 		params["createdOn"] = bson.M{"$lt": lastUpdated}
@@ -484,8 +485,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		log.Print(options)
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}}).Limit(50).Sort("-score").All(&posts);
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}}).Limit(50).Sort("-score").All(&prevPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "active" : true}).Limit(50).Sort("-score").All(&posts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "active" : true}).Limit(50).Sort("-score").All(&prevPosts);
 	}
 
 	log.Print(len(prevPosts))
@@ -709,7 +710,7 @@ func getNearByPopularPosts(lat float64, lng float64) (posts[]models.Post, err er
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }},
-		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+		"createdOn": bson.M{"$gt": then}, "active" : true}).Sort("-score").All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -725,7 +726,7 @@ func getGlobalPopularPosts() (posts[]models.Post, err error) {
 	then := now.AddDate(0, -7, 0)
 	c := context.DbCollection("posts")
 	err = c.Find(bson.M{
-		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+		"createdOn": bson.M{"$gt": then}, "active" : true}).Sort("-score").All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -743,7 +744,7 @@ func getPopularPostsAdminArea(lat float64, lng float64) (posts[]models.Post, err
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 300 / 3963.2} }},
-		"createdOn": bson.M{"$gt": then}}).Sort("-score").All(&posts);
+		"createdOn": bson.M{"$gt": then}, "active" : true}).Sort("-score").All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
