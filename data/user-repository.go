@@ -6,6 +6,7 @@ import (
 	"github.com/mymachine8/fardo-api/common"
 	"log"
 	"time"
+	"gopkg.in/mgo.v2"
 )
 
 type ActionType int8
@@ -52,15 +53,22 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	user.ModifiedOn = time.Now().UTC()
 	user.Token = bson.NewObjectId().Hex();
 
-	changeInfo, err := c.Upsert(bson.M{"imei": user.Imei}, user);
+	err := c.Find(bson.M{"imei": user.Imei}).One(&user)
+
+	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
+		user.Id = bson.NewObjectId()
+		err = c.Insert(&user)
+		if (err != nil) {
+			return user, err
+		}
+		return user, err
+	} else if(err!= nil){
+		return user, err
+	}
 
 	if(err != nil) {
 		return user, err;
 	}
-
-	id, _ := changeInfo.UpsertedId.(bson.ObjectId)
-
-	user.Id = id;
 
 	return user, err;
 }
