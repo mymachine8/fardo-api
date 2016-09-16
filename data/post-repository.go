@@ -1015,7 +1015,7 @@ func checkVoteCount(userId string, id string, isUpvote bool) (err error) {
 
 func ReportSpam(id string, reason string) (err error) {
 	spamReason := bson.M{
-		"commentPostIds": reason,
+		"spamReasons": reason,
 	}
 	context := common.NewContext()
 	defer context.Close()

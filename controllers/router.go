@@ -62,6 +62,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/comments/:id/undo-downvote", undoDownvoteCommentHandler);
 	r.POST("/api/posts", createPostHandler);
 	r.POST("/api/feedback", submitFeedbackHandler);
+	r.POST("/api/report-spam", reportSpamHandler);
 
 	//----------------  End of main endpoints -----------------------
 
@@ -1174,6 +1175,28 @@ func submitFeedbackHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	token := common.GetAccessToken(r);
 
 	err = data.SetUserFeedback(token, feedback.Content, feedback.Phone, feedback.Email);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
+}
+
+func reportSpamHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var feedback struct {
+		PostId string `json:"postId,omitempty" bson:"postId,omitempty"`
+		Content string `json:"content,omitempty" bson:"content,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&feedback)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	err = data.ReportSpam(feedback.PostId, feedback.Content);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
