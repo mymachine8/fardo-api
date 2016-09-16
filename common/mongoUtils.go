@@ -32,7 +32,7 @@ func createDbSession() {
 		Addrs:    []string{AppConfig.MongoDBHost},
 		Username: AppConfig.DBUser,
 		Password: AppConfig.DBPwd,
-		Timeout:  30 * time.Second,
+		Timeout:  10 * time.Second,
 	})
 	if err != nil {
 		slack.Send(slack.PanicLevel, err.Error());

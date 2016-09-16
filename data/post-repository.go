@@ -1065,7 +1065,7 @@ func GetAllComments(token string, postId string) (comments []models.Comment, err
 	defer context.Close()
 	c := context.DbCollection("comments")
 
-	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId)}).All(&comments)
+	err = c.Find(bson.M{"postId": bson.ObjectIdHex(postId), "isActive": true}).All(&comments)
 
 	if (comments == nil) {
 		comments = []models.Comment{}
