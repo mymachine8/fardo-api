@@ -16,7 +16,7 @@ GOOS=linux GOARCH=amd64 go build -v -o $TMP/app ./app
 # [START tar]
 # Add the app binary
 
-killall app 2>/dev/null
+killall app || true
 
 rm -rf /app/app
 
