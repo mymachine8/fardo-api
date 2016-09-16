@@ -60,7 +60,7 @@ var AppConfig configuration
 func initConfig() {
 
 	var err error
-	AppConfig.MongoDBHost = "104.155.206.253"
+	AppConfig.MongoDBHost = "localhost:27017"
 	AppConfig.DBUser = ""
 	AppConfig.DBPwd = ""
 	AppConfig.Database = "zing-prod"

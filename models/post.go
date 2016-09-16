@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	NEGATIVE_VOTES_LIMIT = 2;
+	NEGATIVE_VOTES_LIMIT = 4;
 	SPAM_COUNT_LIMIT = 1;
 )
 

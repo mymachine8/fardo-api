@@ -796,7 +796,7 @@ func GetRecentUserPosts(token string, contentType string) (posts []models.Post, 
 		postIds = userPosts.CommentPostIds;
 	}
 
-	err = postCol.Find(bson.M{"_id": bson.M{"$in": postIds}}).All(&posts)
+	err = postCol.Find(bson.M{"_id": bson.M{"$in": postIds}, "isActive" : true}).All(&posts)
 
 	if (posts == nil) {
 		posts = []models.Post{}
@@ -822,7 +822,7 @@ func GetGroupPosts(token string, groupId string) (posts []models.Post, err error
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId)}).All(&posts)
+	err = c.Find(bson.M{"groupId": bson.ObjectIdHex(groupId), "isActive" : true}).All(&posts)
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -1006,7 +1006,7 @@ func checkVoteCount(userId string, id string, isUpvote bool) (err error) {
 	}
 
 	if (!isUpvote) {
-		if (votes >= models.NEGATIVE_VOTES_LIMIT) {
+		if (votes <= models.NEGATIVE_VOTES_LIMIT) {
 			err = SuspendPost(id);
 		}
 	}
