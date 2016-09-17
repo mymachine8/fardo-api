@@ -60,6 +60,11 @@ func addIndexes() {
 		Bits: 26,
 	}
 
+	groupLocationIndex := mgo.Index{
+		Key: []string{"$2d:loc"},
+		Bits: 26,
+	}
+
 	currentPostTTL := mgo.Index{
 		Key:         []string{"createdOn"},
 		Unique:      false,
@@ -85,6 +90,10 @@ func addIndexes() {
 		log.Print("[addIndexes]: %s\n", err.Error())
 	}
 	err = groupCol.EnsureIndex(groupIndex)
+	if err != nil {
+		log.Print("[addIndexes]: %s\n", err.Error())
+	}
+	err = groupCol.EnsureIndex(groupLocationIndex)
 	if err != nil {
 		log.Print("[addIndexes]: %s\n", err.Error())
 	}

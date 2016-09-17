@@ -48,6 +48,15 @@ func idInGroups(id string, list []models.GroupLite) bool {
 	return false
 }
 
+func idInGroupsFull(id string, list []models.Group) bool {
+	for _, b := range list {
+		if b.Id.Hex() == id {
+			return true
+		}
+	}
+	return false
+}
+
 func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
@@ -68,17 +77,33 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	return
 }
 
-func GetNearByGroups(lat float64, lng float64,limit int64) (groups []models.Group, err error) {
+func GetNearByGroups(lat float64, lng float64,limit int) (groups []models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 
 	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
 	query := c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}});
+	bson.M{"$near": currentLatLng, "$maxDistance": 50/111.12 },})
+	count := 0
 	if(limit > 0) {
-		err = query.Limit(int(limit)).All(&groups);
+		var finalGroups []models.Group
+		err = query.Limit(60).All(&finalGroups);
+		for i:=0;i<len(finalGroups) && count < limit;i++ {
+			if(finalGroups[i].CategoryName!= "Colleges" && finalGroups[i].CategoryName!= "Offices") {
+				groups = append(groups, finalGroups[i])
+				count++
+			}
+		}
+		remaining := limit - len(groups);
+		count := 0
+		for i:=0;i<len(finalGroups) && count < remaining;i++ {
+			if(!idInGroupsFull(finalGroups[i].Id.Hex(), groups)) {
+				groups = append(groups, finalGroups[i])
+				count++;
+			}
+		}
+
 	} else {
 		err = query.All(&groups);
 	}
@@ -285,7 +310,6 @@ func GetLabelById(id string) (label models.Label, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("labels")
-
 	err = c.FindId(bson.ObjectIdHex(id)).One(&label)
 	return
 }

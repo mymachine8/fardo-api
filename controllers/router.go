@@ -183,10 +183,10 @@ func popularPostsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.P
 func GetNearByGroupsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var err error;
 	var lat, lng float64;
-	var limit int64;
+	var limit int;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	limit, _ = strconv.ParseInt(r.URL.Query().Get("limit"), 10, 64)
+	limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
