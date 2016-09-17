@@ -403,6 +403,7 @@ func SendUpvoteNotification(userId string, post models.Post) {
 		"downvotes" : strconv.Itoa(post.Downvotes),
 		"content" : post.Content,
 		"replyCount" : strconv.Itoa(post.ReplyCount),
+		"voteClicked" : post.VoteClicked,
 		"placeName" : post.PlaceName,
 		"placeType" : post.PlaceType,
 		"imageWidth" : strconv.Itoa(post.ImageWidth),

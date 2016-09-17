@@ -306,7 +306,7 @@ func UpvotePost(token string, id string, undo bool) (err error) {
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionUpvote);
-		go checkVoteCount(result.Id.Hex(), id, true);
+		go checkVoteCount(result.Token, result.Id.Hex(), id, true);
 		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "post");
 	}
 	return
@@ -336,7 +336,7 @@ func DownvotePost(token string, id string, undo bool) (err error) {
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionDownvote);
-		go checkVoteCount(result.Id.Hex(), id, false);
+		go checkVoteCount(result.Token, result.Id.Hex(), id, false);
 		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
 	}
 	return
@@ -996,13 +996,15 @@ func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) 
 	return;
 }
 
-func checkVoteCount(userId string, id string, isUpvote bool) (err error) {
+func checkVoteCount(token string, userId string, id string, isUpvote bool) (err error) {
 	post, err := findPostById(id);
 	votes := post.Upvotes - post.Downvotes;
 
 	if (isUpvote) {
 		if (post.Upvotes == 1 || post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
-			common.SendUpvoteNotification(userId, post);
+			posts := []models.Post {post}
+			posts = addUserVotes(token, posts);
+			common.SendUpvoteNotification(userId, posts[0]);
 		}
 	}
 
