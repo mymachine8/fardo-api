@@ -81,10 +81,12 @@ func GetNearByGroups(lat float64, lng float64,limit int) (groups []models.Group,
 	context := common.NewContext()
 	defer context.Close()
 
+	maxDistance := float64(50/111.12)
+
 	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
 	query := c.Find(bson.M{"loc":
-	bson.M{"$near": currentLatLng, "$maxDistance": 50/111.12 },})
+	bson.M{"$near": currentLatLng, "$maxDistance": maxDistance },})
 	count := 0
 	if(limit > 0) {
 		var finalGroups []models.Group
