@@ -35,9 +35,6 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	}
 	//TODO: Have to revisit this code
 	post.UserId = result.Id;
-	if (!post.IsAnonymous) {
-		post.Username = result.Username;
-	}
 	if (post.IsGroup) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
@@ -866,6 +863,10 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	comment.PostId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
+
+	if (!comment.IsAnonymous) {
+		comment.Username = result.Username;
+	}
 
 	err = c.Insert(&comment)
 
