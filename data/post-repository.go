@@ -238,6 +238,8 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 		}
 	}
 
+	post.Id = bson.NewObjectId();
+
 	if (len(post.ImageData) > 0 ) {
 		fileName := "post_" + post.Id.Hex();
 		imageReader := strings.NewReader(post.ImageData);
@@ -258,8 +260,6 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	defer context.Close()
 	c := context.DbCollection("posts")
 
-	obj_id := bson.NewObjectId()
-	post.Id = obj_id
 	post.IsActive = true;
 	post.CreatedOn = time.Now().UTC();
 	post.Score = redditPostRankingAlgorithm(post);
@@ -267,7 +267,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	err = c.Insert(&post)
 	go addToCurrentPosts(post);
 
-	return obj_id.Hex(), err
+	return post.Id.Hex(), err
 }
 
 func addToCurrentPosts(post models.Post) {
