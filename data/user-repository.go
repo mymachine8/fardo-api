@@ -52,6 +52,7 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	user.CreatedOn = time.Now().UTC()
 	user.ModifiedOn = time.Now().UTC()
 	user.Token = bson.NewObjectId().Hex();
+	user.Score = 100;
 
 	err := c.Find(bson.M{"imei": user.Imei}).One(&user)
 
