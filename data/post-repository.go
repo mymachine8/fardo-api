@@ -457,13 +457,20 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 	var prevPosts []models.Post;
 
 	if (len(groupId) > 0) {
-		params := make(map[string]interface{})
-		params["groupId"] = bson.ObjectIdHex(groupId);
-		params["isActive"] = true;
-		params["createdOn"] = bson.M{"$gt": lastUpdated}
-		err = c.Find(params).Limit(50).Sort("-score").All(&posts);
-		params["createdOn"] = bson.M{"$lt": lastUpdated}
-		err = c.Find(params).Limit(50).Sort("-score").All(&prevPosts);
+		options := []bson.M{}
+		options = append(options, bson.M{"groupId" : result.GroupId});
+		if (len(result.GroupId) > 0) {
+			options = append(options, bson.M{"groupId" : result.GroupId});
+		}
+		if(homeLat > 0 && homeLng > 0) {
+			log.Print(homeLat)
+			log.Print(homeLng)
+			homeLatLng := [2]float64{homeLng, homeLat}
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
+		}
+
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 
 	} else {
 		currentLatLng := [2]float64{lng, lat}
@@ -477,19 +484,14 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		}
 
 		if(homeLat > 0 && homeLng > 0) {
-			log.Print(homeLat)
-			log.Print(homeLng)
 			homeLatLng := [2]float64{homeLng, homeLat}
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
-
-		log.Print(options)
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 	}
 
-	log.Print(len(prevPosts))
 	for index, _ := range prevPosts {
 		posts = append(posts, prevPosts[index]);
 	}
