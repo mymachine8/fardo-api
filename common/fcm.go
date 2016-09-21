@@ -559,7 +559,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 
 
-	notficationData := map[string]string{
+	notificationData := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
@@ -597,7 +597,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	message := "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
 
-	sendNotification(fcmIds, message, notficationData);
+	sendNotification(fcmIds, message, notificationData);
 
 	for i:=0;i<len(users);i++ {
 		fcmIds = append(fcmIds, users[i].FcmToken)
@@ -618,7 +618,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	message = "Someone commented \"" + commentContent + "\"" + " on your post \"" + content + "\"";
 
-	sendNotification(ids, message, notficationData);
+	sendNotification(ids, message, notificationData);
 }
 
 func SendNearByNotification(post models.Post) {

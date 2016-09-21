@@ -262,6 +262,35 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 	return !isNear, err
 }
 
+func RemoveUserGroup(token string) (error) {
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err := userCol.Update(bson.M{"token": token},
+		bson.M{"$unset": bson.M{
+			"groupId": 1,
+		}})
+
+	return err
+}
+
+func RemoveHomeLocation(token string) (error) {
+
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err := userCol.Update(bson.M{"token": token},
+		bson.M{"$unset": bson.M{
+			"homeLoc": 1,
+			"homeAddress" : 1,
+		}})
+
+	return err
+}
+
 func GetUserInfo(token string) (user models.User, err error){
 
 	userContext := common.NewContext()

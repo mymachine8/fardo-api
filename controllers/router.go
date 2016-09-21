@@ -34,10 +34,12 @@ func InitRoutes() http.Handler {
 	r.POST("/api/users", memberRegisterHandler);
 	r.GET("/api/users", getUserInfoHandler);
 	r.PUT("/api/users/group", updateUserGroupHandler);
+	r.PUT("/api/users/remove-group", removeUserGroupHandler);
 	r.PUT("/api/users/username", updateUsernameHandler);
 	r.GET("/api/users/username-availability", checkUsernameAvailabilityHandler);
 	r.PUT("/api/users/phone", updateUserPhoneHandler);
 	r.PUT("/api/users/home", updateUserHomeLocationHandler);
+	r.PUT("/api/users/remove-home", removeHomeLocationHandler);
 	r.GET("/api/users/score", getUserScoreHandler);
 	r.PUT("/api/users/lock-group", lockUserGroupHandler);
 	r.PUT("/api/users/unlock-group", unlockUserGroupHandler);
@@ -586,6 +588,34 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	rw.Write(common.SuccessResponseJSON(response));
 }
 
+func removeUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+
+	err := data.RemoveUserGroup(token);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
+}
+
+func removeHomeLocationHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+
+	err := data.RemoveHomeLocation(token);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
+}
+
 func lockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	token := common.GetAccessToken(r);
@@ -596,7 +626,7 @@ func lockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON("SUCCESS"));
+	rw.Write(common.SuccessResponseJSON("success"));
 }
 
 func unlockUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
