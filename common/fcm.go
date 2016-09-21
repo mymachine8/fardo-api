@@ -395,6 +395,14 @@ func SendUpvoteNotification(userId string, post models.Post) {
 		log.Print(err.Error())
 	}
 
+	if(len(post.GroupId) > 0) {
+		post.PlaceType = post.GroupCategoryName;
+		post.PlaceName = post.GroupName;
+	} else {
+		post.PlaceType = "location";
+		post.PlaceName = post.Locality;
+	}
+
 	notificationData := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": post.Id.Hex(),
@@ -416,8 +424,8 @@ func SendUpvoteNotification(userId string, post models.Post) {
 
 	var content string;
 
-	if (len(post.Content) > 30) {
-		content = post.Content[0:30]
+	if (len(post.Content) > 35) {
+		content = post.Content[0:35]
 		content += "..."
 	} else {
 		content = post.Content
@@ -446,6 +454,14 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 		return;
 	}
 
+	if(len(post.GroupId) > 0) {
+		post.PlaceType = post.GroupCategoryName;
+		post.PlaceName = post.GroupName;
+	} else {
+		post.PlaceType = "location";
+		post.PlaceName = post.Locality;
+	}
+
 	data := map[string]string{
 		"id": bson.NewObjectId().Hex(),
 		"postId": comment.PostId.Hex(),
@@ -467,8 +483,8 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 
 	var content string;
 
-	if (len(comment.Content) > 30) {
-		content = comment.Content[0:30]
+	if (len(comment.Content) > 35) {
+		content = comment.Content[0:35]
 		content += "..."
 	} else {
 		content = comment.Content
@@ -513,7 +529,10 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 	currentLatLng := [2]float64{lng, lat}
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 0.05 / 3963.2} }}}).All(&users);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 0.1 / 3963.2} }}}).All(&users);
+	if (users == nil) {
+		users = []models.User{}
+	}
 	return
 }
 
@@ -555,6 +574,14 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	for i:=0;i<len(users);i++ {
 		fcmIds = append(fcmIds, users[i].FcmToken)
+	}
+
+	if(len(post.GroupId) > 0) {
+		post.PlaceType = post.GroupCategoryName;
+		post.PlaceName = post.GroupName;
+	} else {
+		post.PlaceType = "location";
+		post.PlaceName = post.Locality;
 	}
 
 
@@ -625,6 +652,10 @@ func SendNearByNotification(post models.Post) {
 	users, err := findNearByUsers(post.Loc[1], post.Loc[0]);
 
 	if (err != nil) {
+		return;
+	}
+
+	if(len(users) == 0) {
 		return;
 	}
 
