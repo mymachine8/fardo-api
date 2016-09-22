@@ -70,7 +70,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
 
 		var fileType string
-		if(len(post.ImageType) > 0) {
+		if (len(post.ImageType) > 0) {
 			fileType = post.ImageType
 		} else {
 			fileType = "jpeg"
@@ -363,11 +363,24 @@ func SuspendComment(id string) (err error) {
 	defer context.Close()
 	c := context.DbCollection("comments")
 
+	if (err != nil) {
+		return
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
 			"isActive": false,
 			"modifiedOn": time.Now().UTC(),
 		}})
+
+	if (err == nil ) {
+		comment, errr := findCommentById(id);
+		if (errr != nil) {
+			return
+		}
+		go updateReplyCount(comment.PostId.Hex(), false);
+	}
+
 	return
 }
 
@@ -456,21 +469,24 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 	var prevPosts []models.Post;
 
+	var additionalPosts []models.Post;
+
 	if (len(groupId) > 0) {
 		options := []bson.M{}
 		options = append(options, bson.M{"groupId" : result.GroupId});
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
 		}
-		if(homeLat > 0 && homeLng > 0) {
-			log.Print(homeLat)
-			log.Print(homeLng)
+		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
+		if(len(posts) + len(prevPosts) < 75) {
+			err = c.Find(bson.M {"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true}).Limit(50).Sort("-score").All(&additionalPosts);
+		}
 
 	} else {
 		currentLatLng := [2]float64{lng, lat}
@@ -483,7 +499,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			options = append(options, bson.M{"groupId" : result.GroupId});
 		}
 
-		if(homeLat > 0 && homeLng > 0) {
+		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
@@ -496,19 +512,23 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		posts = append(posts, prevPosts[index]);
 	}
 
+	for index, _ := range additionalPosts {
+		posts = append(posts, additionalPosts[index]);
+	}
+
 	for index, _ := range posts {
-		distance := common.DistanceLatLong(posts[index].Loc[1],lat, posts[index].Loc[0], lng)
+		distance := common.DistanceLatLong(posts[index].Loc[1], lat, posts[index].Loc[0], lng)
 		if ((len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())) {
 			posts[index].Score += 0.1;
-		} else if(distance < 500) {
+		} else if (distance < 500) {
 			posts[index].Score += 0.1;
-		} else if(distance < 1000) {
+		} else if (distance < 1000) {
 			posts[index].Score += 0.08;
-		} else if(distance < 1500) {
+		} else if (distance < 1500) {
 			posts[index].Score += 0.05;
-		} else if(distance < 2000) {
+		} else if (distance < 2000) {
 			posts[index].Score += 0.02;
-		} else if(distance > 2600) {
+		} else if (distance > 2600) {
 			posts[index].Score += 0.1;
 		}
 
@@ -879,7 +899,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 		go addToRecentUserPosts(result.Id, comment.PostId, "comment");
 		post, err := findPostById(postId);
 		if (err == nil ) {
-			go updateReplyCount(postId);
+			go updateReplyCount(postId, true);
 			go common.SendCommentNotification(post, comment)
 		}
 	}
@@ -887,17 +907,22 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	return comment.Id.Hex(), err
 }
 
-func updateReplyCount(id string) (err error) {
+func updateReplyCount(id string, isIncrement bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
 
+	var step int
+	if (isIncrement) {
+		step = 1;
+	} else {
+		step = -1;
+	}
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
-			"replyCount": 1,
+			"replyCount": step,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
-
 	return
 }
 
@@ -1007,7 +1032,7 @@ func checkVoteCount(token string, userId string, id string, isUpvote bool) (err 
 
 	if (isUpvote) {
 		if (post.Upvotes == 1 || post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
-			posts := []models.Post {post}
+			posts := []models.Post{post}
 			posts = addUserVotes(token, posts);
 			common.SendUpvoteNotification(userId, posts[0]);
 		}
