@@ -174,8 +174,20 @@ func UpdateGroupLogo(id string, groupLogo string) error {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
-	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
-		bson.M{"$set": bson.M{"logoData": groupLogo}});
+	logoId := bson.NewObjectId()
+	fileName := "group_logo_" + logoId.Hex();
+	imageReader := strings.NewReader(groupLogo);
+
+	dec := base64.NewDecoder(base64.StdEncoding, imageReader);
+
+	res, err := common.SendItemToCloudStorage(common.GroupLogo, fileName,"jpeg", dec);
+
+	if (err != nil) {
+		return models.FardoError{"Insert Group Logo Error: " + err.Error()}
+	}
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{"logoUrl": res}});
 	return err
 }
 
@@ -193,7 +205,7 @@ func UpdateGroupImage(id string, imageData string) error {
 	res, err := common.SendItemToCloudStorage(common.GroupImage, fileName,"jpeg", dec);
 
 	if (err != nil) {
-		return models.FardoError{"Insert Post Image Error: " + err.Error()}
+		return models.FardoError{"Insert Group Image Error: " + err.Error()}
 	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
