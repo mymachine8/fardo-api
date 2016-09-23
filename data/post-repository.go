@@ -214,6 +214,13 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 
 	post.UserId = result.Id;
 
+	if(len(post.Username) > 0) {
+		isAvailable, errr := CheckUsernameAvailability(post.Username)
+		if(!isAvailable || errr !=nil) {
+			return  "", models.FardoError{"Username is not available"}
+		}
+	}
+
 	if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
