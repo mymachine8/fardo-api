@@ -13,13 +13,13 @@ import (
 )
 
 const (
-	PopularPostsLimit int = 10
+	PopularPostsLimit int = 100
 
-	LocalPercent = 5
+	LocalPercent = 40
 
-	AdminAreaPercent = 2
+	AdminAreaPercent = 20
 
-	GlobalPercent = 3
+	GlobalPercent = 40
 )
 
 func CreatePostUser(token string, post models.Post) (models.Post, error) {
