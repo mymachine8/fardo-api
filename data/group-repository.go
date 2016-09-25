@@ -250,6 +250,8 @@ func GetGroups(page int, groupParams models.Group) (groups []models.Group, err e
 		params["state"] = bson.RegEx{Pattern: groupParams.State, Options: "i"};
 	}
 
+	params["isActive"] = true;
+
 	err = c.Find(params).Sort("-createdOn").Skip(skip).Limit(20).All(&groups);
 	if (groups == nil) {
 		groups = []models.Group{}
@@ -263,7 +265,7 @@ func GetAllGroups(name string) (groups []models.Group, err error) {
 	c := context.DbCollection("groups")
 
 	name = "/" + name + "/";
-	err = c.Find(bson.M{"$text": bson.M{"$search": name}}).All(&groups)
+	err = c.Find(bson.M{"$text": bson.M{"$search": name}, "isActive" : true}).All(&groups)
 
 	if (groups == nil) {
 		groups = []models.Group{}
