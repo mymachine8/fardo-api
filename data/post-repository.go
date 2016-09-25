@@ -475,6 +475,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 	}
 
 	var prevPosts []models.Post;
+	var currentPosts []models.Post;
 
 	var additionalPosts []models.Post;
 
@@ -489,10 +490,18 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 		if(len(posts) + len(prevPosts) < 75) {
 			err = c.Find(bson.M {"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true}).Limit(50).Sort("-score").All(&additionalPosts);
+		}
+
+		for index, _ := range currentPosts {
+			posts = append(posts, currentPosts[index]);
+		}
+
+		for index, _ := range prevPosts {
+			posts = append(posts, prevPosts[index]);
 		}
 
 	} else {
@@ -513,10 +522,25 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
-	}
 
-	for index, _ := range prevPosts {
-		posts = append(posts, prevPosts[index]);
+		var count = 0;
+		for index, _ := range currentPosts {
+			if(!currentPosts[index].IsGroup || count < 5) {
+				posts = append(posts, currentPosts[index]);
+				if(currentPosts[index].IsGroup) {
+
+				}
+			}
+		}
+
+		count = 0;
+		for index, _ := range prevPosts {
+			if(!prevPosts[index].IsGroup || count < 8) {
+				posts = append(posts, prevPosts[index]);
+			} else {
+				count++;
+			}
+		}
 	}
 
 	for index, _ := range additionalPosts {

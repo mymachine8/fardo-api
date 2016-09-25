@@ -151,6 +151,14 @@ func UpdateGroup(id string, group models.Group) error {
 	defer context.Close()
 	c := context.DbCollection("groups")
 
+	category, errr := GetCategory(group.CategoryId.Hex());
+
+	if (errr != nil) {
+		return errr
+	}
+
+	group.CategoryName = category.Name
+
 	err := c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		group);
 	return err
