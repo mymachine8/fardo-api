@@ -888,9 +888,9 @@ func GetGroupPosts(token string, groupId string) (posts []models.Post, err error
 func GetCurrentPosts() (posts []models.PostLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("current_posts")
+	c := context.DbCollection("posts")
 
-	err = c.Find(nil).All(&posts)
+	err = c.Find(bson.M{"isActive": true}).All(&posts)
 
 	if (posts == nil) {
 		posts = []models.PostLite{}
