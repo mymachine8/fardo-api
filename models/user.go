@@ -33,7 +33,7 @@ type User struct {
 	GroupId           bson.ObjectId `json:"groupId,omitempty" bson:"groupId,omitempty"`
 	IsGroupLocked     bool `json:"isGroupLocked,omitempty" bson:"isGroupLocked,omitempty"`
 	IsActive          bool `bson:"isActive" json:"isActive"`
-	Role              string `bson:"role,omitempty"`
+	IsAdmin           bool `bson:"isAdmin" json:"isAdmin"`
 	CreatedOn         time.Time `bson:"createdOn" json:"-"`
 	ModifiedOn        time.Time `bson:"modifiedOn" json:"-"`
 }

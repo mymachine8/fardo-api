@@ -920,7 +920,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
 
-	if (!comment.IsAnonymous) {
+	if (!comment.IsAnonymous && !result.IsAdmin) {
 		comment.Username = result.Username;
 	}
 
