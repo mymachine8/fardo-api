@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"encoding/json"
-	"github.com/mymachine8/fardo-api/slack"
 )
 
 const (
@@ -167,8 +166,6 @@ func (this *FcmClient) sendOnce() (*FcmResponseStatus, error) {
 	fcmRespStatus := new(FcmResponseStatus)
 
 	bodyBuff, _ := json.Marshal(this.Message)
-
-	slack.Send(slack.ErrorLevel, bytes.NewBuffer(bodyBuff).String());
 
 	request, err := http.NewRequest("POST", fcmServerUrl, bytes.NewBuffer(bodyBuff))
 	request.Header.Set("Authorization", this.apiKeyHeader())
