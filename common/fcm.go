@@ -172,11 +172,13 @@ func (this *FcmClient) sendOnce() (*FcmResponseStatus, error) {
 		return fcmRespStatus, err
 	}
 
+	s := bytes.NewBuffer(jsonByte).String()
+
+	slack.Send(slack.ErrorLevel, s);
+
 	request, err := http.NewRequest("POST", fcmServerUrl, bytes.NewBuffer(jsonByte))
 	request.Header.Set("Authorization", this.apiKeyHeader())
 	request.Header.Set("Content-Type", "application/json")
-
-	fmt.Print(this.apiKeyHeader());
 
 	client := &http.Client{}
 	response, err := client.Do(request)
@@ -797,7 +799,6 @@ func sendNotification(fcmTokens []string, data map[string]string) {
 	if err == nil {
 		status.PrintResults()
 	} else {
-		slack.Send(slack.ErrorLevel, "FCM Error: " + err.Error())
 		fmt.Println("FCM Error: " + err.Error());
 	}
 }
