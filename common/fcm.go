@@ -166,17 +166,11 @@ func (this *FcmClient) sendOnce() (*FcmResponseStatus, error) {
 
 	fcmRespStatus := new(FcmResponseStatus)
 
-	jsonByte, err := this.Message.toJsonByte()
-	if err != nil {
-		fcmRespStatus.Ok = false
-		return fcmRespStatus, err
-	}
+	bodyBuff, _ := json.Marshal(this.Message)
 
-	s := bytes.NewBuffer(jsonByte).String()
+	slack.Send(slack.ErrorLevel, bytes.NewBuffer(bodyBuff).String());
 
-	slack.Send(slack.ErrorLevel, s);
-
-	request, err := http.NewRequest("POST", fcmServerUrl, bytes.NewBuffer(jsonByte))
+	request, err := http.NewRequest("POST", fcmServerUrl, bytes.NewBuffer(bodyBuff))
 	request.Header.Set("Authorization", this.apiKeyHeader())
 	request.Header.Set("Content-Type", "application/json")
 
