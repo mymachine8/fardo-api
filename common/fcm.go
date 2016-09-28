@@ -440,7 +440,9 @@ func SendUpvoteNotification(userId string, post models.Post) {
 
 	ids := []string{token.FcmToken}
 
-	sendNotification(ids, message, notificationData);
+	notificationData["message"] = message;
+
+	sendNotification(ids, notificationData);
 }
 
 func SendCommentUpvoteNotification(userId string, comment models.Comment, post models.Post) {
@@ -492,10 +494,11 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 
 	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment \"" + content + "\"";
 
+	data["message"] = message;
 
 	ids := []string{token.FcmToken}
 
-	sendNotification(ids, message, data);
+	sendNotification(ids, data);
 }
 
 func findUserById(userId string) (user models.User, err error) {
@@ -624,7 +627,9 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	message := "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
 
-	sendNotification(fcmIds, message, notificationData);
+	notificationData["message"] = message;
+
+	sendNotification(fcmIds, notificationData);
 
 	for i:=0;i<len(users);i++ {
 		fcmIds = append(fcmIds, users[i].FcmToken)
@@ -645,7 +650,9 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	message = "Someone commented \"" + commentContent + "\"" + " on your post \"" + content + "\"";
 
-	sendNotification(ids, message, notificationData);
+	notificationData["message"] = message;
+
+	sendNotification(ids, notificationData);
 }
 
 func SendNearByNotification(post models.Post) {
@@ -698,7 +705,9 @@ func SendNearByNotification(post models.Post) {
 		message = "Someone nearby posted \"" + content + "\"";
 	}
 
-	sendNotification(ids, message, data);
+	data["message"] = message;
+
+	sendNotification(ids, data);
 }
 
 func SendDeletePostNotification(post models.Post) {
@@ -726,7 +735,9 @@ func SendDeletePostNotification(post models.Post) {
 	message := "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
 	ids := []string{token.FcmToken}
 
-	sendNotification(ids, message, data);
+	data["message"] = message;
+
+	sendNotification(ids, data);
 }
 
 func GroupUnlockedNotification(user models.User) {
@@ -740,7 +751,9 @@ func GroupUnlockedNotification(user models.User) {
 
 	ids := []string{user.FcmToken}
 
-	sendNotification(ids, message, data);
+	data["message"] = message;
+
+	sendNotification(ids, data);
 }
 
 func AppAvailableNotification(city string) {
@@ -769,17 +782,15 @@ func AppAvailableNotification(city string) {
 		ids = append(ids, user.FcmToken)
 	}
 
-	sendNotification(ids, message, data);
+	data["message"] = message;
+
+	sendNotification(ids, data);
 }
 
-func sendNotification(fcmTokens []string, message string, data map[string]string) {
+func sendNotification(fcmTokens []string, data map[string]string) {
 
 	c := NewFcmClient(serverKey)
 	c.NewFcmRegIdsMsg(fcmTokens, data)
-	var notification NotificationPayload;
-	notification.Title = "Zing";
-	notification.Body = message;
-	c.SetNotificationPayload(&notification);
 
 	status, err := c.Send()
 
