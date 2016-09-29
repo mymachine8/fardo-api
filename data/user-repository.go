@@ -29,18 +29,6 @@ func RegisterUser(user models.User) error {
 	return err
 }
 
-func Login(user models.User) (u models.User, err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("users")
-
-	err = c.Find(bson.M{"username": user.Username}).One(&u)
-	if err != nil {
-		u = models.User{}
-	}
-	return
-}
-
 func RegisterAppUser(user models.User) (models.User,  error) {
 
 	context := common.NewContext()
@@ -52,7 +40,6 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	user.CreatedOn = time.Now().UTC()
 	user.ModifiedOn = time.Now().UTC()
 	user.Token = bson.NewObjectId().Hex();
-	user.Score = 100;
 
 	err := c.Find(bson.M{"imei": user.Imei}).One(&user)
 
@@ -66,6 +53,8 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	} else if(err!= nil){
 		return user, err
 	}
+
+	err = c.Update(bson.M{"imei": user.Imei},bson.M{"token" : user.Token});
 
 	if(err != nil) {
 		return user, err;
@@ -148,7 +137,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) error {
+func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) (models.User, error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
@@ -161,7 +150,12 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 			"sessionId" : sessionId,
 		}})
 
-	return err
+	var user models.User
+	if(err != nil) {
+		err = userCol.Find(bson.M{"token": token}).One(&user)
+	}
+
+	return user, err
 }
 
 func ChangeUserHomeLocation(accessToken string, homeAddress string, lat float64, lng float64) error {
