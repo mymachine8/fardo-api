@@ -11,6 +11,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"encoding/json"
+	"math/rand"
 )
 
 const (
@@ -397,7 +398,7 @@ func SendUpvoteNotification(userId string, post models.Post) {
 	}
 
 	notificationData := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
@@ -458,7 +459,7 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 	}
 
 	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
@@ -583,7 +584,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 
 	notificationData := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
@@ -666,7 +667,7 @@ func SendNearByNotification(post models.Post) {
 	}
 
 	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"upvotes" : strconv.Itoa(post.Upvotes),
@@ -710,7 +711,7 @@ func SendDeletePostNotification(post models.Post) {
 	}
 
 	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "post_delete",
@@ -737,7 +738,7 @@ func GroupUnlockedNotification(user models.User) {
 	//TODO: Send Ready Notification, when the group is unocked for that user
 	message := "You have unlocked your college, you can now share the happening to your college even when you're away from it"
 	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "unlock",
 	}
@@ -764,7 +765,7 @@ func AppAvailableNotification(city string) {
 	}
 
 	data := map[string]string{
-		"id": bson.NewObjectId().Hex(),
+		"id": strconv.Itoa(rand.Intn(999999)),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "general",
 	}
