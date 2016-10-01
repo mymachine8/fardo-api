@@ -61,7 +61,7 @@ func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
-	err = c.Find(nil).Sort("-score").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups)
+	err = c.Find(nil).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups)
 	return;
 }
 
@@ -73,7 +73,7 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}}).Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}}).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
 	return
 }
 
@@ -404,8 +404,10 @@ func CalculatePlacesTrendingScore() (err error) {
 		trendingScore := calculateZIndex(count, group.Scores)
 
 		if (now.Day() != group.ScoreLastUpdated.Day()) {
-			c.Update(bson.M{"_id": group.Id},
-				bson.M{"$pop": bson.M{"scores": -1 } });
+			if(len(group.Scores) > 7) {
+				c.Update(bson.M{"_id": group.Id},
+					bson.M{"$pop": bson.M{"scores": -1 } });
+			}
 		} else {
 			c.Update(bson.M{"_id": group.Id},
 				bson.M{"$pop": bson.M{"scores": 1 } });
@@ -421,6 +423,13 @@ func CalculatePlacesTrendingScore() (err error) {
 func calculateZIndex(currentScore int, prevScores [] int) float64 {
 	n := len(prevScores)
 
+	if (n == 0) {
+		if(currentScore < 10) {
+			return -9999
+		}
+		return 0
+	}
+
 	var sum float64
 
 	sum = 0
@@ -432,10 +441,6 @@ func calculateZIndex(currentScore int, prevScores [] int) float64 {
 	var avg float64
 	avg = float64(sum / float64(n))
 
-	if (avg == 0) {
-		return -999999
-	}
-
 	sum = 0
 
 	for i := 0; i < n; i++ {
@@ -445,6 +450,9 @@ func calculateZIndex(currentScore int, prevScores [] int) float64 {
 	variance := sum / float64(n)
 
 	if(variance == 0) {
+		if(avg > 50) {
+			return (float64(currentScore) - avg)/50
+		}
 		return 0
 	}
 
