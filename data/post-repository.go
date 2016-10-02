@@ -228,7 +228,8 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 		err = groupCol.FindId(post.GroupId).One(&group)
 		groupContext.Close()
 		if (err == nil) {
-			post.GroupName = group.Name;
+			post.GroupName = group.ShortName;
+			post.GroupCategoryName = group.CategoryName
 			post.Loc[0] = group.Loc[0];
 			post.Loc[1] = group.Loc[1];
 		}
