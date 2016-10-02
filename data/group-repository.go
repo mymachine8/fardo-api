@@ -61,7 +61,7 @@ func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("groups")
-	err = c.Find(nil).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups)
+	err = c.Find(bson.M{"isActive":true}).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups)
 	return;
 }
 
@@ -73,7 +73,7 @@ func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }}}).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 40 / 3963.2} }},"isActive": true}).Sort("-trendingScore").Select(bson.M{"name": 1, "shortName": 1, "categoryName" : 1}).Limit(5).All(&groups);
 	return
 }
 
@@ -84,7 +84,7 @@ func GetNearByGroups(lat float64, lng float64,limit int) (groups []models.Group,
 	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
 	query := c.Find(bson.M{"loc":
-	bson.M{"$near": currentLatLng}},)
+	bson.M{"$near": currentLatLng},"isActive":true},)
 	count := 0
 	if(limit > 0) {
 		var finalGroups []models.Group
