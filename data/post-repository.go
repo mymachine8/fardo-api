@@ -690,23 +690,23 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 		}
 	}
 
-	for _, glb := range globalPosts {
-		if (len(glb.GroupName) > 0) {
-			glb.PlaceName = glb.GroupName;
-			glb.PlaceType = glb.GroupCategoryName;
+	for index, _ := range globalPosts {
+		if (len(globalPosts[index].GroupName) > 0) {
+			globalPosts[index].PlaceName = globalPosts[index].GroupName;
+			globalPosts[index].PlaceType = globalPosts[index].GroupCategoryName;
 		} else {
-			glb.PlaceName = glb.City;
-			glb.PlaceType = "location"
+			globalPosts[index].PlaceName = globalPosts[index].City;
+			globalPosts[index].PlaceType = "location"
 		}
 	}
 
-	for _, aa := range adminAreaPosts {
-		if (len(aa.GroupName) > 0) {
-			aa.PlaceName = aa.GroupName;
-			aa.PlaceType = aa.GroupCategoryName;
+	for index, _ := range adminAreaPosts {
+		if (len(adminAreaPosts[index].GroupName) > 0) {
+			adminAreaPosts[index].PlaceName = adminAreaPosts[index].GroupName;
+			adminAreaPosts[index].PlaceType = adminAreaPosts[index].GroupCategoryName;
 		} else {
-			aa.PlaceName = aa.City;
-			aa.PlaceType = "location"
+			adminAreaPosts[index].PlaceName = adminAreaPosts[index].City;
+			adminAreaPosts[index].PlaceType = "location"
 		}
 	}
 
