@@ -214,10 +214,10 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 
 	post.UserId = result.Id;
 
-	if(len(post.Username) > 0) {
+	if (len(post.Username) > 0) {
 		isAvailable, errr := CheckUsernameAvailability(post.Username)
-		if(!isAvailable || errr !=nil) {
-			return  "", models.FardoError{"Username is not available"}
+		if (!isAvailable || errr != nil) {
+			return "", models.FardoError{"Username is not available"}
 		}
 	}
 
@@ -492,8 +492,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
-		if(len(posts) + len(prevPosts) < 75) {
-			err = c.Find(bson.M {"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true}).Limit(50).Sort("-score").All(&additionalPosts);
+		if (len(posts) + len(prevPosts) < 75) {
+			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true}).Limit(50).Sort("-score").All(&additionalPosts);
 		}
 
 		for index, _ := range currentPosts {
@@ -525,9 +525,9 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		var count = 0;
 		for index, _ := range currentPosts {
-			if(!currentPosts[index].IsGroup || count < 5) {
+			if (!currentPosts[index].IsGroup || count < 5) {
 				posts = append(posts, currentPosts[index]);
-				if(currentPosts[index].IsGroup) {
+				if (currentPosts[index].IsGroup) {
 
 				}
 			}
@@ -535,7 +535,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		count = 0;
 		for index, _ := range prevPosts {
-			if(!prevPosts[index].IsGroup || count < 8) {
+			if (!prevPosts[index].IsGroup || count < 8) {
 				posts = append(posts, prevPosts[index]);
 			} else {
 				count++;
@@ -690,7 +690,6 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 		}
 	}
 
-	var count int = 0;
 	for _, glb := range globalPosts {
 		if (len(glb.GroupName) > 0) {
 			glb.PlaceName = glb.GroupName;
@@ -699,13 +698,8 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			glb.PlaceName = glb.City;
 			glb.PlaceType = "location"
 		}
-		if (!idInPosts(glb.Id.Hex(), posts) && count < GlobalPercent) {
-			posts = append(posts, glb)
-			count++;
-		}
 	}
 
-	count = 0;
 	for _, aa := range adminAreaPosts {
 		if (len(aa.GroupName) > 0) {
 			aa.PlaceName = aa.GroupName;
@@ -714,43 +708,38 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			aa.PlaceName = aa.City;
 			aa.PlaceType = "location"
 		}
-		if (!idInPosts(aa.Id.Hex(), posts) && count < AdminAreaPercent) {
-			posts = append(posts, aa)
-			count++;
-		}
 	}
 
 	totalCount := len(nearByPosts) + len(globalPosts) + len(adminAreaPosts)
 
-	j:=0
-	k:=0
-	l:=0
+	j := 0
+	k := 0
+	l := 0
 
 	nearPostsLen := len(nearByPosts);
 	globalPostsLen := len(globalPosts);
 	adminAreaPostsLen := len(adminAreaPosts);
 
-	for i:=0; i< totalCount;i++ {
-		if(i%3 == 0) {
-			if(!idInPosts(nearByPosts[j].Id.Hex(), posts) && j< nearPostsLen) {
+	for i := 0; i < totalCount; i++ {
+		if (i % 3 == 0) {
+			if (j < nearPostsLen && !idInPosts(nearByPosts[j].Id.Hex(), posts)) {
 				posts = append(posts, nearByPosts[j])
 			}
 			j++
 		}
-		if(i%3 == 1) {
-			if(!idInPosts(globalPosts[k].Id.Hex(), posts) && k < globalPostsLen) {
+		if (i % 3 == 1) {
+			if (k < globalPostsLen && !idInPosts(globalPosts[k].Id.Hex(), posts)) {
 				posts = append(posts, globalPosts[k])
 			}
 			k++
 		}
-		if(i%3 == 2) {
-			if(!idInPosts(adminAreaPosts[l].Id.Hex(), posts) && l < adminAreaPostsLen) {
+		if (i % 3 == 2) {
+			if (l < adminAreaPostsLen && !idInPosts(adminAreaPosts[l].Id.Hex(), posts)) {
 				posts = append(posts, adminAreaPosts[l])
 			}
 			l++
 		}
 	}
-
 
 	if (posts == nil) {
 		posts = []models.Post{}
