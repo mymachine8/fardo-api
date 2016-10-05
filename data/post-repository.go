@@ -886,6 +886,11 @@ func GetGroupPosts(token string, groupId string) (posts []models.Post, err error
 		posts = []models.Post{}
 	}
 
+	for index, _ := range posts {
+		posts[index].PlaceName = posts[index].GroupName;
+		posts[index].PlaceType = posts[index].GroupCategoryName;
+	}
+
 	posts = addUserVotes(token, posts);
 
 	return
