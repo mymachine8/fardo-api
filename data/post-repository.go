@@ -572,6 +572,10 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			posts[index].PlaceType = "location"
 		}
 
+		if(len(posts[index].PlaceName) > 24) {
+			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		}
+
 	}
 
 	sort.Sort(models.ScoreSorter(posts))
@@ -689,6 +693,9 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			nearByPosts[index].PlaceName = nearByPosts[index].Locality;
 			nearByPosts[index].PlaceType = "location"
 		}
+		if(len(posts[index].PlaceName) > 24) {
+			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		}
 	}
 
 	for index, _ := range globalPosts {
@@ -699,6 +706,9 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			globalPosts[index].PlaceName = globalPosts[index].City;
 			globalPosts[index].PlaceType = "location"
 		}
+		if(len(posts[index].PlaceName) > 24) {
+			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		}
 	}
 
 	for index, _ := range adminAreaPosts {
@@ -708,6 +718,9 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 		} else {
 			adminAreaPosts[index].PlaceName = adminAreaPosts[index].City;
 			adminAreaPosts[index].PlaceType = "location"
+		}
+		if(len(posts[index].PlaceName) > 24) {
+			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
 		}
 	}
 
