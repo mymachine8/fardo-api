@@ -105,7 +105,7 @@ func GetNearByGroups(lat float64, lng float64,limit int) (groups []models.Group,
 		}
 
 	} else {
-		err = query.Limit(80).All(&groups);
+		err = query.Limit(100).All(&groups);
 	}
 	return
 }
