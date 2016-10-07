@@ -363,6 +363,11 @@ func SuspendPost(id string) (err error) {
 			"isActive": false,
 			"modifiedOn": time.Now().UTC(),
 		}})
+
+	if(err == nil) {
+		post,_ := findPostById(id)
+		common.SendDeletePostNotification(post);
+	}
 	return
 }
 
@@ -1124,9 +1129,6 @@ func checkSpamCountLimit(id string) (err error) {
 	post, err := findPostById(id);
 	if (post.SpamCount >= models.SPAM_COUNT_LIMIT) {
 		err = SuspendPost(id);
-		if (err != nil) {
-			common.SendDeletePostNotification(post);
-		}
 	}
 	return
 }
