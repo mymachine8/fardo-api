@@ -693,8 +693,8 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			nearByPosts[index].PlaceName = nearByPosts[index].Locality;
 			nearByPosts[index].PlaceType = "location"
 		}
-		if(len(posts[index].PlaceName) > 24) {
-			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		if(len(nearByPosts[index].PlaceName) > 24) {
+			nearByPosts[index].PlaceName = nearByPosts[index].PlaceName[0:24] + "...";
 		}
 	}
 
@@ -706,8 +706,8 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			globalPosts[index].PlaceName = globalPosts[index].City;
 			globalPosts[index].PlaceType = "location"
 		}
-		if(len(posts[index].PlaceName) > 24) {
-			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		if(len(globalPosts[index].PlaceName) > 24) {
+			globalPosts[index].PlaceName = globalPosts[index].PlaceName[0:24] + "...";
 		}
 	}
 
@@ -719,8 +719,8 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			adminAreaPosts[index].PlaceName = adminAreaPosts[index].City;
 			adminAreaPosts[index].PlaceType = "location"
 		}
-		if(len(posts[index].PlaceName) > 24) {
-			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
+		if(len(adminAreaPosts[index].PlaceName) > 24) {
+			adminAreaPosts[index].PlaceName = adminAreaPosts[index].PlaceName[0:24] + "...";
 		}
 	}
 
