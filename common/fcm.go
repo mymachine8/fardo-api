@@ -714,13 +714,13 @@ func SendDeletePostNotification(post models.Post) {
 		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"type": "post_delete",
+		"type": "general",
 	}
 
 	var content string;
 
-	if (len(post.Content) > 20) {
-		content = post.Content[0:20]
+	if (len(post.Content) > 30) {
+		content = post.Content[0:30]
 		content += "..."
 	} else {
 		content = post.Content
@@ -740,7 +740,7 @@ func GroupUnlockedNotification(user models.User) {
 	data := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"type": "unlock",
+		"type": "general",
 	}
 
 	ids := []string{user.FcmToken}
