@@ -619,7 +619,13 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		commentContent = comment.Content
 	}
 
-	message := "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
+	message := "";
+
+	if(len(post.Content) == 0) {
+		message = "Someone else commented \"" + commentContent + "\"";
+	} else {
+		message = "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
+	}
 
 	notificationData["message"] = message;
 
@@ -686,7 +692,7 @@ func SendNearByNotification(post models.Post) {
 	var content string;
 
 	if (len(post.Content) > 30) {
-		content = post.Content[0:20]
+		content = post.Content[0:30]
 		content += "..."
 	} else {
 		content = post.Content
@@ -726,7 +732,12 @@ func SendDeletePostNotification(post models.Post) {
 		content = post.Content
 	}
 
-	message := "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
+	message := "";
+	if(len(post.Content) == 0) {
+		message = "Your Post has been suspended as people in your community downvoted or reported about it"
+	} else {
+		message = "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
+	}
 	ids := []string{token.FcmToken}
 
 	data["message"] = message;
