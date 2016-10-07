@@ -710,6 +710,17 @@ func SendNearByNotification(post models.Post) {
 	sendNotification(ids, data);
 }
 
+func FeedbackNotification(fcmToken string) {
+	data := map[string]string{
+		"id": strconv.Itoa(rand.Intn(999999)),
+		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
+		"type": "general",
+		"message": "Feedback succesfully submitted, thank you for your valuable feedback!!",
+	}
+	ids := []string{fcmToken}
+	sendNotification(ids, data);
+}
+
 func SendDeletePostNotification(post models.Post) {
 	token, err := findUserById(post.UserId.Hex());
 	if (err != nil) {

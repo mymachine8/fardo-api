@@ -369,6 +369,8 @@ func SetUserFeedback(token string, content string, phone string, email string) e
 		log.Print(err.Error())
 	}
 
+	common.FeedbackNotification(user.FcmToken)
+
 	return err
 }
 
