@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	NEGATIVE_VOTES_LIMIT = 4;
-	SPAM_COUNT_LIMIT = 1;
+	NEGATIVE_VOTES_LIMIT = -4;
+	SPAM_COUNT_LIMIT = 2;
 )
 
 type Post struct {

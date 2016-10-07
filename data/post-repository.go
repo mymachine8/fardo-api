@@ -1063,7 +1063,7 @@ func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) 
 	votes := comment.Upvotes - comment.Downvotes;
 
 	if (isUpvote) {
-		if (comment.Upvotes == 1 || comment.Upvotes == 4 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
+		if (comment.Upvotes == 2 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
 			var post models.Post
 			post, err = findPostById(comment.PostId.Hex());
 			if (err != nil) {
@@ -1074,7 +1074,7 @@ func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) 
 	}
 
 	if (!isUpvote) {
-		if (votes >= models.NEGATIVE_VOTES_LIMIT) {
+		if (votes <= models.NEGATIVE_VOTES_LIMIT) {
 			err = SuspendComment(id);
 		}
 	}
@@ -1086,7 +1086,7 @@ func checkVoteCount(token string, userId string, id string, isUpvote bool) (err 
 	votes := post.Upvotes - post.Downvotes;
 
 	if (isUpvote) {
-		if (post.Upvotes == 1 || post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
+		if (post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
 			posts := []models.Post{post}
 			posts = addUserVotes(token, posts);
 			common.SendUpvoteNotification(userId, posts[0]);
@@ -1114,6 +1114,7 @@ func ReportSpam(id string, reason string) (err error) {
 			"$push": spamReason, })
 	if (err == nil) {
 		go updateUserAndPostScore(id, ActionSpam);
+		go checkSpamCountLimit(id);
 	}
 
 	return;
