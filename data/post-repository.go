@@ -52,7 +52,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 			post.MyGroupName = myGroup.ShortName;
 			post.MyGroupCategoryName = myGroup.CategoryName
 		}
-	} else if(len(post.GroupId) > 0){
+	} else if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
 		var group models.Group
