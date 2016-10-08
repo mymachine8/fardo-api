@@ -581,14 +581,14 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
 			if (len(posts[index].MyGroupName) > 0) {
-				posts[index].PlaceName = posts[index].GroupName;
-				posts[index].PlaceType = posts[index].GroupCategoryName;
+				posts[index].PlaceName = posts[index].MyGroupName;
+				posts[index].PlaceType = posts[index].MyGroupCategoryName;
 			} else {
 				posts[index].PlaceName = posts[index].GroupName;
 				posts[index].PlaceType = posts[index].GroupCategoryName;
 			}
 		} else {
-			if (len(posts[index].MyGroupName) > 0) {
+			if (len(posts[index].GroupName) > 0) {
 				posts[index].PlaceName = posts[index].GroupName;
 				posts[index].PlaceType = posts[index].GroupCategoryName;
 			} else {
