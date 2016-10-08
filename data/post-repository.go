@@ -42,11 +42,15 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
 		var group models.Group
+		var myGroup models.Group
 		err = groupCol.FindId(post.GroupId).One(&group)
+		err = groupCol.FindId(post.MyGroupId).One(&myGroup)
 		groupContext.Close()
 		if (err == nil) {
 			post.GroupName = group.ShortName;
 			post.GroupCategoryName = group.CategoryName
+			post.MyGroupName = myGroup.ShortName;
+			post.MyGroupCategoryName = myGroup.CategoryName
 		}
 	}
 	if (len(post.LabelId) > 0 && post.IsGroup) {
@@ -101,8 +105,14 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	}
 
 	if (post.IsGroup) {
-		post.PlaceName = post.GroupName
-		post.PlaceType = post.GroupCategoryName
+		if (len(post.MyGroupId) > 0) {
+			post.PlaceName = post.MyGroupName
+			post.PlaceType = post.MyGroupCategoryName
+		} else {
+			post.PlaceName = post.GroupName
+			post.PlaceType = post.GroupCategoryName
+		}
+
 	} else {
 		post.PlaceName = post.Locality
 		post.PlaceType = "location"
@@ -364,8 +374,8 @@ func SuspendPost(id string) (err error) {
 			"modifiedOn": time.Now().UTC(),
 		}})
 
-	if(err == nil) {
-		post,_ := findPostById(id)
+	if (err == nil) {
+		post, _ := findPostById(id)
 		common.SendDeletePostNotification(post);
 	}
 	return
@@ -570,14 +580,24 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		}
 
 		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
-			posts[index].PlaceName = posts[index].GroupName;
-			posts[index].PlaceType = posts[index].GroupCategoryName;
+			if (len(posts[index].MyGroupName) > 0) {
+				posts[index].PlaceName = posts[index].GroupName;
+				posts[index].PlaceType = posts[index].GroupCategoryName;
+			} else {
+				posts[index].PlaceName = posts[index].GroupName;
+				posts[index].PlaceType = posts[index].GroupCategoryName;
+			}
 		} else {
-			posts[index].PlaceName = posts[index].Locality;
-			posts[index].PlaceType = "location"
+			if (len(posts[index].MyGroupName) > 0) {
+				posts[index].PlaceName = posts[index].GroupName;
+				posts[index].PlaceType = posts[index].GroupCategoryName;
+			} else {
+				posts[index].PlaceName = posts[index].Locality;
+				posts[index].PlaceType = "location"
+			}
 		}
 
-		if(len(posts[index].PlaceName) > 24) {
+		if (len(posts[index].PlaceName) > 24) {
 			posts[index].PlaceName = posts[index].PlaceName[0:24] + "...";
 		}
 
@@ -698,7 +718,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			nearByPosts[index].PlaceName = nearByPosts[index].Locality;
 			nearByPosts[index].PlaceType = "location"
 		}
-		if(len(nearByPosts[index].PlaceName) > 24) {
+		if (len(nearByPosts[index].PlaceName) > 24) {
 			nearByPosts[index].PlaceName = nearByPosts[index].PlaceName[0:24] + "...";
 		}
 	}
@@ -711,7 +731,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			globalPosts[index].PlaceName = globalPosts[index].City;
 			globalPosts[index].PlaceType = "location"
 		}
-		if(len(globalPosts[index].PlaceName) > 24) {
+		if (len(globalPosts[index].PlaceName) > 24) {
 			globalPosts[index].PlaceName = globalPosts[index].PlaceName[0:24] + "...";
 		}
 	}
@@ -724,7 +744,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			adminAreaPosts[index].PlaceName = adminAreaPosts[index].City;
 			adminAreaPosts[index].PlaceType = "location"
 		}
-		if(len(adminAreaPosts[index].PlaceName) > 24) {
+		if (len(adminAreaPosts[index].PlaceName) > 24) {
 			adminAreaPosts[index].PlaceName = adminAreaPosts[index].PlaceName[0:24] + "...";
 		}
 	}

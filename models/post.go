@@ -35,6 +35,9 @@ type Post struct {
 	ModifiedOn time.Time `bson:"modifiedOn,omitempty" json:"-"`
 	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
 	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`
+	MyGroupName string `bson:"myGroupName,omitempty" json:"myGroupName,omitempty"`
+	MyGroupId    bson.ObjectId `bson:"myGroupId,omitempty" json:"myGroupId,omitempty"`
+	MyGroupCategoryName string `bson:"myGroupCategoryName,omitempty" json:"-"`
 	GroupCategoryName string `bson:"groupCategoryName,omitempty" json:"-"`
 	PlaceName string `bson:"placeName,omitempty" json:"placeName,omitempty"`
 	PlaceType string `bson:"placeType,omitempty" json:"placeType,omitempty"`
