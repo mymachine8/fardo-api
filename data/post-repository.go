@@ -52,6 +52,16 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 			post.MyGroupName = myGroup.ShortName;
 			post.MyGroupCategoryName = myGroup.CategoryName
 		}
+	} else if(len(post.GroupId) > 0){
+		groupContext := common.NewContext()
+		groupCol := groupContext.DbCollection("groups")
+		var group models.Group
+		err = groupCol.FindId(post.GroupId).One(&group)
+		groupContext.Close()
+		if (err == nil) {
+			post.GroupName = group.ShortName;
+			post.GroupCategoryName = group.CategoryName
+		}
 	}
 	if (len(post.LabelId) > 0 && post.IsGroup) {
 		labelContext := common.NewContext()
