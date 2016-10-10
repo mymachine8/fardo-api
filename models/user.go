@@ -18,7 +18,7 @@ type User struct {
 	Id                bson.ObjectId `json:"id,omitempty" bson:"_id,omitempty"`
 	Username          string `bson:"username,omitempty" json:"username,omitempty"`
 	SessionId         uint64  `bson:"sessionId,omitempty" json:"sessionId,omitempty"`
-	Imei              string `json:"imei,omitempty" bson:"imei,omitempty"`
+	Imei              string `json:"imei" bson:"imei"`
 	Status            string `json:"status" bson:"status"`
 	FcmToken          string `bson:"fcmToken" json:"fcmToken"`
 	Token             string `bson:"token" json:"token"`
