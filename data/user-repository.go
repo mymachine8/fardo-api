@@ -155,9 +155,13 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 		}})
 
 	var user models.User
+
 	if(err != nil) {
-		err = userCol.Find(bson.M{"token": token}).One(&user)
+		return user, err
+
 	}
+
+	err = userCol.Find(bson.M{"token": token}).One(&user)
 
 	return user, err
 }
