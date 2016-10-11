@@ -30,6 +30,7 @@ type Post struct {
 	CreatedOn  time.Time `bson:"createdOn" json:"createdOn"`
 	UserId     bson.ObjectId `bson:"userId" json:"userId"`
 	Username string `bson:"username" json:"username"`
+	Jid string `bson:"jid,omitempty" json:"jid,omitempty"`
 	VoteClicked string `bson:"-" json:"voteClicked,omitempty"`
 	IsAnonymous bool `bson:"isAnonymous" json:"isAnonymous"`
 	ModifiedOn time.Time `bson:"modifiedOn,omitempty" json:"-"`
