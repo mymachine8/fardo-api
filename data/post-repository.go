@@ -507,19 +507,21 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 	if (len(groupId) > 0) {
 		options := []bson.M{}
-		options = append(options, bson.M{"groupId" : result.GroupId});
-		if (len(result.GroupId) > 0) {
+		options = append(options, bson.M{"groupId" : bson.ObjectIdHex(groupId)});
+		options = append(options, bson.M{"myGroupId" : bson.ObjectIdHex(groupId)});
+		if (len(result.GroupId) > 0 && result.GroupId.Hex() != groupId) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
+			options = append(options, bson.M{"myGroupId" : result.GroupId});
 		}
 		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &currentPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &prevPosts);
 		if (len(posts) + len(prevPosts) < 75) {
-			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true}).Limit(50).Sort("-score").All(&additionalPosts);
+			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").Distinct("_id", &additionalPosts);
 		}
 
 		for index, _ := range currentPosts {
@@ -539,6 +541,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
+			options = append(options, bson.M{"myGroupId" : result.GroupId});
 		}
 
 		if (homeLat > 0 && homeLng > 0) {
@@ -546,25 +549,28 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
 		}
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&posts);
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &posts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &prevPosts);
 
 		var count = 0;
 		for index, _ := range currentPosts {
-			if (!currentPosts[index].IsGroup || count < 5) {
+			isHisGroup := currentPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || currentPosts[index].GroupId.Hex() == result.GroupId.Hex()
+			if (!currentPosts[index].IsGroup || count < 5 || isHisGroup) {
 				posts = append(posts, currentPosts[index]);
-				if (currentPosts[index].IsGroup) {
-
+				if (currentPosts[index].IsGroup && !isHisGroup) {
+					count++;
 				}
 			}
 		}
 
 		count = 0;
 		for index, _ := range prevPosts {
-			if (!prevPosts[index].IsGroup || count < 8) {
+			isHisGroup := prevPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || prevPosts[index].GroupId.Hex() == result.GroupId.Hex()
+			if (!prevPosts[index].IsGroup || count < 8 || isHisGroup) {
 				posts = append(posts, prevPosts[index]);
-			} else {
-				count++;
+				if (prevPosts[index].IsGroup && !isHisGroup) {
+					count++;
+				}
 			}
 		}
 	}
@@ -589,7 +595,9 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			posts[index].Score += 0.1;
 		}
 
-		if ((posts[index].IsGroup && !posts[index].IsLocation) || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
+		isOnlyGroupPost := posts[index].IsGroup && !posts[index].IsLocation
+
+		if ( isOnlyGroupPost || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
 			if (len(posts[index].MyGroupName) > 0) {
 				posts[index].PlaceName = posts[index].MyGroupName;
 				posts[index].PlaceType = posts[index].MyGroupCategoryName;
