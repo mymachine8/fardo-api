@@ -146,20 +146,27 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	err := userCol.Update(bson.M{"token": accessToken},
-		bson.M{"$set": bson.M{
-			"token": token,
-			"tokenSecret": tokenSecret,
-			"phone" : phone,
-			"sessionId" : sessionId,
-		}})
+	var existing models.User
+	err := userCol.Find(bson.M{"phone": phone}).One(&existing)
+	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
+		err = userCol.Update(bson.M{"token": accessToken},
+			bson.M{"$set": bson.M{
+				"token": token,
+				"tokenSecret": tokenSecret,
+				"phone" : phone,
+				"sessionId" : sessionId,
+			}})
+	} else {
+		err = userCol.Update(bson.M{"phone": phone},
+			bson.M{"$set": bson.M{
+				"token": token,
+				"tokenSecret": tokenSecret,
+				"phone" : phone,
+				"sessionId" : sessionId,
+			}})
+	}
 
 	var user models.User
-
-	if(err != nil) {
-		return user, err
-
-	}
 
 	err = userCol.Find(bson.M{"token": token}).One(&user)
 
