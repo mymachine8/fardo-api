@@ -515,13 +515,13 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		}
 		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 3 / 3963.2}}}});
 		}
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &currentPosts);
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &prevPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 		if (len(posts) + len(prevPosts) < 75) {
-			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 2.5 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").Distinct("_id", &additionalPosts);
+			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 3 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").All(&additionalPosts);
 		}
 
 		for index, _ := range currentPosts {
@@ -537,7 +537,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		options := []bson.M{}
 
-		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 2.5 / 3963.2}}}})
+		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 3 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
@@ -546,11 +546,11 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 2.5 / 3963.2}}}});
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 3 / 3963.2}}}});
 		}
 
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &posts);
-		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").Distinct("_id", &prevPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
+		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 
 		var count = 0;
 		for index, _ := range currentPosts {
@@ -591,8 +591,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 			posts[index].Score += 0.05;
 		} else if (distance < 2000) {
 			posts[index].Score += 0.02;
-		} else if (distance > 2600) {
-			posts[index].Score += 0.1;
+		} else if (distance < 2600) {
+			posts[index].Score += 0.01;
 		}
 
 		isOnlyGroupPost := posts[index].IsGroup && !posts[index].IsLocation
