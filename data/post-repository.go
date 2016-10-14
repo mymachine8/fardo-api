@@ -554,8 +554,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		var count = 0;
 		for index, _ := range currentPosts {
-			isHisGroup := currentPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || currentPosts[index].GroupId.Hex() == result.GroupId.Hex()
-			if (!currentPosts[index].IsGroup || count < 5 || isHisGroup) {
+			isHisGroup := len(result.GroupId) > 0 && (currentPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || currentPosts[index].GroupId.Hex() == result.GroupId.Hex())
+			if (!currentPosts[index].IsGroup || count < 4 || isHisGroup) {
 				posts = append(posts, currentPosts[index]);
 				if (currentPosts[index].IsGroup && !isHisGroup) {
 					count++;
@@ -565,8 +565,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		count = 0;
 		for index, _ := range prevPosts {
-			isHisGroup := prevPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || prevPosts[index].GroupId.Hex() == result.GroupId.Hex()
-			if (!prevPosts[index].IsGroup || count < 8 || isHisGroup) {
+			isHisGroup := len(result.GroupId) > 0 && (prevPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || prevPosts[index].GroupId.Hex() == result.GroupId.Hex())
+			if (!prevPosts[index].IsGroup || count < 4 || isHisGroup) {
 				posts = append(posts, prevPosts[index]);
 				if (prevPosts[index].IsGroup && !isHisGroup) {
 					count++;
@@ -581,18 +581,17 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 	for index, _ := range posts {
 		distance := common.DistanceLatLong(posts[index].Loc[1], lat, posts[index].Loc[0], lng)
-		if ((len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())) {
-			posts[index].Score += 0.1;
-		} else if (distance < 500) {
-			posts[index].Score += 0.1;
+		isHisGroup := len(result.GroupId) > 0 && (posts[index].MyGroupId.Hex() == result.GroupId.Hex() || posts[index].GroupId.Hex() == result.GroupId.Hex())
+		if (isHisGroup) {
+			posts[index].Score += 0.5;
 		} else if (distance < 1000) {
-			posts[index].Score += 0.08;
+			posts[index].Score += 0.5;
 		} else if (distance < 1500) {
-			posts[index].Score += 0.05;
+			posts[index].Score += 0.46;
 		} else if (distance < 2000) {
-			posts[index].Score += 0.02;
+			posts[index].Score += 0.40;
 		} else if (distance < 2600) {
-			posts[index].Score += 0.01;
+			posts[index].Score += 0.34;
 		}
 
 		isOnlyGroupPost := posts[index].IsGroup && !posts[index].IsLocation
