@@ -757,8 +757,7 @@ func SendDeletePostNotification(post models.Post) {
 }
 
 func GroupUnlockedNotification(user models.User) {
-	//TODO: Send Ready Notification, when the group is unocked for that user
-	message := "You have unlocked your college, you can now share the happening to your college even when you're away from it"
+	message := "You have unlocked your college/workplace, you can now share the happening with your college/workplace even when you're away"
 	data := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),

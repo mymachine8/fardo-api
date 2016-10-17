@@ -250,7 +250,7 @@ func LockUserGroup(token string, isLock bool) error {
 			"isGroupLocked" : isLock,
 		}})
 
-	if(err == nil) {
+	if(err == nil && !isLock) {
 		var user models.User
 		_ = userCol.Find(bson.M{"token": token}).One(&user)
 		common.GroupUnlockedNotification(user)
