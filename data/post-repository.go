@@ -37,6 +37,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	post.UserId = result.Id;
 	if (!post.IsAnonymous) {
 		post.Username = result.Username;
+		post.Jid = result.Phone + "@im.ripplin.in"
 	}
 	if (post.IsGroup) {
 		groupContext := common.NewContext()
