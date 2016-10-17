@@ -61,8 +61,8 @@ func initConfig() {
 
 	var err error
 	AppConfig.MongoDBHost = "localhost:27017"
-	AppConfig.DBUser = ""
-	AppConfig.DBPwd = ""
+	AppConfig.DBUser = "prodUserAdmin"
+	AppConfig.DBPwd = "machine8"
 	AppConfig.Database = "zing-prod"
 	StorageBucketName = "go-server"
 	StorageBucket, err = configureStorage(StorageBucketName)
