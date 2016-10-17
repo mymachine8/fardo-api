@@ -60,10 +60,7 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	}
 
 	err = c.Update(bson.M{"imei": user.Imei},
-		bson.M{"$set": bson.M{
-			"token": user.Token,
-			"modifiedOn": time.Now().UTC(),
-		}})
+		bson.M{"$set": user})
 
 	if(err != nil) {
 		return user, err;
