@@ -16,6 +16,7 @@ type Comment struct {
 	VoteClicked string `bson:"-" json:"voteClicked,omitempty"`
 	Replies []Reply `bson:"replies,omitempty" json:"replies,omitempty"`
 	UserId    bson.ObjectId `bson:"userId" json:"userId"`
+	Jid    string `bson:"jid,omitempty" json:"jid,omitempty"`
 	Username string `bson:"username" json:"username"`
 	IsAnonymous bool `bson:"isAnonymous" json:"isAnonymous"`
 	IsPrivate  bool `bson:"isPrivate" json:"isPrivate"`

@@ -37,7 +37,9 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	post.UserId = result.Id;
 	if (!post.IsAnonymous) {
 		post.Username = result.Username;
-		post.Jid = result.Phone + "@im.ripplin.in"
+		if(len(result.Phone) > 0) {
+			post.Jid = result.Phone + "@im.ripplin.in"
+		}
 	}
 	if (post.IsGroup) {
 		groupContext := common.NewContext()
@@ -984,6 +986,9 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	comment.PostId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
+	if(len(result.Phone) > 0) {
+		comment.Jid = result.Phone + "@im.ripplin.in"
+	}
 
 	if (!comment.IsAnonymous && !result.IsAdmin) {
 		comment.Username = result.Username;
