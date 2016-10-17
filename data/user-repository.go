@@ -63,6 +63,8 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	err = c.Update(bson.M{"imei": user.Imei},
 		user)
 
+	user.Id = existingUser.Id;
+
 	if(err != nil) {
 		return user, err;
 	}
