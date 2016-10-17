@@ -46,7 +46,8 @@ func RegisterAppUser(user models.User) (models.User,  error) {
 	user.HomeLoc = [2] float64{0,0};
 	user.DownvotePostCount = 0;
 
-	err := c.Find(bson.M{"imei": user.Imei}).One(&user)
+	var existingUser models.User
+	err := c.Find(bson.M{"imei": user.Imei}).One(&existingUser)
 
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		user.Id = bson.NewObjectId()
