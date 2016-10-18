@@ -724,14 +724,22 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	token := common.GetAccessToken(r);
 
 
-	user, errr := data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone);
+	user,group, errr := data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone);
 
 	if (errr != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, errr);
 		return
 	}
 
-	rw.Write(common.SuccessResponseJSON(user));
+	response := struct {
+		User  models.User `json:"user"`
+		Group models.Group `json:"group,omitempty"`
+	}{
+		user,
+		group,
+	}
+
+	rw.Write(common.SuccessResponseJSON(response));
 }
 
 func updateUserHomeLocationHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {

@@ -122,7 +122,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) (models.User, error) {
+func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) (models.User,models.Group, error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
@@ -150,8 +150,14 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 	var user models.User
 
 	err = userCol.Find(bson.M{"token": token}).One(&user)
+	var group models.Group
+	if(err == nil) {
+		if(len(user.GroupId) > 0) {
+			group, err = GetGroupById(user.GroupId.Hex())
+		}
+	}
 
-	return user, err
+	return user,group, err
 }
 
 func ChangeUserHomeLocation(accessToken string, homeAddress string, lat float64, lng float64) error {
