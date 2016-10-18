@@ -713,6 +713,7 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		Token       string `json:"token"`
 		TokenSecret string `json:"tokenSecret"`
 		Phone       string `json:"phone"`
+		FcmToken    string `json:"fcmToken"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&body)
 
@@ -724,7 +725,7 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	token := common.GetAccessToken(r);
 
 
-	user,group, errr := data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone);
+	user, group, errr := data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone, body.FcmToken);
 
 	if (errr != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, errr);
@@ -1199,8 +1200,8 @@ func bulkInsertSubCategoryHandler(rw http.ResponseWriter, r *http.Request, p htt
 
 func submitFeedbackHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var feedback struct {
-		Phone string `json:"phone,omitempty" bson:"phone,omitempty"`
-		Email string `json:"email,omitempty" bson:"email,omitempty"`
+		Phone   string `json:"phone,omitempty" bson:"phone,omitempty"`
+		Email   string `json:"email,omitempty" bson:"email,omitempty"`
 		Content string `json:"content,omitempty" bson:"content,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&feedback)
@@ -1224,7 +1225,7 @@ func submitFeedbackHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 
 func reportSpamHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var feedback struct {
-		PostId string `json:"postId,omitempty" bson:"postId,omitempty"`
+		PostId  string `json:"postId,omitempty" bson:"postId,omitempty"`
 		Content string `json:"content,omitempty" bson:"content,omitempty"`
 	}
 	err := json.NewDecoder(r.Body).Decode(&feedback)

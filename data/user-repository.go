@@ -122,7 +122,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string) (models.User,models.Group, error) {
+func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string, fcmToken string) (models.User,models.Group, error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
@@ -136,6 +136,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 				"tokenSecret": tokenSecret,
 				"phone" : phone,
 				"sessionId" : sessionId,
+				"fcmToken" : fcmToken,
 			}})
 	} else {
 		err = userCol.Update(bson.M{"phone": phone},
@@ -144,6 +145,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 				"tokenSecret": tokenSecret,
 				"phone" : phone,
 				"sessionId" : sessionId,
+				"fcmToken" : fcmToken,
 			}})
 	}
 
