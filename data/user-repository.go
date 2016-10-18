@@ -29,47 +29,24 @@ func RegisterUser(user models.User) error {
 	return err
 }
 
-func RegisterAppUser(user models.User) (models.User,  error) {
+func RegisterAppUser(user models.User) (models.User, error) {
 
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("users")
 
-
 	user.IsActive = true;
-	user.CreatedOn = time.Now().UTC()
 	user.ModifiedOn = time.Now().UTC()
+	user.CreatedOn = time.Now().UTC()
 	user.Token = bson.NewObjectId().Hex();
 	user.Score = 200;
-	user.GroupId = "";
-	user.HomeAddress = "";
-	user.HomeLoc = [2] float64{0,0};
-	user.DownvotePostCount = 0;
-
-	var existingUser models.User
-	err := c.Find(bson.M{"imei": user.Imei}).One(&existingUser)
-
-	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
-		user.Id = bson.NewObjectId()
-		err = c.Insert(&user)
-		if (err != nil) {
-			return user, err
-		}
-		return user, err
-	} else if(err!= nil){
+	user.CreatedOn = time.Now().UTC()
+	user.Id = bson.NewObjectId()
+	err := c.Insert(&user)
+	if (err != nil) {
 		return user, err
 	}
-
-	err = c.Update(bson.M{"imei": user.Imei},
-		user)
-
-	user.Id = existingUser.Id;
-
-	if(err != nil) {
-		return user, err;
-	}
-
-	return user, err;
+	return user, err
 }
 
 func SetUserToken(token string, username string) error {
@@ -100,8 +77,7 @@ func SetUserFcmToken(accessToken string, fcmToken string) error {
 	return err
 }
 
-
-func SetUsernameToken(accessToken string , username string) (string, error) {
+func SetUsernameToken(accessToken string, username string) (string, error) {
 
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
@@ -110,11 +86,11 @@ func SetUsernameToken(accessToken string , username string) (string, error) {
 	var users []models.User
 	err := userCol.Find(bson.M{"username": username}).All(&users)
 
-	if(err != nil) {
+	if (err != nil) {
 		return "", err
 	}
 
-	if(len(users) > 0) {
+	if (len(users) > 0) {
 		return "username already exists", err
 	}
 
@@ -135,11 +111,11 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	var users []models.User
 	err := userCol.Find(bson.M{"username": username}).All(&users)
 
-	if(err != nil) {
+	if (err != nil) {
 		return false, err
 	}
 
-	if(len(users) > 0) {
+	if (len(users) > 0) {
 		return false, err
 	}
 
@@ -201,8 +177,8 @@ func GetUserScore(accessToken string) (score int, err error) {
 	var user models.User;
 	err = userCol.Find(bson.M{"token": accessToken}).One(&user)
 
-	if(err != nil) {
-		return score,err;
+	if (err != nil) {
+		return score, err;
 	}
 
 	return user.Score, err
@@ -223,16 +199,16 @@ func SetUserLocation(accessToken string, lat float64, lng float64) error {
 	return err
 }
 
-func isLocationInGroup(groupId string, lat float64, lng float64)(isNear bool) {
+func isLocationInGroup(groupId string, lat float64, lng float64) (isNear bool) {
 	groupContext := common.NewContext()
 	groupCol := groupContext.DbCollection("groups")
 	defer groupContext.Close()
 	var group models.Group
 	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group);
 
-	log.Print(common.DistanceLatLong(group.Loc[1],lat,group.Loc[0], lng));
+	log.Print(common.DistanceLatLong(group.Loc[1], lat, group.Loc[0], lng));
 
-	if (err == nil && common.DistanceLatLong(group.Loc[1],lat,group.Loc[0], lng) < float64(group.Radius)) {
+	if (err == nil && common.DistanceLatLong(group.Loc[1], lat, group.Loc[0], lng) < float64(group.Radius)) {
 		return true
 	}
 
@@ -250,7 +226,7 @@ func LockUserGroup(token string, isLock bool) error {
 			"isGroupLocked" : isLock,
 		}})
 
-	if(err == nil && !isLock) {
+	if (err == nil && !isLock) {
 		var user models.User
 		_ = userCol.Find(bson.M{"token": token}).One(&user)
 		common.GroupUnlockedNotification(user)
@@ -265,7 +241,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	isNear := isLocationInGroup(groupId,lat,lng);
+	isNear := isLocationInGroup(groupId, lat, lng);
 
 	err := userCol.Update(bson.M{"token": token},
 		bson.M{"$set": bson.M{
@@ -305,7 +281,7 @@ func RemoveHomeLocation(token string) (error) {
 	return err
 }
 
-func GetUserInfo(token string) (user models.User, err error){
+func GetUserInfo(token string) (user models.User, err error) {
 
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
@@ -364,7 +340,7 @@ func SetUserFeedback(token string, content string, phone string, email string) e
 
 	err := userCol.Find(bson.M{"token": token}).One(&user)
 
-	if(err != nil) {
+	if (err != nil) {
 		return err;
 	}
 
@@ -375,11 +351,11 @@ func SetUserFeedback(token string, content string, phone string, email string) e
 	params["content"] = content;
 	params["createdOn"] = time.Now().UTC();
 
-	if(len(phone) > 0 ) {
+	if (len(phone) > 0 ) {
 		params["phone"] = phone;
 	}
 
-	if(len(email) > 0) {
+	if (len(email) > 0) {
 		params["email"] = email;
 	}
 
