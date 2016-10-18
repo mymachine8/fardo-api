@@ -290,6 +290,9 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	c := context.DbCollection("posts")
 
 	post.IsActive = true;
+	if(!post.CreatedOn.IsZero()) {
+		post.CreatedOn = post.CreatedOn.UTC();
+	}
 	post.CreatedOn = time.Now().UTC();
 	post.Score = redditPostRankingAlgorithm(post);
 
