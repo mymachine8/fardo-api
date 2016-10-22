@@ -828,7 +828,7 @@ func getNearByPopularPosts(lat float64, lng float64) (posts[]models.Post, err er
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }},
-		"createdOn": bson.M{"$gt": then}, "isActive" : true}).Sort("-score").Limit(LocalPercent).All(&posts);
+		"createdOn": bson.M{"$gt": then}, "isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(LocalPercent).All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -844,7 +844,7 @@ func getGlobalPopularPosts() (posts[]models.Post, err error) {
 	then := now.AddDate(0, -7, 0)
 	c := context.DbCollection("posts")
 	err = c.Find(bson.M{
-		"createdOn": bson.M{"$gt": then}, "isActive" : true}).Sort("-score").Limit(GlobalPercent).All(&posts);
+		"createdOn": bson.M{"$gt": then}, "isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(GlobalPercent).All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
@@ -862,7 +862,7 @@ func getPopularPostsAdminArea(lat float64, lng float64) (posts[]models.Post, err
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 300 / 3963.2} }},
-		"createdOn": bson.M{"$gt": then}, "isActive" : true}).Sort("-score").Limit(AdminAreaPercent).All(&posts);
+		"createdOn": bson.M{"$gt": then}, "isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(AdminAreaPercent).All(&posts);
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
