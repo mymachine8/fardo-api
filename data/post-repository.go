@@ -504,6 +504,8 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		return
 	}
 
+	go SetUserLocation(token, lat, lng);
+
 	var prevPosts []models.Post;
 	var currentPosts []models.Post;
 
