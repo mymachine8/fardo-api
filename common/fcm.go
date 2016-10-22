@@ -418,8 +418,8 @@ func SendUpvoteNotification(userId string, post models.Post) {
 
 	var content string;
 
-	if (len(post.Content) > 35) {
-		content = post.Content[0:35]
+	if (len(post.Content) > 55) {
+		content = post.Content[0:55]
 		content += "..."
 	} else {
 		content = post.Content
@@ -479,8 +479,8 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 
 	var content string;
 
-	if (len(comment.Content) > 35) {
-		content = comment.Content[0:35]
+	if (len(comment.Content) > 55) {
+		content = comment.Content[0:55]
 		content += "..."
 	} else {
 		content = comment.Content
@@ -603,8 +603,8 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	var content string;
 
-	if (len(post.Content) > 15) {
-		content = post.Content[0:15]
+	if (len(post.Content) > 25) {
+		content = post.Content[0:25]
 		content += "..."
 	} else {
 		content = post.Content
@@ -612,8 +612,8 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	var commentContent string;
 
-	if (len(comment.Content) > 20) {
-		commentContent = comment.Content[0:20]
+	if (len(comment.Content) > 30) {
+		commentContent = comment.Content[0:30]
 		commentContent += "..."
 	} else {
 		commentContent = comment.Content
@@ -691,8 +691,8 @@ func SendNearByNotification(post models.Post) {
 
 	var content string;
 
-	if (len(post.Content) > 30) {
-		content = post.Content[0:30]
+	if (len(post.Content) > 80) {
+		content = post.Content[0:80]
 		content += "..."
 	} else {
 		content = post.Content
