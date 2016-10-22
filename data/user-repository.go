@@ -301,6 +301,16 @@ func GetUserInfo(token string) (user models.User, err error) {
 
 }
 
+func GetUsers() (users [] models.User, err error) {
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	err = userCol.Find(bson.M{"isActive": true}).One(&users)
+
+	return
+}
+
 func CalculateUserScore(post models.Post, actionType ActionType) {
 	var resultScore int;
 	switch actionType {

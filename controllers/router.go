@@ -94,6 +94,7 @@ func InitRoutes() http.Handler {
 
 
 	r.POST("/api/admin/register", registerAdminHandler);
+	r.POST("/api/admin/users", getActiveUsersList);
 	r.POST("/api/admin/login", loginAdminHandler);
 
 	r.GET("/api/admin/posts", allPostsListHandler);
@@ -394,7 +395,7 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	result, err := data.CreatePostUser(token, post);
 
 	if (err != nil) {
-		result.ImageData = "";
+		post.ImageData = "";
 		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
 		return
 	}
@@ -1154,6 +1155,15 @@ func memberRegisterHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 func getUserInfoHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	token := common.GetAccessToken(r);
 	user, err := data.GetUserInfo(token);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(user));
+}
+
+func getActiveUsersList(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	user, err := data.GetUsers();
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
