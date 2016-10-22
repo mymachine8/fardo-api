@@ -306,7 +306,7 @@ func GetUsers() (users [] models.User, err error) {
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	err = userCol.Find(bson.M{"isActive": true}).One(&users)
+	err = userCol.Find(bson.M{"isActive": true}).All(&users)
 
 	return
 }
