@@ -94,7 +94,7 @@ func InitRoutes() http.Handler {
 
 
 	r.POST("/api/admin/register", registerAdminHandler);
-	r.POST("/api/admin/users", getActiveUsersList);
+	r.GET("/api/admin/users", getActiveUsersList);
 	r.POST("/api/admin/login", loginAdminHandler);
 
 	r.GET("/api/admin/posts", allPostsListHandler);
