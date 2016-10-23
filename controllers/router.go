@@ -721,6 +721,7 @@ func checkUsernameAvailabilityHandler(rw http.ResponseWriter, r *http.Request, p
 
 func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var body struct {
+		Imei        string `json:"imei"`
 		SessionId   uint64 `json:"sessionId"`
 		Token       string `json:"token"`
 		TokenSecret string `json:"tokenSecret"`
@@ -737,7 +738,7 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	token := common.GetAccessToken(r);
 
 
-	user, group, errr := data.ChangeUserPhone(token, body.SessionId, body.Token, body.TokenSecret, body.Phone, body.FcmToken);
+	user, group, errr := data.ChangeUserPhone(token, body.Imei, body.SessionId, body.Token, body.TokenSecret, body.Phone, body.FcmToken);
 
 	if (errr != nil) {
 		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, errr);

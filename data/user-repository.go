@@ -126,7 +126,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSecret string, phone string, fcmToken string) (models.User,models.Group, error) {
+func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token string, tokenSecret string, phone string, fcmToken string) (models.User, models.Group, error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
@@ -137,6 +137,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 		err = userCol.Update(bson.M{"token": accessToken},
 			bson.M{"$set": bson.M{
 				"token": token,
+				"imei": imei,
 				"tokenSecret": tokenSecret,
 				"phone" : phone,
 				"sessionId" : sessionId,
@@ -146,6 +147,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 		err = userCol.Update(bson.M{"phone": phone, "isActive" : true},
 			bson.M{"$set": bson.M{
 				"token": token,
+				"imei": imei,
 				"tokenSecret": tokenSecret,
 				"phone" : phone,
 				"sessionId" : sessionId,
@@ -157,13 +159,13 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 
 	err = userCol.Find(bson.M{"token": token}).One(&user)
 	var group models.Group
-	if(err == nil) {
-		if(len(user.GroupId) > 0) {
+	if (err == nil) {
+		if (len(user.GroupId) > 0) {
 			group, err = GetGroupById(user.GroupId.Hex())
 		}
 	}
 
-	return user,group, err
+	return user, group, err
 }
 
 func ChangeUserHomeLocation(accessToken string, homeAddress string, lat float64, lng float64) error {
