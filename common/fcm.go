@@ -527,7 +527,7 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 	currentLatLng := [2]float64{lng, lat}
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 0.1 / 3963.2} }}}).All(&users);
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 0.1 / 3963.2} }}, "isActive" : true}).All(&users);
 	if (users == nil) {
 		users = []models.User{}
 	}
@@ -560,6 +560,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	options := bson.M{}
 
 	options["$in"] = userIds;
+	options["isActive"] = true;
 
 	context := NewContext()
 	defer context.Close()
