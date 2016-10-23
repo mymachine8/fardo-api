@@ -548,6 +548,8 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	comments, e := GetCommentsForPost(post.Id.Hex())
 
+	slack.Send(slack.DebugLevel, "Comments len: " + strconv.Itoa(len(comments)))
+
 	if (e != nil) {
 		return;
 	}
@@ -636,7 +638,9 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	notificationData["message"] = message;
 
-	sendNotification(fcmIds, notificationData);
+	if(len(fcmIds) > 0) {
+		sendNotification(fcmIds, notificationData);
+	}
 
 	found := false;
 	for i := 0; i < len(users); i++ {
