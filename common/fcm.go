@@ -536,10 +536,6 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 
 func SendCommentNotification(post models.Post, comment models.Comment) {
 
-	if (post.UserId == comment.UserId) {
-		return;
-	}
-
 	user, err := findUserById(post.UserId.Hex());
 
 	if (err != nil) {
@@ -552,17 +548,12 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		return;
 	}
 
-	slack.Send(slack.DebugLevel, "Comments:" + strconv.Itoa(len(comments)))
-
 	var userIds []bson.ObjectId;
 	for i := 0; i < len(comments); i++ {
 		userIds = append(userIds, comments[i].UserId)
 	}
 
-	options := bson.M{}
-
-	options["id"] = bson.M { "$in" : userIds};
-	options["isActive"] = true;
+	options := bson.M{"_id" : bson.M{ "$in" : userIds}}
 
 	context := NewContext()
 	defer context.Close()
@@ -571,15 +562,10 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	var users []models.User
 	err = c.Find(options).All(&users);
 
-
-
 	var fcmIds []string
 
-	slack.Send(slack.DebugLevel, "Comment users len: " + strconv.Itoa(len(users)))
-
 	for i := 0; i < len(users); i++ {
-		if(users[i].Id.Hex() != comment.UserId.Hex()) {
-			slack.Send(slack.ErrorLevel, "each user: " + users[i].Id.Hex())
+		if(users[i].Id.Hex() != comment.UserId.Hex() && users[i].IsActive) {
 			fcmIds = append(fcmIds, users[i].FcmToken)
 		}
 	}
