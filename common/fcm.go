@@ -548,8 +548,6 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	comments, e := GetCommentsForPost(post.Id.Hex())
 
-	slack.Send(slack.DebugLevel, "Comments len: " + strconv.Itoa(len(comments)))
-
 	if (e != nil) {
 		return;
 	}
@@ -561,7 +559,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	options := bson.M{}
 
-	options["$in"] = userIds;
+	options["id"] = bson.M { "$in" : userIds};
 	options["isActive"] = true;
 
 	context := NewContext()
