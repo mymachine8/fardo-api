@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"math/rand"
+	"github.com/mymachine8/fardo-api/slack"
 )
 
 const (
@@ -379,7 +380,7 @@ func (this *FcmClient) SetCondition(condition string) *FcmClient {
 
 func SendUpvoteNotification(userId string, post models.Post) {
 
-	if(post.UserId.Hex() == userId) {
+	if (post.UserId.Hex() == userId) {
 		return;
 	}
 
@@ -389,7 +390,7 @@ func SendUpvoteNotification(userId string, post models.Post) {
 		log.Print(err.Error())
 	}
 
-	if(len(post.GroupId) > 0) {
+	if (len(post.GroupId) > 0) {
 		post.PlaceType = post.GroupCategoryName;
 		post.PlaceName = post.GroupName;
 	} else {
@@ -441,7 +442,7 @@ func SendUpvoteNotification(userId string, post models.Post) {
 
 func SendCommentUpvoteNotification(userId string, comment models.Comment, post models.Post) {
 
-	if(comment.UserId.Hex() == userId) {
+	if (comment.UserId.Hex() == userId) {
 		return;
 	}
 
@@ -450,7 +451,7 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 		return;
 	}
 
-	if(len(post.GroupId) > 0) {
+	if (len(post.GroupId) > 0) {
 		post.PlaceType = post.GroupCategoryName;
 		post.PlaceName = post.GroupName;
 	} else {
@@ -547,16 +548,16 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	comments, e := GetCommentsForPost(post.Id.Hex())
 
-	if(e != nil) {
+	if (e != nil) {
 		return;
 	}
 
 	var userIds []bson.ObjectId;
-	for i :=0 ; i< len(comments) ; i++ {
+	for i := 0; i < len(comments); i++ {
 		userIds = append(userIds, comments[i].UserId)
 	}
 
-	options := bson.M {}
+	options := bson.M{}
 
 	options["$in"] = userIds;
 
@@ -569,19 +570,17 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	var fcmIds []string
 
-	for i:=0;i<len(users);i++ {
+	for i := 0; i < len(users); i++ {
 		fcmIds = append(fcmIds, users[i].FcmToken)
 	}
 
-	if(len(post.GroupId) > 0) {
+	if (len(post.GroupId) > 0) {
 		post.PlaceType = post.GroupCategoryName;
 		post.PlaceName = post.GroupName;
 	} else {
 		post.PlaceType = "location";
 		post.PlaceName = post.Locality;
 	}
-
-
 
 	notificationData := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
@@ -621,7 +620,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	message := "";
 
-	if(len(post.Content) == 0) {
+	if (len(post.Content) == 0) {
 		message = "Someone else commented \"" + commentContent + "\"";
 	} else {
 		message = "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
@@ -631,13 +630,13 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	sendNotification(fcmIds, notificationData);
 
-	for i:=0;i<len(users);i++ {
+	for i := 0; i < len(users); i++ {
 		fcmIds = append(fcmIds, users[i].FcmToken)
 	}
 
 	found := false;
-	for i:=0;i<len(users);i++ {
-		if(users[i].Id.Hex() == user.Id.Hex()) {
+	for i := 0; i < len(users); i++ {
+		if (users[i].Id.Hex() == user.Id.Hex()) {
 			found = true;
 		}
 	}
@@ -662,7 +661,7 @@ func SendNearByNotification(post models.Post) {
 		return;
 	}
 
-	if(len(users) == 0) {
+	if (len(users) == 0) {
 		return;
 	}
 
@@ -744,7 +743,7 @@ func SendDeletePostNotification(post models.Post) {
 	}
 
 	message := "";
-	if(len(post.Content) == 0) {
+	if (len(post.Content) == 0) {
 		message = "Your Post has been suspended as people in your community downvoted or reported about it"
 	} else {
 		message = "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"
@@ -807,11 +806,9 @@ func sendNotification(fcmTokens []string, data map[string]string) {
 	c := NewFcmClient(serverKey)
 	c.NewFcmRegIdsMsg(fcmTokens, data)
 
-	status, err := c.Send()
+	_, err := c.Send()
 
-	if err == nil {
-		status.PrintResults()
-	} else {
-		fmt.Println("FCM Error: " + err.Error());
+	if(err != nil) {
+		slack.Send(slack.ErrorLevel, "FCM Notification error: " + err.Error())
 	}
 }
