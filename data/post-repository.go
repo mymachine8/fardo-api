@@ -377,7 +377,7 @@ func DownvotePost(token string, id string, undo bool) (err error) {
 	return
 }
 
-func SuspendPost(id string) (err error) {
+func SuspendPost(id string, isSilent bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("posts")
@@ -388,7 +388,7 @@ func SuspendPost(id string) (err error) {
 			"modifiedOn": time.Now().UTC(),
 		}})
 
-	if (err == nil) {
+	if (err == nil && !isSilent) {
 		post, _ := findPostById(id)
 		common.SendDeletePostNotification(post);
 	}
@@ -1139,7 +1139,7 @@ func checkVoteCount(token string, userId string, id string, isUpvote bool) (err 
 
 	if (!isUpvote) {
 		if (votes <= models.NEGATIVE_VOTES_LIMIT) {
-			err = SuspendPost(id);
+			err = SuspendPost(id, false);
 		}
 	}
 	return;
@@ -1167,7 +1167,7 @@ func ReportSpam(id string, reason string) (err error) {
 func checkSpamCountLimit(id string) (err error) {
 	post, err := findPostById(id);
 	if (post.SpamCount >= models.SPAM_COUNT_LIMIT) {
-		err = SuspendPost(id);
+		err = SuspendPost(id, false);
 	}
 	return
 }

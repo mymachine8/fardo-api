@@ -54,6 +54,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/posts/:id/undo-upvote", undoUpvotePostHandler);
 	r.PUT("/api/posts/:id/undo-downvote", undoDownvotePostHandler);
 	r.PUT("/api/posts/:id/suspend", suspendPostHandler);
+	r.PUT("/api/posts/:id/silent-suspend", silentSuspendHandler);
 	r.PUT("/api/comments/:id/suspend", suspendCommentHandler);
 	r.GET("/api/posts/:id/comments", commentListHandler);
 	r.POST("/api/posts/:id/comments", createCommentHandler);
@@ -535,7 +536,17 @@ func undoDownvoteCommentHandler(rw http.ResponseWriter, r *http.Request, p httpr
 
 func suspendPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
-	err := data.SuspendPost(p.ByName("id"));
+	err := data.SuspendPost(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func silentSuspendHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.SuspendPost(p.ByName("id"), true);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return
