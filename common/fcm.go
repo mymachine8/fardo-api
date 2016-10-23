@@ -569,10 +569,17 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	var users []models.User
 	err = c.Find(options).All(&users);
 
+
+
 	var fcmIds []string
 
+	slack.Send(slack.DebugLevel, "Comment users len: " + strconv.Itoa(len(users)))
+
 	for i := 0; i < len(users); i++ {
-		fcmIds = append(fcmIds, users[i].FcmToken)
+		if(users[i].Id.Hex() != comment.UserId.Hex()) {
+			slack.Send(slack.ErrorLevel, "each user: " + users[i].Id.Hex())
+			fcmIds = append(fcmIds, users[i].FcmToken)
+		}
 	}
 
 	if (len(post.GroupId) > 0) {
@@ -630,10 +637,6 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	notificationData["message"] = message;
 
 	sendNotification(fcmIds, notificationData);
-
-	for i := 0; i < len(users); i++ {
-		fcmIds = append(fcmIds, users[i].FcmToken)
-	}
 
 	found := false;
 	for i := 0; i < len(users); i++ {
