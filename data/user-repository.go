@@ -101,6 +101,7 @@ func SetUsernameToken(accessToken string, username string) (string, error) {
 	err = userCol.Update(bson.M{"token": accessToken},
 		bson.M{"$set": bson.M{
 			"username": username,
+			"modifiedOn": time.Now().UTC(),
 		}})
 
 	return "success", err
@@ -142,6 +143,7 @@ func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token s
 				"phone" : phone,
 				"sessionId" : sessionId,
 				"fcmToken" : fcmToken,
+				"modifiedOn": time.Now().UTC(),
 			}})
 	} else {
 		err = userCol.Update(bson.M{"phone": phone, "isActive" : true},
@@ -152,6 +154,7 @@ func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token s
 				"phone" : phone,
 				"sessionId" : sessionId,
 				"fcmToken" : fcmToken,
+				"modifiedOn": time.Now().UTC(),
 			}})
 		err = userCol.Update(bson.M{"imei": imei, "phone": bson.M{"$exists" : false}},
 			bson.M{"$set": bson.M{
