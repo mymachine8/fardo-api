@@ -552,6 +552,8 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		return;
 	}
 
+	slack.Send(slack.DebugLevel, "Comments:" + strconv.Itoa(len(comments)))
+
 	var userIds []bson.ObjectId;
 	for i := 0; i < len(comments); i++ {
 		userIds = append(userIds, comments[i].UserId)
