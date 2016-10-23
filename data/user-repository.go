@@ -42,7 +42,7 @@ func RegisterAppUser(user models.User) (models.User, error) {
 	user.Score = 200;
 	user.CreatedOn = time.Now().UTC()
 	user.Id = bson.NewObjectId()
-	err := c.Update(bson.M{"imei": user.Imei, "phone": bson.M{"$exists" : false}},
+	_, err := c.UpdateAll(bson.M{"imei": user.Imei, "phone": bson.M{"$exists" : false}},
 		bson.M{"$set": bson.M{
 			"isActive": false,
 			"modifiedOn": time.Now().UTC(),
@@ -156,7 +156,7 @@ func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token s
 				"fcmToken" : fcmToken,
 				"modifiedOn": time.Now().UTC(),
 			}})
-		err = userCol.Update(bson.M{"imei": imei, "phone": bson.M{"$exists" : false}},
+		_, err = userCol.UpdateAll(bson.M{"imei": imei, "phone": bson.M{"$exists" : false}},
 			bson.M{"$set": bson.M{
 				"isActive": false,
 				"modifiedOn": time.Now().UTC(),
