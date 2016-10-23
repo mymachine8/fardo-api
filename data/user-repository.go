@@ -153,6 +153,11 @@ func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token s
 				"sessionId" : sessionId,
 				"fcmToken" : fcmToken,
 			}})
+		err = userCol.Update(bson.M{"imei": imei, "phone": bson.M{"$exists" : false}},
+			bson.M{"$set": bson.M{
+				"isActive": false,
+				"modifiedOn": time.Now().UTC(),
+			}})
 	}
 
 	var user models.User
