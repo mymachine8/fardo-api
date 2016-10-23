@@ -42,10 +42,14 @@ func RegisterAppUser(user models.User) (models.User, error) {
 	user.Score = 200;
 	user.CreatedOn = time.Now().UTC()
 	user.Id = bson.NewObjectId()
-	err := c.Insert(&user)
-	if (err != nil) {
-		return user, err
-	}
+	err := c.Update(bson.M{"imei": user.Imei, "phone": bson.M{"$exists" : false}},
+		bson.M{"$set": bson.M{
+			"isActive": false,
+			"modifiedOn": time.Now().UTC(),
+		}})
+
+	err = c.Insert(&user)
+
 	return user, err
 }
 
@@ -128,7 +132,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 	defer userContext.Close()
 
 	var existing models.User
-	err := userCol.Find(bson.M{"phone": phone}).One(&existing)
+	err := userCol.Find(bson.M{"phone": phone, "isActive": true}).One(&existing)
 	if (err != nil && err.Error() == mgo.ErrNotFound.Error()) {
 		err = userCol.Update(bson.M{"token": accessToken},
 			bson.M{"$set": bson.M{
@@ -139,7 +143,7 @@ func ChangeUserPhone(accessToken string, sessionId uint64, token string, tokenSe
 				"fcmToken" : fcmToken,
 			}})
 	} else {
-		err = userCol.Update(bson.M{"phone": phone},
+		err = userCol.Update(bson.M{"phone": phone, "isActive" : true},
 			bson.M{"$set": bson.M{
 				"token": token,
 				"tokenSecret": tokenSecret,
