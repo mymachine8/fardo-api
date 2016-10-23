@@ -661,14 +661,16 @@ func SendNearByNotification(post models.Post) {
 		return;
 	}
 
-	if (len(users) == 0) {
-		return;
-	}
-
 	ids := []string{}
 
 	for _, user := range users {
-		ids = append(ids, user.FcmToken);
+		if(user.Id.Hex() != post.UserId.Hex()) {
+			ids = append(ids, user.FcmToken);
+		}
+	}
+
+	if(len(ids) == 0) {
+		return;
 	}
 
 	data := map[string]string{
