@@ -747,13 +747,11 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 
 	response := struct {
 		User  models.User `json:"user"`
-		Group *models.Group `json:"group,omitempty"`
+		Group models.Group `json:"group,omitempty"`
 	}{
 		user,
 		group,
 	}
-
-	slack.Send(slack.ErrorLevel, string(common.SuccessResponseJSON(response)))
 
 	rw.Write(common.SuccessResponseJSON(response));
 }

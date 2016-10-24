@@ -127,7 +127,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	return true, err
 }
 
-func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token string, tokenSecret string, phone string, fcmToken string) (models.User, *models.Group, error) {
+func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token string, tokenSecret string, phone string, fcmToken string) (models.User, models.Group, error) {
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
@@ -173,7 +173,7 @@ func ChangeUserPhone (accessToken string, imei string, sessionId uint64, token s
 		}
 	}
 
-	return user, &group, err
+	return user, group, err
 }
 
 func ChangeUserHomeLocation(accessToken string, homeAddress string, lat float64, lng float64) error {
