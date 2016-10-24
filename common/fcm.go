@@ -402,19 +402,13 @@ func SendUpvoteNotification(userId string, post models.Post) {
 		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"upvotes" : strconv.Itoa(post.Upvotes),
-		"downvotes" : strconv.Itoa(post.Downvotes),
-		"content" : post.Content,
-		"replyCount" : strconv.Itoa(post.ReplyCount),
-		"voteClicked" : post.VoteClicked,
-		"placeName" : post.PlaceName,
-		"placeType" : post.PlaceType,
-		"imageWidth" : strconv.Itoa(post.ImageWidth),
-		"imageHeight" : strconv.Itoa(post.ImageHeight),
-		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"emphasis" : strconv.Itoa(post.Upvotes) + " upvotes",
-		"type": "post_upvote",
+	}
+
+	if(len(post.ImageUrl) > 0) {
+		notificationData["type"] = "image_post_upvote";
+	} else {
+		notificationData["type"] = "post_upvote";
 	}
 
 	var content string;
@@ -464,16 +458,6 @@ func SendCommentUpvoteNotification(userId string, comment models.Comment, post m
 		"postId": comment.PostId.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"upvotes" : strconv.Itoa(post.Upvotes),
-		"downvotes" : strconv.Itoa(post.Downvotes),
-		"content" : post.Content,
-		"imageWidth" : strconv.Itoa(post.ImageWidth),
-		"imageHeight" : strconv.Itoa(post.ImageHeight),
-		"replyCount" : strconv.Itoa(post.ReplyCount),
-		"placeName" : post.PlaceName,
-		"placeType" : post.PlaceType,
-		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"emphasis": strconv.Itoa(comment.Upvotes) + " upvotes",
 		"type": "comment_upvote",
 	}
@@ -583,16 +567,6 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		"postId": post.Id.Hex(),
 		"commentId": comment.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"upvotes" : strconv.Itoa(post.Upvotes),
-		"downvotes" : strconv.Itoa(post.Downvotes),
-		"content" : post.Content,
-		"imageWidth" : strconv.Itoa(post.ImageWidth),
-		"imageHeight" : strconv.Itoa(post.ImageHeight),
-		"replyCount" : strconv.Itoa(post.ReplyCount),
-		"placeName" : post.PlaceName,
-		"placeType" : post.PlaceType,
-		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
 		"type": "comment",
 	}
 
@@ -671,17 +645,12 @@ func SendNearByNotification(post models.Post) {
 		"id": strconv.Itoa(rand.Intn(999999)),
 		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"upvotes" : strconv.Itoa(post.Upvotes),
-		"downvotes" : strconv.Itoa(post.Downvotes),
-		"content" : post.Content,
-		"imageWidth" : strconv.Itoa(post.ImageWidth),
-		"imageHeight" : strconv.Itoa(post.ImageHeight),
-		"replyCount" : strconv.Itoa(post.ReplyCount),
-		"placeName" : post.PlaceName,
-		"placeType" : post.PlaceType,
-		"imageUrl" : post.ImageUrl,
-		"createdOn" : post.CreatedOn.Format("2006-01-02T15:04:05.000Z"),
-		"type": "post",
+	}
+
+	if(len(post.ImageUrl) > 0) {
+		data["type"] = "image_post";
+	} else {
+		data["type"] = "post";
 	}
 
 	var content string;
