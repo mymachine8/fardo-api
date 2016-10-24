@@ -750,8 +750,10 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		Group *models.Group `json:"group,omitempty"`
 	}{
 		user,
-		&group,
+		group,
 	}
+
+	slack.Send(slack.ErrorLevel, string(common.SuccessResponseJSON(response)))
 
 	rw.Write(common.SuccessResponseJSON(response));
 }
