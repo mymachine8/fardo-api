@@ -733,6 +733,7 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	globalPosts, _ := getGlobalPopularPosts(); //30%
 	adminAreaPosts, _ := getPopularPostsAdminArea(lat, lng); //20%
 
+
 	for index, _ := range nearByPosts {
 		if (len(nearByPosts[index].GroupName) > 0) {
 			nearByPosts[index].PlaceName = nearByPosts[index].GroupName;
@@ -802,6 +803,25 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 			l++
 		}
 	}
+
+	for ; j < nearPostsLen; j++ {
+		if(!idInPosts(nearByPosts[j].Id.Hex(), posts)) {
+			posts = append(posts, nearByPosts[j])
+		}
+	}
+
+	for ; k < globalPostsLen; k++ {
+		if(!idInPosts(globalPosts[k].Id.Hex(), posts)) {
+			posts = append(posts, globalPosts[k])
+		}
+	}
+
+	for ; l < adminAreaPostsLen; l++ {
+		if(!idInPosts(adminAreaPosts[l].Id.Hex(), posts)) {
+			posts = append(posts, adminAreaPosts[l])
+		}
+	}
+
 
 	if (posts == nil) {
 		posts = []models.Post{}
