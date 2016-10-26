@@ -415,7 +415,7 @@ func CalculatePlacesTrendingScore() (err error) {
 		}
 		c.Update(bson.M{"_id": group.Id},
 			bson.M{"$push": bson.M{"scores": count },
-				"$set": bson.M{"scoreLastUpdated" : now, "trendingScore" : trendingScore }});
+				"$set": bson.M{"scoreLastUpdated" : now, "trendingScore" : trendingScore, "postsCount": count}});
 	}
 
 	return err

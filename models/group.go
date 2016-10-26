@@ -19,6 +19,7 @@ type Group struct {
 	SubCategoryId bson.ObjectId `bson:"subCategoryId" json:"subCategoryId"`
 	SubCategoryName string `bson:"subCategoryName" json:"subCategoryName"`
 	Radius int `bson:"radius" json:"radius"`
+	PostsCount int `bson:"postsCount" json:"postsCount"`
 	Scores []int `bson:"scores" json:"-"`
 	IsChildGroup bool `bson:"isChildGroup" json:"isChildGroup"`
 	ParentGroupId bson.ObjectId `bson:"parentGroupId,omitempty" json:"parentGroupId,omitempty"`

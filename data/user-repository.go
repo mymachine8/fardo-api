@@ -206,6 +206,21 @@ func GetUserScore(accessToken string) (score int, err error) {
 	return user.Score, err
 }
 
+func GetUsernameByPhone(phone string) (username string, err error) {
+	userContext := common.NewContext()
+	userCol := userContext.DbCollection("users")
+	defer userContext.Close()
+
+	var user models.User;
+	err = userCol.Find(bson.M{"phone": phone, "isActive": true}).One(&user)
+
+	if (err != nil) {
+		return username, err;
+	}
+
+	return user.Username, err
+}
+
 func SetUserLocation(accessToken string, lat float64, lng float64) error {
 
 	userContext := common.NewContext()

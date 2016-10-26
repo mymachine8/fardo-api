@@ -38,6 +38,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/users/username", updateUsernameHandler);
 	r.GET("/api/users/username-availability", checkUsernameAvailabilityHandler);
 	r.PUT("/api/users/phone", updateUserPhoneHandler);
+	r.GET("/api/users/username", getUsernameHandler);
 	r.PUT("/api/users/home", updateUserHomeLocationHandler);
 	r.PUT("/api/users/remove-home", removeHomeLocationHandler);
 	r.GET("/api/users/score", getUserScoreHandler);
@@ -754,6 +755,20 @@ func updateUserPhoneHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	rw.Write(common.SuccessResponseJSON(response));
+}
+
+func getUsernameHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	phone := r.URL.Query().Get("phone");
+
+	username, err := data.GetUsernameByPhone(phone);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, username, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(username));
 }
 
 func updateUserHomeLocationHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
