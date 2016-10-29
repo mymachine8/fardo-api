@@ -53,6 +53,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		post.GroupCategoryName = group.CategoryName
 		post.MyGroupName = myGroup.ShortName;
 		post.MyGroupCategoryName = myGroup.CategoryName
+		UpdateGroupPostCount(group.Id.Hex());
 	} else if (len(post.GroupId) > 0) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
@@ -253,6 +254,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 			post.GroupCategoryName = group.CategoryName
 			post.Loc[0] = group.Loc[0];
 			post.Loc[1] = group.Loc[1];
+			UpdateGroupPostCount(group.Id.Hex());
 		}
 	}
 

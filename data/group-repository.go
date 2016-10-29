@@ -361,6 +361,19 @@ func GetGroupLabels(groupId string) (labels []models.Label, err error) {
 	return
 }
 
+
+func UpdateGroupPostCount(groupId string) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("groups")
+
+	_ = c.Update(bson.M{"_id": bson.ObjectIdHex(groupId)},
+		bson.M{"$inc": bson.M{
+			"postsCount": 1,
+		}, "$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
+}
+
 func CalculatePlacesTrendingScore() (err error) {
 	context := common.NewContext()
 	defer context.Close()
@@ -415,7 +428,7 @@ func CalculatePlacesTrendingScore() (err error) {
 		}
 		c.Update(bson.M{"_id": group.Id},
 			bson.M{"$push": bson.M{"scores": count },
-				"$set": bson.M{"scoreLastUpdated" : now, "trendingScore" : trendingScore, "postsCount": count}});
+				"$set": bson.M{"scoreLastUpdated" : now, "trendingScore" : trendingScore}});
 	}
 
 	return err
