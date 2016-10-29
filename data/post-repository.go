@@ -521,13 +521,13 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		}
 		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 5 / 3963.2}}}});
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 8 / 3963.2}}}});
 		}
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
 		if (len(posts) + len(prevPosts) < 75) {
-			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 5 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").All(&additionalPosts);
+			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 8 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").All(&additionalPosts);
 		}
 
 		for index, _ := range currentPosts {
@@ -543,7 +543,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		options := []bson.M{}
 
-		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 5 / 3963.2}}}})
+		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 8 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
@@ -552,7 +552,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		if (homeLat > 0 && homeLng > 0) {
 			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 5 / 3963.2}}}});
+			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 8 / 3963.2}}}});
 		}
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
