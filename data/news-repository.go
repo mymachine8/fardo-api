@@ -74,7 +74,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 		return news, models.FardoError{"Insert News Error: " + err.Error()}
 	}
 
-	go addToRecentUserPosts(result.Id, news.Id, "news");
+	go addToRecentUserNews(result.Id, news.Id, "news");
 
 	go CalculateUserScoreForNews(news, ActionCreate);
 
@@ -151,11 +151,7 @@ func UpvoteNews(token string, id string, undo bool) (err error) {
 	defer context.Close()
 	c := context.DbCollection("news")
 
-	tokenContext := common.NewContext()
-	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("users")
-	var result models.User
-	err = tokenCol.Find(bson.M{"token": token}).One(&result)
+	result, err := GetUserInfo(token)
 
 	step := 1;
 	if (undo) {
@@ -170,7 +166,7 @@ func UpvoteNews(token string, id string, undo bool) (err error) {
 	if (err == nil) {
 		go updateUserAndNewsScore(id, ActionUpvote);
 		go checkVoteCountNews(result.Token, result.Id.Hex(), id, true);
-		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "post");
+		go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), true, undo, "news");
 	}
 	return
 }
@@ -178,7 +174,7 @@ func UpvoteNews(token string, id string, undo bool) (err error) {
 func DownvoteNews(token string, id string, undo bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("posts")
+	c := context.DbCollection("news")
 
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
@@ -198,9 +194,9 @@ func DownvoteNews(token string, id string, undo bool) (err error) {
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
-		go updateUserAndPostScore(id, ActionDownvote);
-		go checkVoteCount(result.Token, result.Id.Hex(), id, false);
-		go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
+		go updateUserAndNewsScore(id, ActionDownvote);
+		go checkVoteCountNews(result.Token, result.Id.Hex(), id, false);
+		go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
 	}
 	return
 }
@@ -226,7 +222,7 @@ func SuspendNews(id string, isSilent bool) (err error) {
 func SuspendNewsComment(id string) (err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("comments")
+	c := context.DbCollection("news_comments")
 
 	if (err != nil) {
 		return
@@ -282,11 +278,11 @@ func addUserNewsVotes(token string, news []models.News) []models.News {
 
 	m := make(map[string]string)
 
-	for i := 0; i < len(userPosts.PostVotes); i++ {
-		if (userPosts.PostVotes[i].IsUpvote) {
-			m[userPosts.PostVotes[i].Id.Hex()] = "upvote";
+	for i := 0; i < len(userPosts.Votes); i++ {
+		if (userPosts.Votes[i].IsUpvote) {
+			m[userPosts.Votes[i].Id.Hex()] = "upvote";
 		} else {
-			m[userPosts.PostVotes[i].Id.Hex()] = "downvote";
+			m[userPosts.Votes[i].Id.Hex()] = "downvote";
 		}
 	}
 
@@ -340,4 +336,165 @@ func addUserNewsCommentVotes(token string, comments []models.NewsComment) []mode
 	}
 
 	return comments;
+}
+
+func UpvoteNewsComment(token string, id string, undo bool) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news_comments")
+
+	step := 1;
+	if (undo) {
+		step = -1;
+	}
+
+	result, err := GetUserInfo(token)
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"upvotes": step,
+		}, "$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
+
+	go checkNewsCommentVoteCount(result.Id.Hex(), id, true);
+	go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), true, undo, "comment");
+	return
+}
+
+func DownvoteNewsComment(token string, id string, undo bool) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news_comments")
+
+	step := 1;
+	if (undo) {
+		step = -1;
+	}
+
+	result, err := GetUserInfo(token)
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"downvotes": step,
+		}, "$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
+
+	go checkNewsCommentVoteCount(result.Id.Hex(), id, false);
+	go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), false, undo, "comment");
+	return
+}
+
+func findNewsCommentById(id string) (comment models.NewsComment, err error, ) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news_comments")
+
+	err = c.FindId(bson.ObjectIdHex(id)).One(&comment);
+	return
+}
+
+func addToRecentUserNewsVotes(userId bson.ObjectId, id bson.ObjectId, isUpvote bool, isUndo bool, fieldType string) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_news")
+
+	ids := bson.M{};
+	if (fieldType == "comment") {
+		ids = bson.M{
+			"$pull": bson.M{"commentVotes" : bson.M{"_id" : id}}}
+	} else {
+		ids = bson.M{
+			"$pull": bson.M{"votes" : bson.M{"_id" : id}}}
+	}
+	_ = c.Update(bson.M{"userId": userId},
+		ids)
+
+	if (isUndo) {
+		return;
+	}
+
+	var userVote models.UserVote;
+	userVote.Id = id;
+	userVote.IsUpvote = isUpvote;
+
+	ids = bson.M{
+		"votes": userVote,
+	}
+
+	if (fieldType == "comment") {
+		ids = bson.M{
+			"commentVotes": userVote,
+		}
+	}
+
+	_, _ = c.Upsert(bson.M{"userId": userId},
+		bson.M{"$push": ids})
+}
+
+func checkNewsCommentVoteCount(userId string, id string, isUpvote bool) (err error) {
+	comment, err := findNewsCommentById(id);
+	votes := comment.Upvotes - comment.Downvotes;
+
+	if (isUpvote) {
+		if (comment.Upvotes == 2 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
+			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(),comment.Id.Hex(), comment.NewsId.Hex(),"news_comment_upvote",comment.Upvotes - comment.Downvotes, comment.Content);
+		}
+	}
+
+	if (!isUpvote) {
+		if (votes <= models.NEGATIVE_VOTES_LIMIT) {
+			err = SuspendNewsComment(id);
+		}
+	}
+	return;
+}
+
+func AddNewsComment(token string, postId string, comment models.Comment) (string, error) {
+	var err error
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news_comments")
+
+	result, err := GetUserInfo(token)
+
+	if (err != nil ) {
+		return "", err
+	}
+
+	comment.Id = bson.NewObjectId()
+	comment.IsActive = true;
+	comment.PostId = bson.ObjectIdHex(postId);
+	comment.CreatedOn = time.Now()
+	comment.UserId = result.Id;
+
+	err = c.Insert(&comment)
+
+	if (err == nil) {
+		go addToRecentUserPosts(result.Id, comment.PostId, "comment");
+		post, err := findPostById(postId);
+		if (err == nil ) {
+			go updateReplyCount(postId, true);
+			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content);
+		}
+	}
+
+	return comment.Id.Hex(), err
+}
+
+func addToRecentUserNews(userId bson.ObjectId, postId bson.ObjectId, fieldType string) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_news")
+
+	ids := bson.M{
+		"newsIds": postId,
+	}
+
+	if (fieldType == "comment") {
+		ids = bson.M{
+			"commentNewsIds": postId,
+		}
+	}
+	_, _ = c.Upsert(bson.M{"userId": userId},
+		bson.M{"$push": ids})
 }

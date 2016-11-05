@@ -6,7 +6,7 @@ type UserNews struct {
 	Id     bson.ObjectId `json:"id" bson:"_id"`
 	UserId bson.ObjectId `json:"userId" bson:"userId"`
 	NewsIds []bson.ObjectId `bson:"newsIds" json:"newsIds"`
-	CommentIds []bson.ObjectId `bson:"commentPostIds" json:"commentPostIds"`
+	CommentNewsIds []bson.ObjectId `bson:"CommentNewsIds" json:"CommentNewsIds"`
 	CommentVotes [] UserVote `bson:"commentVotes" json:"commentVotes"`
-	PostVotes [] UserVote `bson:"postVotes" json:"postVotes"`
+	Votes [] UserVote `bson:"votes" json:"votes"`
 }
