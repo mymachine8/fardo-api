@@ -1120,12 +1120,7 @@ func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) 
 
 	if (isUpvote) {
 		if (comment.Upvotes == 2 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
-			var post models.Post
-			post, err = findPostById(comment.PostId.Hex());
-			if (err != nil) {
-				return;
-			}
-			common.SendCommentUpvoteNotification(userId, comment, post);
+			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(),comment.Id.Hex(), comment.PostId.Hex(),"comment_upvote",comment.Upvotes - comment.Downvotes, comment.Content);
 		}
 	}
 
