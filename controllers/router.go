@@ -59,7 +59,6 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/comments/:id/suspend", suspendCommentHandler);
 	r.GET("/api/posts/:id/comments", commentListHandler);
 	r.POST("/api/posts/:id/comments", createCommentHandler);
-	r.POST("/api/comments/:id/replies", createReplyHandler);
 	r.PUT("/api/comments/:id/upvote", upvoteCommentHandler);
 	r.PUT("/api/comments/:id/downvote", downvoteCommentHandler);
 	r.PUT("/api/comments/:id/undo-upvote", undoUpvoteCommentHandler);
@@ -420,27 +419,6 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
-		return
-	}
-
-	rw.Write(common.SuccessResponseJSON(id));
-}
-
-func createReplyHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	var reply models.Reply
-	err := json.NewDecoder(r.Body).Decode(&reply)
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, reply, http.StatusInternalServerError, err);
-		return
-	}
-
-	token := common.GetAccessToken(r);
-
-	id, err := data.AddReply(token, p.ByName("id"), reply);
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, reply, http.StatusInternalServerError, err);
 		return
 	}
 

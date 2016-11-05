@@ -493,7 +493,7 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 	return
 }
 
-func SendCommentNotification(postUserId string, postId string, commentUserId string, commentId string, postContent string,commentContent string) {
+func SendCommentNotification(postUserId string, postId string, commentUserId string, commentId string, postContent string,commentContent string, commentType string) {
 
 	user, err := findUserById(postUserId);
 
@@ -534,7 +534,7 @@ func SendCommentNotification(postUserId string, postId string, commentUserId str
 		"postId": postId,
 		"commentId": commentId,
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"type": "comment",
+		"type": commentType,
 	}
 
 	var content string;

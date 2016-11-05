@@ -1011,7 +1011,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 		post, err := findPostById(postId);
 		if (err == nil ) {
 			go updateReplyCount(postId, true);
-			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content);
+			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content, "comment");
 		}
 	}
 
@@ -1035,30 +1035,6 @@ func updateReplyCount(id string, isIncrement bool) (err error) {
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	return
-}
-
-func AddReply(token string, commentId string, reply models.Reply) (string, error) {
-	var err error
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("comments")
-
-	tokenContext := common.NewContext()
-	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("users")
-	var result models.User
-	err = tokenCol.Find(bson.M{"token": token}).One(&result)
-	if (err != nil) {
-		return "", models.FardoError{"Get Access Token: " + err.Error()}
-	}
-	//TODO: Have to revisit this code
-	reply.UserId = result.Id;
-	reply.CreatedOn = time.Now()
-
-	err = c.Update(bson.M{"_id": bson.ObjectIdHex(commentId)},
-		bson.M{"$push": bson.M{"replies": reply}})
-
-	return commentId, err
 }
 
 func UpvoteComment(token string, id string, undo bool) (err error) {

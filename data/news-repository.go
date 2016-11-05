@@ -449,7 +449,7 @@ func checkNewsCommentVoteCount(userId string, id string, isUpvote bool) (err err
 	return;
 }
 
-func AddNewsComment(token string, postId string, comment models.Comment) (string, error) {
+func AddNewsComment(token string, postId string, comment models.NewsComment) (string, error) {
 	var err error
 	context := common.NewContext()
 	defer context.Close()
@@ -463,18 +463,18 @@ func AddNewsComment(token string, postId string, comment models.Comment) (string
 
 	comment.Id = bson.NewObjectId()
 	comment.IsActive = true;
-	comment.PostId = bson.ObjectIdHex(postId);
+	comment.NewsId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
 
 	err = c.Insert(&comment)
 
 	if (err == nil) {
-		go addToRecentUserPosts(result.Id, comment.PostId, "comment");
+		go addToRecentUserNews(result.Id, comment.NewsId, "comment");
 		post, err := findPostById(postId);
 		if (err == nil ) {
-			go updateReplyCount(postId, true);
-			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content);
+			go updateReplyCountNews(postId, true);
+			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content, "news_comment");
 		}
 	}
 
@@ -497,4 +497,38 @@ func addToRecentUserNews(userId bson.ObjectId, postId bson.ObjectId, fieldType s
 	}
 	_, _ = c.Upsert(bson.M{"userId": userId},
 		bson.M{"$push": ids})
+}
+
+func updateReplyCountNews(id string, isIncrement bool) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news")
+
+	var step int
+	if (isIncrement) {
+		step = 1;
+	} else {
+		step = -1;
+	}
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"replyCount": step,
+		}, "$set": bson.M{
+			"modifiedOn": time.Now().UTC()}})
+	return
+}
+
+func GetAllNewsComments(token string, postId string) (comments []models.NewsComment, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news_comments")
+
+	err = c.Find(bson.M{"newsId": bson.ObjectIdHex(postId), "isActive": true}).All(&comments)
+
+	if (comments == nil) {
+		comments = []models.NewsComment{}
+	}
+
+	comments = addUserNewsCommentVotes(token, comments);
+	return
 }
