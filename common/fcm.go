@@ -419,44 +419,34 @@ func SendUpvoteNotification(userId string, postId string, postUserId string, vot
 	sendNotification(ids, notificationData);
 }
 
-func SendCommentUpvoteNotification(userId string, comment models.Comment, post models.Post) {
+func SendCommentUpvoteNotification(userId string, commentUserId string,commentId string, postId string, commentType string, votes int, content string) {
 
-	if (comment.UserId.Hex() == userId) {
+	if (commentUserId == userId) {
 		return;
 	}
 
-	token, err := findUserById(comment.UserId.Hex());
+	token, err := findUserById(commentUserId);
 	if (err != nil) {
 		return;
 	}
 
-	if (len(post.GroupId) > 0) {
-		post.PlaceType = post.GroupCategoryName;
-		post.PlaceName = post.GroupName;
-	} else {
-		post.PlaceType = "location";
-		post.PlaceName = post.Locality;
-	}
-
 	data := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
-		"postId": comment.PostId.Hex(),
-		"commentId": comment.Id.Hex(),
+		"postId": postId,
+		"commentId": commentId,
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"emphasis": strconv.Itoa(comment.Upvotes) + " upvotes",
-		"type": "comment_upvote",
+		"emphasis": strconv.Itoa(votes) + " upvotes",
+		"type": commentType,
 	}
 
-	var content string;
-
-	if (len(comment.Content) > 55) {
-		content = comment.Content[0:55]
+	if (len(content) > 55) {
+		content = content[0:55]
 		content += "..."
 	} else {
-		content = comment.Content
+		content = content
 	}
 
-	message := "You got " + strconv.Itoa(comment.Upvotes) + " upvotes for your comment \"" + content + "\"";
+	message := "You got " + strconv.Itoa(votes) + " upvotes for your comment \"" + content + "\"";
 
 	data["message"] = message;
 
@@ -503,15 +493,15 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 	return
 }
 
-func SendCommentNotification(post models.Post, comment models.Comment) {
+func SendCommentNotification(postUserId string, postId string, commentUserId string, commentId string, postContent string,commentContent string) {
 
-	user, err := findUserById(post.UserId.Hex());
+	user, err := findUserById(postUserId);
 
 	if (err != nil) {
 		return;
 	}
 
-	comments, e := GetCommentsForPost(post.Id.Hex())
+	comments, e := GetCommentsForPost(postId)
 
 	if (e != nil) {
 		return;
@@ -534,48 +524,38 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	var fcmIds []string
 
 	for i := 0; i < len(users); i++ {
-		if (users[i].Id.Hex() != comment.UserId.Hex() && users[i].IsActive) {
+		if (users[i].Id.Hex() != commentUserId && users[i].IsActive) {
 			fcmIds = append(fcmIds, users[i].FcmToken)
 		}
 	}
 
-	if (len(post.GroupId) > 0) {
-		post.PlaceType = post.GroupCategoryName;
-		post.PlaceName = post.GroupName;
-	} else {
-		post.PlaceType = "location";
-		post.PlaceName = post.Locality;
-	}
-
 	notificationData := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
-		"postId": post.Id.Hex(),
-		"commentId": comment.Id.Hex(),
+		"postId": postId,
+		"commentId": commentId,
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "comment",
 	}
 
 	var content string;
 
-	if (len(post.Content) > 25) {
-		content = post.Content[0:25]
+	if (len(postContent) > 25) {
+		content = postContent[0:25]
 		content += "..."
 	} else {
-		content = post.Content
+		content = postContent
 	}
 
-	var commentContent string;
-
-	if (len(comment.Content) > 30) {
-		commentContent = comment.Content[0:30]
+	if (len(commentContent) > 30) {
+		commentContent = commentContent[0:30]
 		commentContent += "..."
 	} else {
-		commentContent = comment.Content
+		commentContent = commentContent
 	}
 
 	message := "";
 
-	if (len(post.Content) == 0) {
+	if (len(postContent) == 0) {
 		message = "Someone else commented \"" + commentContent + "\"";
 	} else {
 		message = "Someone else commented \"" + commentContent + "\"" + " on the post \"" + content + "\"";
@@ -670,30 +650,27 @@ func FeedbackNotification(fcmToken string) {
 	sendNotification(ids, data);
 }
 
-func SendDeletePostNotification(post models.Post) {
-	token, err := findUserById(post.UserId.Hex());
+func SendDeletePostNotification(userId string, content string) {
+	token, err := findUserById(userId);
 	if (err != nil) {
 		return;
 	}
 
 	data := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
-		"postId": post.Id.Hex(),
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 		"type": "general",
 	}
 
-	var content string;
-
-	if (len(post.Content) > 30) {
-		content = post.Content[0:30]
+	if (len(content) > 30) {
+		content = content[0:30]
 		content += "..."
 	} else {
-		content = post.Content
+		content = content
 	}
 
 	message := "";
-	if (len(post.Content) == 0) {
+	if (len(content) == 0) {
 		message = "Your Post has been suspended as people in your community downvoted or reported about it"
 	} else {
 		message = "Your Post \"" + content + "\" has been suspended as people in your community downvoted or reported about it"

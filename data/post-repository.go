@@ -392,7 +392,7 @@ func SuspendPost(id string, isSilent bool) (err error) {
 
 	if (err == nil && !isSilent) {
 		post, _ := findPostById(id)
-		common.SendDeletePostNotification(post);
+		common.SendDeletePostNotification(post.UserId.Hex(), post.Content);
 	}
 	return
 }
@@ -1011,7 +1011,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 		post, err := findPostById(postId);
 		if (err == nil ) {
 			go updateReplyCount(postId, true);
-			go common.SendCommentNotification(post, comment)
+			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content);
 		}
 	}
 

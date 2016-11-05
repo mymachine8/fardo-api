@@ -21,7 +21,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 	if (err != nil) {
 		return news, models.FardoError{"Get Access Token: " + err.Error()}
 	}
-	//TODO: Have to revisit this code
+
 	news.UserId = result.Id;
 	if (len(news.LabelId) > 0) {
 		labelContext := common.NewContext()
@@ -131,7 +131,7 @@ func checkVoteCountNews(token string, userId string, id string, isUpvote bool) (
 
 	if (!isUpvote) {
 		if (votes <= models.NEGATIVE_VOTES_LIMIT) {
-			err = SuspendPost(id, false);
+			err = SuspendNews(id, false);
 		}
 	}
 	return;
@@ -208,7 +208,7 @@ func DownvoteNews(token string, id string, undo bool) (err error) {
 func SuspendNews(id string, isSilent bool) (err error) {
 	context := common.NewContext()
 	defer context.Close()
-	c := context.DbCollection("posts")
+	c := context.DbCollection("news")
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$set": bson.M{
@@ -218,7 +218,7 @@ func SuspendNews(id string, isSilent bool) (err error) {
 
 	if (err == nil && !isSilent) {
 		post, _ := findPostById(id)
-		common.SendDeletePostNotification(post);
+		common.SendDeletePostNotification(post.UserId.Hex(), post.Content);
 	}
 	return
 }
