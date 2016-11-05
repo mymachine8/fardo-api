@@ -378,53 +378,38 @@ func (this *FcmClient) SetCondition(condition string) *FcmClient {
 	return this
 }
 
-func SendUpvoteNotification(userId string, post models.Post) {
+func SendUpvoteNotification(userId string, postId string, postUserId string, votes int, postType string, content string) {
 
-	if (post.UserId.Hex() == userId) {
+	if (postUserId == userId) {
 		return;
 	}
 
-	token, err := findUserById(post.UserId.Hex());
+	token, err := findUserById(postUserId);
 
 	if (err != nil) {
 		log.Print(err.Error())
 	}
 
-	if (len(post.GroupId) > 0) {
-		post.PlaceType = post.GroupCategoryName;
-		post.PlaceName = post.GroupName;
-	} else {
-		post.PlaceType = "location";
-		post.PlaceName = post.Locality;
-	}
-
 	notificationData := map[string]string{
 		"id": strconv.Itoa(rand.Intn(999999)),
-		"postId": post.Id.Hex(),
+		"postId": postId,
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
-		"emphasis" : strconv.Itoa(post.Upvotes) + " upvotes",
+		"emphasis" : strconv.Itoa(votes) + " upvotes",
 	}
+	notificationData["type"] = postType;
 
-	if(len(post.ImageUrl) > 0) {
-		notificationData["type"] = "image_post_upvote";
-	} else {
-		notificationData["type"] = "post_upvote";
-	}
-
-	var content string;
-
-	if (len(post.Content) > 55) {
-		content = post.Content[0:55]
+	if (len(content) > 55) {
+		content = content[0:55]
 		content += "..."
 	} else {
-		content = post.Content
+		content = content
 	}
 
 	var message string
 	if (len(content) == 0) {
-		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post";
+		message = "You got " + strconv.Itoa(votes) + " upvotes for your post";
 	} else {
-		message = "You got " + strconv.Itoa(post.Upvotes) + " upvotes for your post \"" + content + "\"";
+		message = "You got " + strconv.Itoa(votes) + " upvotes for your post \"" + content + "\"";
 	}
 
 	ids := []string{token.FcmToken}
@@ -537,7 +522,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 		userIds = append(userIds, comments[i].UserId)
 	}
 
-	options := bson.M{"_id" : bson.M{ "$in" : userIds}}
+	options := bson.M{"_id" : bson.M{"$in" : userIds}}
 
 	context := NewContext()
 	defer context.Close()
@@ -549,7 +534,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 	var fcmIds []string
 
 	for i := 0; i < len(users); i++ {
-		if(users[i].Id.Hex() != comment.UserId.Hex() && users[i].IsActive) {
+		if (users[i].Id.Hex() != comment.UserId.Hex() && users[i].IsActive) {
 			fcmIds = append(fcmIds, users[i].FcmToken)
 		}
 	}
@@ -598,7 +583,7 @@ func SendCommentNotification(post models.Post, comment models.Comment) {
 
 	notificationData["message"] = message;
 
-	if(len(fcmIds) > 0) {
+	if (len(fcmIds) > 0) {
 		sendNotification(fcmIds, notificationData);
 	}
 
@@ -632,12 +617,12 @@ func SendNearByNotification(post models.Post) {
 	ids := []string{}
 
 	for _, user := range users {
-		if(user.Id.Hex() != post.UserId.Hex()) {
+		if (user.Id.Hex() != post.UserId.Hex()) {
 			ids = append(ids, user.FcmToken);
 		}
 	}
 
-	if(len(ids) == 0) {
+	if (len(ids) == 0) {
 		return;
 	}
 
@@ -647,7 +632,7 @@ func SendNearByNotification(post models.Post) {
 		"time": time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
 	}
 
-	if(len(post.ImageUrl) > 0) {
+	if (len(post.ImageUrl) > 0) {
 		data["type"] = "image_post";
 	} else {
 		data["type"] = "post";
@@ -773,7 +758,7 @@ func sendNotification(fcmTokens []string, data map[string]string) {
 
 	_, err := c.Send()
 
-	if(err != nil) {
+	if (err != nil) {
 		slack.Send(slack.ErrorLevel, "FCM Notification error: " + err.Error())
 	}
 }

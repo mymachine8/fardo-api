@@ -37,7 +37,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	post.UserId = result.Id;
 	if (!post.IsAnonymous) {
 		post.Username = result.Username;
-		if(len(result.Phone) > 0) {
+		if (len(result.Phone) > 0) {
 			post.Jid = result.Phone + "@im.ripplin.in"
 		}
 	}
@@ -292,7 +292,7 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 	c := context.DbCollection("posts")
 
 	post.IsActive = true;
-	if(!post.CreatedOn.IsZero()) {
+	if (!post.CreatedOn.IsZero()) {
 		post.CreatedOn = post.CreatedOn.UTC();
 	}
 	post.CreatedOn = time.Now().UTC();
@@ -649,11 +649,7 @@ func addUserVotes(token string, posts []models.Post) []models.Post {
 	defer context.Close()
 	c := context.DbCollection("user_posts")
 
-	tokenContext := common.NewContext()
-	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("users")
-	var result models.User
-	err := tokenCol.Find(bson.M{"token": token}).One(&result)
+	result, err := GetUserInfo(token);
 
 	var userPosts models.UserPost
 	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
@@ -694,12 +690,7 @@ func addUserCommentVotes(token string, comments []models.Comment) []models.Comme
 	defer context.Close()
 	c := context.DbCollection("user_posts")
 
-	tokenContext := common.NewContext()
-	defer tokenContext.Close()
-	tokenCol := tokenContext.DbCollection("users")
-	var result models.User
-	err := tokenCol.Find(bson.M{"token": token}).One(&result)
-
+	result, err := GetUserInfo(token);
 	var userPosts models.UserPost
 	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
 	if (err != nil) {
@@ -807,23 +798,22 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	}
 
 	for ; j < nearPostsLen; j++ {
-		if(!idInPosts(nearByPosts[j].Id.Hex(), posts)) {
+		if (!idInPosts(nearByPosts[j].Id.Hex(), posts)) {
 			posts = append(posts, nearByPosts[j])
 		}
 	}
 
 	for ; k < globalPostsLen; k++ {
-		if(!idInPosts(globalPosts[k].Id.Hex(), posts)) {
+		if (!idInPosts(globalPosts[k].Id.Hex(), posts)) {
 			posts = append(posts, globalPosts[k])
 		}
 	}
 
 	for ; l < adminAreaPostsLen; l++ {
-		if(!idInPosts(adminAreaPosts[l].Id.Hex(), posts)) {
+		if (!idInPosts(adminAreaPosts[l].Id.Hex(), posts)) {
 			posts = append(posts, adminAreaPosts[l])
 		}
 	}
-
 
 	if (posts == nil) {
 		posts = []models.Post{}
@@ -1006,7 +996,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 	comment.PostId = bson.ObjectIdHex(postId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
-	if(len(result.Phone) > 0) {
+	if (len(result.Phone) > 0) {
 		comment.Jid = result.Phone + "@im.ripplin.in"
 	}
 
@@ -1155,7 +1145,13 @@ func checkVoteCount(token string, userId string, id string, isUpvote bool) (err 
 		if (post.Upvotes == 3 || post.Upvotes == 7 || post.Upvotes == 12 || (post.Upvotes > 15 && common.DivisbleByPowerOf2(post.Upvotes))) {
 			posts := []models.Post{post}
 			posts = addUserVotes(token, posts);
-			common.SendUpvoteNotification(userId, posts[0]);
+			var postType string;
+			if(len(posts[0].ImageUrl) > 0) {
+				postType = "image_post_upvote";
+			} else {
+				postType = "post_upvote";
+			}
+			common.SendUpvoteNotification(userId, posts[0].Id.Hex(),posts[0].UserId.Hex(), posts[0].Upvotes - posts[0].Downvotes,postType, posts[0].Content);
 		}
 	}
 

@@ -11,6 +11,7 @@ import (
 
 var (
 	bucket *storage.BucketHandle
+	newsImageBucket *storage.BucketHandle
 	postImageBucket *storage.BucketHandle
 	groupImageBucket *storage.BucketHandle
 	groupLogoBucket *storage.BucketHandle
@@ -20,12 +21,14 @@ type BucketType uint8
 
 const (
 	PostImage BucketType = iota
+	NewsImage BucketType = iota
 	GroupImage
 	GroupLogo
 )
 
 func InitCloudStorage() {
 	client, err := storage.NewClient(context.Background())
+	newsImageBucket = client.Bucket("zing-news-images");
 	postImageBucket = client.Bucket("zing-post-images");
 	groupImageBucket = client.Bucket("zing-group-images");
 	groupLogoBucket = client.Bucket("zing-group-logos");
@@ -41,6 +44,9 @@ func getBucket(bucketType BucketType) *storage.BucketHandle {
 	case PostImage:
 		bucket = postImageBucket
 		return bucket;
+	case NewsImage:
+		bucket = newsImageBucket
+		return bucket;
 	case GroupImage:
 		bucket = groupImageBucket
 		return bucket;
@@ -55,6 +61,8 @@ func getBucketName(bucketType BucketType) string {
 	switch bucketType {
 	case PostImage:
 		return "zing-post-images"
+	case NewsImage:
+		return "zing-news-images"
 	case GroupImage:
 		bucket = groupImageBucket
 		return "zing-group-images";

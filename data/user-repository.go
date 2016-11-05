@@ -347,7 +347,7 @@ func CalculateUserScore(post models.Post, actionType ActionType) {
 		resultScore = postCreateScore();
 		break;
 	case ActionDownvote:
-		resultScore = downvoteScore(post.Upvotes - post.Downvotes) * -1;
+		resultScore = downvoteScore();
 		break;
 	case ActionSpam:
 		resultScore = spamScore(post.SpamCount) * -1;
@@ -360,18 +360,45 @@ func CalculateUserScore(post models.Post, actionType ActionType) {
 		break;
 	}
 
+	saveUserScore(post.UserId.Hex(), resultScore);
+}
+
+func saveUserScore(userId string,score int) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("users")
 
-	err := c.Update(bson.M{"_id": post.UserId},
+	err := c.Update(bson.M{"_id": bson.ObjectIdHex(userId)},
 		bson.M{"$inc": bson.M{
-			"score": resultScore,
+			"score": score,
 		}})
 
 	if (err != nil) {
 		log.Print(err.Error())
 	}
+}
+
+func CalculateUserScoreForNews(news models.News, actionType ActionType) {
+	var resultScore int;
+	switch actionType {
+	case ActionCreate:
+		resultScore = newsCreateScore();
+		break;
+	case ActionDownvote:
+		resultScore = downvoteScore();
+		break;
+	case ActionSpam:
+		resultScore = newsSpamScore(news.SpamCount);
+		break;
+	case ActionShare:
+		resultScore = shareScore();
+		break;
+	case ActionUpvote:
+		resultScore = upvoteScore();
+		break;
+	}
+
+	saveUserScore(news.UserId.Hex(), resultScore);
 }
 
 func SetUserFeedback(token string, content string, phone string, email string) error {
@@ -421,24 +448,26 @@ func postCreateScore() int {
 	return 10;
 }
 
-func downvoteScore(votes int) int {
-	if (votes == 1 || votes == 2) {
-		return 5;
-	}
-	if (votes == 3) {
-		return 20;
-	}
-	return 0;
+func newsCreateScore() int {
+	return 30;
+}
+
+func downvoteScore() int {
+	return -5;
 }
 
 func spamScore(spamCount int) int {
-	return 10 * spamCount;
+	return -10 * spamCount;
+}
+
+func newsSpamScore(spamCount int) int {
+	return -20 * spamCount;
 }
 
 func shareScore() int {
-	return 10;
+	return 5;
 }
 
 func upvoteScore() int {
-	return 5;
+	return 2;
 }
