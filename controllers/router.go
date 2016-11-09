@@ -67,6 +67,8 @@ func InitRoutes() http.Handler {
 	r.POST("/api/feedback", submitFeedbackHandler);
 	r.PUT("/api/report-spam", reportSpamHandler);
 
+	r.POST("/api/news", createNewsHandler);
+
 	//----------------  End of main endpoints -----------------------
 
 
@@ -398,6 +400,28 @@ func createPostHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	if (err != nil) {
 		post.ImageData = "";
 		writeErrorResponse(rw, r, p, post, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func createNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var news models.News
+	err := json.NewDecoder(r.Body).Decode(&news)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, news, http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.CreateNews(token, news, false);
+
+	if (err != nil) {
+		news.ImageData = "";
+		writeErrorResponse(rw, r, p, news, http.StatusInternalServerError, err);
 		return
 	}
 

@@ -12,6 +12,9 @@ type News struct {
 	State string `bson:"state" json:"state"`
 	Locality string `bson:"locality" json:"locality"`
 	FullAddress string `bson:"fullAddress" json:"fullAddress"`
+	Title    string `bson:"title" json:"title"`
+	Content    string `bson:"content" json:"content"`
+	Link    string `bson:"link" json:"link"`
 	ImageUrl string `bson:"imageUrl" json:"imageUrl"`
 	ImageType string `bson:"imageType" json:"imageType"`
 	ImageData string `bson:"-" json:"imageData,omitempty"`
@@ -27,12 +30,8 @@ type News struct {
 	Username string `bson:"username" json:"username"`
 	VoteClicked string `bson:"-" json:"voteClicked,omitempty"`
 	ModifiedOn time.Time `bson:"modifiedOn,omitempty" json:"-"`
-	GroupId    bson.ObjectId `bson:"groupId,omitempty" json:"groupId,omitempty"`
-	GroupName  string `bson:"groupName,omitempty" json:"groupName,omitempty"`
-	GroupCategoryName string `bson:"groupCategoryName,omitempty" json:"-"`
 	PlaceName string `bson:"placeName,omitempty" json:"placeName,omitempty"`
 	PlaceType string `bson:"placeType,omitempty" json:"placeType,omitempty"`
-	Content    string `bson:"content" json:"content"`
 	ReplyCount int `bson:"replyCount" json:"replyCount"`
 	LabelId    bson.ObjectId `bson:"labelId,omitempty" json:"labelId,omitempty"`
 	LabelName  string `bson:"labelName,omitempty" json:"labelName,omitempty"`

@@ -38,7 +38,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 
 
 	if (len(news.ImageData) > 0 ) {
-		fileName := "post_" + news.Id.Hex();
+		fileName := "news_" + news.Id.Hex();
 		imageReader := strings.NewReader(news.ImageData);
 
 		dec := base64.NewDecoder(base64.StdEncoding, imageReader);
@@ -53,7 +53,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 		res, err := common.SendItemToCloudStorage(common.PostImage, fileName, fileType, dec);
 
 		if (err != nil) {
-			return news, models.FardoError{"Insert Post Image Error: " + err.Error()}
+			return news, models.FardoError{"Insert News Image Error: " + err.Error()}
 		}
 
 		news.ImageUrl = res;

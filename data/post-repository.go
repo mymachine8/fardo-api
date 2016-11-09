@@ -502,7 +502,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 	if (err != nil) {
-		err = models.FardoError{"Get Access Token: " + err.Error()}
+		err = models.FardoError{"Get Access Token: " + token + " " + err.Error()}
 		return
 	}
 
