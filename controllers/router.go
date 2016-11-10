@@ -68,6 +68,17 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/report-spam", reportSpamHandler);
 
 	r.POST("/api/news", createNewsHandler);
+	r.GET("/api/news/:id", getNewsByIdHandler);
+	r.PUT("/api/news/:id/upvote", upvoteNewsHandler);
+	r.PUT("/api/news/:id/downvote", downvoteNewsHandler);
+	r.PUT("/api/news/:id/undo-upvote", undoUpvoteNewsHandler);
+	r.PUT("/api/news/:id/undo-downvote", undoDownvoteNewsHandler);
+	r.PUT("/api/news/:id/silent-suspend", suspendNewsHandler);
+	r.PUT("/api/news/comments/:id/upvote", upvoteNewsCommentHandler);
+	r.PUT("/api/news/comments/:id/downvote", downvoteNewsCommentHandler);
+	r.PUT("/api/news/comments/:id/undo-upvote", undoUpvoteNewsCommentHandler);
+	r.PUT("/api/news/comments/:id/undo-downvote", undoDownvoteNewsCommentHandler);
+	r.PUT("/api/news/report-spam", reportNewsSpamHandler);
 
 	//----------------  End of main endpoints -----------------------
 
@@ -567,6 +578,104 @@ func suspendCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
 }
 
+func upvoteNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.UpvoteNews(token, p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoUpvoteNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.UpvoteNews(token, p.ByName("id"), true);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func downvoteNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.DownvoteNews(token, p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoDownvoteNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.DownvoteNews(token, p.ByName("id"), true);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func upvoteNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.UpvoteNewsComment(token, p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoUpvoteNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.UpvoteNewsComment(token, p.ByName("id"), true);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func downvoteNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.DownvoteNewsComment(token, p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func undoDownvoteNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	err := data.DownvoteNewsComment(token, p.ByName("id"), true);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func suspendNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.SuspendNews(p.ByName("id"), false);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
 func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var body struct {
 		GroupId string `json:"groupId"`
@@ -1005,6 +1114,17 @@ func getPostByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
+func getNewsByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	result, err := data.GetNewsById(p.ByName("id"));
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
 func labelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result, err := data.GetAllLabels();
 
@@ -1275,6 +1395,28 @@ func reportSpamHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 	}
 
 	err = data.ReportSpam(feedback.PostId, feedback.Content);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
+}
+
+func reportNewsSpamHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var feedback struct {
+		NewsId  string `json:"newsId,omitempty" bson:"newsId,omitempty"`
+		Content string `json:"content,omitempty" bson:"content,omitempty"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&feedback)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
+		return
+	}
+
+	err = data.ReportNewsSpam(feedback.NewsId, feedback.Content);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);

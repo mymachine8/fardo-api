@@ -532,3 +532,18 @@ func GetAllNewsComments(token string, postId string) (comments []models.NewsComm
 	comments = addUserNewsCommentVotes(token, comments);
 	return
 }
+
+func ReportNewsSpam(id string, reason string) (err error) {
+	spamReason := bson.M{
+		"spamReasons": reason,
+	}
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news")
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$inc": bson.M{
+			"spamCount": 1},
+			"$push": spamReason, })
+
+	return;
+}
