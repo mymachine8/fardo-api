@@ -74,11 +74,11 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/news/:id/undo-upvote", undoUpvoteNewsHandler);
 	r.PUT("/api/news/:id/undo-downvote", undoDownvoteNewsHandler);
 	r.PUT("/api/news/:id/silent-suspend", suspendNewsHandler);
-	r.PUT("/api/news/comments/:id/upvote", upvoteNewsCommentHandler);
-	r.PUT("/api/news/comments/:id/downvote", downvoteNewsCommentHandler);
-	r.PUT("/api/news/comments/:id/undo-upvote", undoUpvoteNewsCommentHandler);
-	r.PUT("/api/news/comments/:id/undo-downvote", undoDownvoteNewsCommentHandler);
-	r.PUT("/api/news/report-spam", reportNewsSpamHandler);
+	r.PUT("/api/news-comments/:id/upvote", upvoteNewsCommentHandler);
+	r.PUT("/api/news-comments/:id/downvote", downvoteNewsCommentHandler);
+	r.PUT("/api/news-comments/:id/undo-upvote", undoUpvoteNewsCommentHandler);
+	r.PUT("/api/news-comments/:id/undo-downvote", undoDownvoteNewsCommentHandler);
+	r.PUT("/api/news-report-spam", reportNewsSpamHandler);
 
 	//----------------  End of main endpoints -----------------------
 
