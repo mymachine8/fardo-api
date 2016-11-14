@@ -96,8 +96,10 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/upload-group-image/:id", uploadGroupImage);
 	r.DELETE("/api/groups/:id", removeGroupHandler);
 
+
 	r.GET("/api/groups/:id/labels", groupLabelListHandler);
 	r.GET("/api/labels", labelListHandler);
+	r.GET("/api/user-labels", userLabelListHandler);
 	r.GET("/api/labels/:id", getLabelByIdHandler);
 	r.POST("/api/groups/:id/labels", createLabelHandler);
 	r.PUT("/api/labels/:id", updateLabelHandler);
@@ -1127,6 +1129,21 @@ func getNewsByIdHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 func labelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result, err := data.GetAllLabels();
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func userLabelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	token := common.GetAccessToken(r);
+	groupId := r.URL.Query().Get("groupId");
+	lat, err := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	result, err := data.GetUserLabels(token,groupId,lat,lng);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);

@@ -13,7 +13,7 @@ func CreateLabel(groupId string, label models.Label) (string, error) {
 	c := context.DbCollection("labels")
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
-	if(len(groupId) > 0) {
+	if (len(groupId) > 0) {
 		label.GroupId = bson.ObjectIdHex(groupId);
 		label.CreatedOn = time.Now().UTC()
 	}
@@ -52,6 +52,28 @@ func GetLabelById(id string) (label models.Label, err error) {
 	defer context.Close()
 	c := context.DbCollection("labels")
 	err = c.FindId(bson.ObjectIdHex(id)).One(&label)
+	return
+}
+
+func GetUserLabels(token string, groupId string, lat float64, lng float64) (labels []models.Label, err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("labels")
+	params := make(map[string]interface{})
+	if (len(groupId) > 0) {
+		params["groupId"] = groupId;
+	}
+
+	params["loc"] = [2]float64{lng, lat};
+
+	options := []bson.M{}
+	options = append(options, params);
+	options = append(options, bson.M{"isGlobal" : true});
+
+	err = c.Find(bson.M{"$or":options}).All(&labels)
+	if (labels == nil) {
+		labels = []models.Label{}
+	}
 	return
 }
 
