@@ -16,6 +16,7 @@ type News struct {
 	Title       string `bson:"title" json:"title"`
 	Content     string `bson:"content" json:"content"`
 	Link        string `bson:"link" json:"link"`
+	LinkName    string `bson:"linkName" json:"linkName"`
 	ImageUrl    string `bson:"imageUrl" json:"imageUrl"`
 	ImageType   string `bson:"imageType" json:"imageType"`
 	ImageData   string `bson:"-" json:"imageData,omitempty"`
