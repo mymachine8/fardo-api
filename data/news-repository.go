@@ -23,6 +23,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 	}
 
 	news.UserId = result.Id;
+	news.Username = result.Username;
 	if (len(news.LabelId) > 0) {
 		labelContext := common.NewContext()
 		labelCol := labelContext.DbCollection("labels")
