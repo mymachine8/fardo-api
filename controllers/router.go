@@ -69,6 +69,8 @@ func InitRoutes() http.Handler {
 
 	r.POST("/api/news", createNewsHandler);
 	r.GET("/api/news/:id", getNewsByIdHandler);
+	r.GET("/api/news/:id/comments", newsCommentListHandler);
+	r.POST("/api/news/:id/comments", createNewsCommentHandler);
 	r.PUT("/api/news/:id/upvote", upvoteNewsHandler);
 	r.PUT("/api/news/:id/downvote", downvoteNewsHandler);
 	r.PUT("/api/news/:id/undo-upvote", undoUpvoteNewsHandler);
@@ -453,6 +455,27 @@ func createCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 	token := common.GetAccessToken(r);
 
 	id, err := data.AddComment(token, p.ByName("id"), comment);
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(id));
+}
+
+func createNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var comment models.NewsComment
+	err := json.NewDecoder(r.Body).Decode(&comment)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	id, err := data.AddNewsComment(token, p.ByName("id"), comment);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, comment, http.StatusInternalServerError, err);
@@ -1085,6 +1108,19 @@ func commentListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Pa
 
 	token := common.GetAccessToken(r);
 	result, err := data.GetAllComments(token, p.ByName("id"));
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func newsCommentListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	token := common.GetAccessToken(r);
+	result, err := data.GetAllNewsComments(token, p.ByName("id"));
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
