@@ -45,35 +45,11 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 		groupContext := common.NewContext()
 		groupCol := groupContext.DbCollection("groups")
 		var group models.Group
-		var myGroup models.Group
 		err = groupCol.FindId(post.GroupId).One(&group)
-		err = groupCol.FindId(post.MyGroupId).One(&myGroup)
 		groupContext.Close()
 		post.GroupName = group.ShortName;
 		post.GroupCategoryName = group.CategoryName
-		post.MyGroupName = myGroup.ShortName;
-		post.MyGroupCategoryName = myGroup.CategoryName
 		UpdateGroupPostCount(group.Id.Hex());
-	} else if (len(post.GroupId) > 0) {
-		groupContext := common.NewContext()
-		groupCol := groupContext.DbCollection("groups")
-		var group models.Group
-		err = groupCol.FindId(post.GroupId).One(&group)
-		groupContext.Close()
-		if (err == nil) {
-			post.GroupName = group.ShortName;
-			post.GroupCategoryName = group.CategoryName
-		}
-	}
-	if (len(post.LabelId) > 0 && post.IsGroup) {
-		labelContext := common.NewContext()
-		labelCol := labelContext.DbCollection("labels")
-		var label models.Label
-		err = labelCol.FindId(post.LabelId).One(&label)
-		labelContext.Close()
-		if (err == nil) {
-			post.LabelName = label.Name;
-		}
 	}
 
 	post.Id = bson.NewObjectId();
@@ -117,13 +93,8 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 	}
 
 	if (post.IsGroup) {
-		if (len(post.MyGroupId) > 0) {
-			post.PlaceName = post.MyGroupName
-			post.PlaceType = post.MyGroupCategoryName
-		} else {
-			post.PlaceName = post.GroupName
-			post.PlaceType = post.GroupCategoryName
-		}
+		post.PlaceName = post.GroupName
+		post.PlaceType = post.GroupCategoryName
 
 	} else {
 		post.PlaceName = post.Locality
@@ -258,17 +229,6 @@ func CreatePostAdmin(token string, post models.Post) (string, error) {
 		}
 	}
 
-	if (len(post.LabelId) > 0) {
-		labelContext := common.NewContext()
-		labelCol := labelContext.DbCollection("labels")
-		var label models.Label
-		err = labelCol.FindId(post.LabelId).One(&label)
-		labelContext.Close()
-		if (err == nil) {
-			post.LabelName = label.Name;
-		}
-	}
-
 	post.Id = bson.NewObjectId();
 
 	if (len(post.ImageData) > 0 ) {
@@ -310,7 +270,6 @@ func addToCurrentPosts(post models.Post) {
 	defer context.Close()
 	postLite.Id = post.Id
 	postLite.GroupId = post.GroupId
-	postLite.LabelId = post.LabelId
 	postLite.Loc = post.Loc
 	postLite.CreatedOn = post.CreatedOn
 	c := context.DbCollection("current_posts")
@@ -491,7 +450,7 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 40000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, homeLng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
+func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time, groupId string) (posts[]models.Post, err error) {
 	context := common.NewContext()
 	c := context.DbCollection("posts")
 	defer context.Close()
@@ -511,26 +470,15 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 	var prevPosts []models.Post;
 	var currentPosts []models.Post;
 
-	var additionalPosts []models.Post;
-
 	if (len(groupId) > 0) {
 		options := []bson.M{}
 		options = append(options, bson.M{"groupId" : bson.ObjectIdHex(groupId)});
-		options = append(options, bson.M{"myGroupId" : bson.ObjectIdHex(groupId)});
 		if (len(result.GroupId) > 0 && result.GroupId.Hex() != groupId) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
-			options = append(options, bson.M{"myGroupId" : result.GroupId});
-		}
-		if (homeLat > 0 && homeLng > 0) {
-			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 8 / 3963.2}}}});
 		}
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$lt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&prevPosts);
-		if (len(posts) + len(prevPosts) < 75) {
-			err = c.Find(bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{[2]float64{lng, lat}, 8 / 3963.2}}}, "isActive" : true, "isGroup": false}).Limit(50).Sort("-score").All(&additionalPosts);
-		}
 
 		for index, _ := range currentPosts {
 			posts = append(posts, currentPosts[index]);
@@ -549,12 +497,6 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
-			options = append(options, bson.M{"myGroupId" : result.GroupId});
-		}
-
-		if (homeLat > 0 && homeLng > 0) {
-			homeLatLng := [2]float64{homeLng, homeLat}
-			options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{homeLatLng, 8 / 3963.2}}}});
 		}
 
 		err = c.Find(bson.M{"$or":options, "createdOn": bson.M{"$gt": lastUpdated}, "isActive" : true}).Limit(50).Sort("-score").All(&currentPosts);
@@ -562,7 +504,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		var count = 0;
 		for index, _ := range currentPosts {
-			isHisGroup := len(result.GroupId) > 0 && (currentPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || currentPosts[index].GroupId.Hex() == result.GroupId.Hex())
+			isHisGroup := len(result.GroupId) > 0 && currentPosts[index].GroupId.Hex() == result.GroupId.Hex()
 			if (!currentPosts[index].IsGroup || count < 4 || isHisGroup) {
 				posts = append(posts, currentPosts[index]);
 				if (currentPosts[index].IsGroup && !isHisGroup) {
@@ -573,7 +515,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 
 		count = 0;
 		for index, _ := range prevPosts {
-			isHisGroup := len(result.GroupId) > 0 && (prevPosts[index].MyGroupId.Hex() == result.GroupId.Hex() || prevPosts[index].GroupId.Hex() == result.GroupId.Hex())
+			isHisGroup := len(result.GroupId) > 0 && prevPosts[index].GroupId.Hex() == result.GroupId.Hex()
 			if (!prevPosts[index].IsGroup || count < 4 || isHisGroup) {
 				posts = append(posts, prevPosts[index]);
 				if (prevPosts[index].IsGroup && !isHisGroup) {
@@ -583,43 +525,27 @@ func GetMyCirclePosts(token string, lat float64, lng float64, homeLat float64, h
 		}
 	}
 
-	for index, _ := range additionalPosts {
-		posts = append(posts, additionalPosts[index]);
-	}
-
 	for index, _ := range posts {
 		distance := common.DistanceLatLong(posts[index].Loc[1], lat, posts[index].Loc[0], lng)
-		isHisGroup := len(result.GroupId) > 0 && (posts[index].MyGroupId.Hex() == result.GroupId.Hex() || posts[index].GroupId.Hex() == result.GroupId.Hex())
+		isHisGroup := len(result.GroupId) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex()
 		if (isHisGroup) {
-			posts[index].Score += 0.5;
+			posts[index].Score += 0.8;
 		} else if (distance < 1000) {
-			posts[index].Score += 0.5;
+			posts[index].Score += 0.8;
 		} else if (distance < 1500) {
-			posts[index].Score += 0.46;
+			posts[index].Score += 0.7;
 		} else if (distance < 2000) {
-			posts[index].Score += 0.40;
+			posts[index].Score += 0.6;
 		} else if (distance < 2600) {
-			posts[index].Score += 0.34;
+			posts[index].Score += 0.5;
 		}
 
-		isOnlyGroupPost := posts[index].IsGroup && !posts[index].IsLocation
-
-		if ( isOnlyGroupPost || (posts[index].IsGroup && ((len(groupId) > 0 && posts[index].GroupId.Hex() == groupId) || (len(result.GroupId.Hex()) > 0 && posts[index].GroupId.Hex() == result.GroupId.Hex())))) {
-			if (len(posts[index].MyGroupName) > 0) {
-				posts[index].PlaceName = posts[index].MyGroupName;
-				posts[index].PlaceType = posts[index].MyGroupCategoryName;
-			} else {
-				posts[index].PlaceName = posts[index].GroupName;
-				posts[index].PlaceType = posts[index].GroupCategoryName;
-			}
+		if (len(posts[index].GroupName) > 0) {
+			posts[index].PlaceName = posts[index].GroupName;
+			posts[index].PlaceType = posts[index].GroupCategoryName;
 		} else {
-			if (len(posts[index].GroupName) > 0) {
-				posts[index].PlaceName = posts[index].GroupName;
-				posts[index].PlaceType = posts[index].GroupCategoryName;
-			} else {
-				posts[index].PlaceName = posts[index].Locality;
-				posts[index].PlaceType = "location"
-			}
+			posts[index].PlaceName = posts[index].Locality;
+			posts[index].PlaceType = "location"
 		}
 
 		if (len(posts[index].PlaceName) > 24) {
@@ -1096,7 +1022,7 @@ func checkCommentVoteCount(userId string, id string, isUpvote bool) (err error) 
 
 	if (isUpvote) {
 		if (comment.Upvotes == 2 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
-			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(),comment.Id.Hex(), comment.PostId.Hex(),"comment_upvote",comment.Upvotes - comment.Downvotes, comment.Content);
+			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(), comment.Id.Hex(), comment.PostId.Hex(), "comment_upvote", comment.Upvotes - comment.Downvotes, comment.Content);
 		}
 	}
 
@@ -1117,12 +1043,12 @@ func checkVoteCount(token string, userId string, id string, isUpvote bool) (err 
 			posts := []models.Post{post}
 			posts = addUserVotes(token, posts);
 			var postType string;
-			if(len(posts[0].ImageUrl) > 0) {
+			if (len(posts[0].ImageUrl) > 0) {
 				postType = "image_post_upvote";
 			} else {
 				postType = "post_upvote";
 			}
-			common.SendUpvoteNotification(userId, posts[0].Id.Hex(),posts[0].UserId.Hex(), posts[0].Upvotes - posts[0].Downvotes,postType, posts[0].Content);
+			common.SendUpvoteNotification(userId, posts[0].Id.Hex(), posts[0].UserId.Hex(), posts[0].Upvotes - posts[0].Downvotes, postType, posts[0].Content);
 		}
 	}
 
