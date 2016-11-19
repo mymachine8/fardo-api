@@ -105,7 +105,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 
 	go addToRecentUserPosts(result.Id, post.Id, "post");
 
-	go common.SendNearByNotification(post)
+	//go common.SendNearByNotification(post)
 
 	go CalculateUserScore(post, ActionCreate);
 
