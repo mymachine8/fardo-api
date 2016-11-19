@@ -29,6 +29,7 @@ func InitRoutes() http.Handler {
 	r.GET("/api/near-groups", GetNearByGroupsHandler);
 	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/my-circle", myCircleHandler);
+	r.GET("/api/home", homeHandler);
 	r.GET("/api/popular", popularPostsHandler);
 
 	r.POST("/api/users", memberRegisterHandler);
@@ -156,7 +157,6 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	var lat, lng float64;
 	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	groupId := r.URL.Query().Get("groupId");
 	layout := "2006-01-02T15:04:05.000Z"
 	last_updated, _ := time.Parse(
 		layout,
@@ -167,7 +167,43 @@ func myCircleHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 	token := common.GetAccessToken(r);
 
-	result, e := data.GetMyCirclePosts(token, lat, lng, last_updated, groupId);
+	result, _, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
+
+	if (e != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
+		return
+	}
+
+	rw.Write(common.SuccessResponseJSON(result));
+
+}
+
+func homeHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	layout := "2006-01-02T15:04:05.000Z"
+	last_updated, _ := time.Parse(
+		layout,
+		r.URL.Query().Get("last_updated"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	token := common.GetAccessToken(r);
+
+	result, group, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
+	response := struct {
+		Posts []models.Post `json:"posts"`
+		Group models.Group `json:"group,omitempty"`
+	}{
+		result,
+		group,
+	}
+
+	rw.Write(common.SuccessResponseJSON(response));
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
@@ -1177,7 +1213,7 @@ func userLabelListHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 	groupId := r.URL.Query().Get("groupId");
 	lat, err := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	result, err := data.GetUserLabels(token,groupId,lat,lng);
+	result, err := data.GetUserLabels(token, groupId, lat, lng);
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);

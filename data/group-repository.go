@@ -66,6 +66,18 @@ func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	return;
 }
 
+func GetNearGroup(lat float64, lng float64) (group models.Group, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("groups")
+	query := c.Find(bson.M{"loc":
+	bson.M{"$near": currentLatLng},"isActive":true, "isChildGroup": false},)
+	err = query.One(&group)
+	return
+}
+
 func GetNearByPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err error) {
 	context := common.NewContext()
 	defer context.Close()
