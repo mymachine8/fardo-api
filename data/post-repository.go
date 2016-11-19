@@ -450,7 +450,7 @@ func redditPostRankingAlgorithm(post models.Post) float64 {
 	return float64(sign) * math.Log10(float64(z)) + float64(timeDiff) / 40000;
 }
 
-func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time) (posts[]models.Post, group models.Group, err error) {
+func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.Time) (posts[]models.Post, group *models.Group, err error) {
 	context := common.NewContext()
 	c := context.DbCollection("posts")
 	defer context.Close()
@@ -465,16 +465,20 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 		return
 	}
 
-	group, _ = GetNearGroup(lat, lng);
+	group, err = GetNearGroup(lat, lng);
+
+	var groupId string;
+
+	if (err == nil) {
+		groupId = group.Id.Hex();
+	}
 
 	go SetUserLocation(token, lat, lng);
 
 	var prevPosts []models.Post;
 	var currentPosts []models.Post;
 
-	groupId := group.Id.Hex();
-
-	if (len(group.Id) > 0) {
+	if (len(groupId) > 0) {
 		options := []bson.M{}
 		options = append(options, bson.M{"groupId" : bson.ObjectIdHex(groupId)});
 		if (len(result.GroupId) > 0 && result.GroupId.Hex() != groupId) {

@@ -197,18 +197,18 @@ func homeHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	result, group, e := data.GetMyCirclePosts(token, lat, lng, last_updated);
 	response := struct {
 		Posts []models.Post `json:"posts"`
-		Group models.Group `json:"group,omitempty"`
+		Group *models.Group `json:"group,omitempty"`
 	}{
 		result,
 		group,
 	}
 
-	rw.Write(common.SuccessResponseJSON(response));
 	if (e != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, e);
 		return
 	}
-	rw.Write(common.SuccessResponseJSON(result));
+
+	rw.Write(common.SuccessResponseJSON(response));
 
 }
 
@@ -766,8 +766,6 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		isGroupLocked,
 	}
 
-	log.Print(isGroupLocked);
-
 	rw.Write(common.SuccessResponseJSON(response));
 }
 
@@ -879,8 +877,6 @@ func updateUsernameHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 func checkUsernameAvailabilityHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	isAvailable, err := data.CheckUsernameAvailability(r.URL.Query().Get("username"));
-
-	log.Print(isAvailable)
 
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, r.URL.Query().Get("username"), http.StatusInternalServerError, err);

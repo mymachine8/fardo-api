@@ -8,6 +8,7 @@ import (
 	"strings"
 	"encoding/base64"
 	"math"
+	"errors"
 )
 
 func GetPopularGroups(lat float64, lng float64) (groups []models.GroupLite, err error) {
@@ -66,7 +67,7 @@ func GetGlobalPopularGroups() (groups []models.GroupLite, err error) {
 	return;
 }
 
-func GetNearGroup(lat float64, lng float64) (group models.Group, err error) {
+func GetNearGroup(lat float64, lng float64) (group * models.Group, err error) {
 	context := common.NewContext()
 	defer context.Close()
 
@@ -75,6 +76,11 @@ func GetNearGroup(lat float64, lng float64) (group models.Group, err error) {
 	query := c.Find(bson.M{"loc":
 	bson.M{"$near": currentLatLng},"isActive":true, "isChildGroup": false},)
 	err = query.One(&group)
+	if(err == nil) {
+		if(common.DistanceLatLong(group.Loc[1], lat, group.Loc[0], lng) > float64(group.Radius)) {
+			return nil, errors.New("No near group found")
+		}
+	}
 	return
 }
 
