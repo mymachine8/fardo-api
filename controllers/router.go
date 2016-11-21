@@ -27,6 +27,7 @@ func InitRoutes() http.Handler {
 
 
 	r.GET("/api/near-groups", GetNearByGroupsHandler);
+	r.GET("/api/user-near-groups", GetNearCollegesAndOfficesHandler);
 	r.GET("/api/popular-groups", GetPopularGroupsHandler);
 	r.GET("/api/my-circle", myCircleHandler);
 	r.GET("/api/home", homeHandler);
@@ -249,6 +250,25 @@ func GetNearByGroupsHandler(rw http.ResponseWriter, r *http.Request, p httproute
 	}
 
 	result, err := data.GetNearByGroups(lat, lng, limit);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func GetNearCollegesAndOfficesHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	result, err := data.GetNearCollegesAndOffices(lat, lng);
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
 		return

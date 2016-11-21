@@ -129,6 +129,17 @@ func GetNearByGroups(lat float64, lng float64,limit int) (groups []models.Group,
 	return
 }
 
+func GetNearCollegesAndOffices(lat float64, lng float64) (groups []models.GroupLite, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("groups")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$near": currentLatLng},"isActive":true, "categoryName": bson.M{"$in": [2]string{"Colleges", "Offices"}} },).Limit(150).All(groups)
+	return
+}
+
 func CreateGroup(group models.Group) (string, error) {
 	context := common.NewContext()
 	defer context.Close()
