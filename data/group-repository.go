@@ -136,7 +136,7 @@ func GetNearCollegesAndOffices(lat float64, lng float64) (groups []models.GroupL
 	currentLatLng := [2]float64{lng, lat}
 	c := context.DbCollection("groups")
 	err = c.Find(bson.M{"loc":
-	bson.M{"$near": currentLatLng},"isActive":true, "categoryName": bson.M{"$in": [2]string{"Colleges", "Offices"}} },).Limit(150).All(groups)
+	bson.M{"$near": currentLatLng},"isActive":true, "categoryName": bson.M{"$in": [2]string{"Colleges", "Offices"}} },).Limit(150).All(&groups)
 	return
 }
 
