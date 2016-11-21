@@ -6,4 +6,5 @@ type GroupLite struct {
 	Id      bson.ObjectId `bson:"_id" json:"id"`
 	Name    string  `bson:"name" json:"name"`
 	LogoUrl string `bson:"logoUrl" json:"logoUrl,omitempty"`
+	ShortName string `bson:"shortName" json:"shortName"`
 }
