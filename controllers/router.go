@@ -770,19 +770,18 @@ func updateUserGroupHandler(rw http.ResponseWriter, r *http.Request, p httproute
 		return
 	}
 
-	var isGroupLocked bool;
-	isGroupLocked, err = data.UpdateUserGroup(token, body.GroupId, body.Lat, body.Lng);
+	isGroupLocked,group, er := data.UpdateUserGroup(token, body.GroupId, body.Lat, body.Lng);
 
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, err);
+	if (er != nil) {
+		writeErrorResponse(rw, r, p, body, http.StatusInternalServerError, er);
 		return
 	}
 
 	response := struct {
-		GroupId       string `json:"groupId"`
+		Group       models.Group `json:"group"`
 		IsGroupLocked bool `json:"isGroupLocked"`
 	}{
-		body.GroupId,
+		group,
 		isGroupLocked,
 	}
 

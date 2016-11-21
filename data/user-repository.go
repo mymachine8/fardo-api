@@ -236,20 +236,18 @@ func SetUserLocation(accessToken string, lat float64, lng float64) error {
 	return err
 }
 
-func isLocationInGroup(groupId string, lat float64, lng float64) (isNear bool) {
+func isLocationInGroup(groupId string, lat float64, lng float64) (bool, models.Group) {
 	groupContext := common.NewContext()
 	groupCol := groupContext.DbCollection("groups")
 	defer groupContext.Close()
 	var group models.Group
 	err := groupCol.FindId(bson.ObjectIdHex(groupId)).One(&group);
 
-	log.Print(common.DistanceLatLong(group.Loc[1], lat, group.Loc[0], lng));
-
 	if (err == nil && common.DistanceLatLong(group.Loc[1], lat, group.Loc[0], lng) < float64(group.Radius)) {
-		return true
+		return true, group
 	}
 
-	return false
+	return false, group
 }
 
 func LockUserGroup(token string, isLock bool) error {
@@ -272,13 +270,13 @@ func LockUserGroup(token string, isLock bool) error {
 	return err;
 }
 
-func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bool, error) {
+func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bool, models.Group, error) {
 
 	userContext := common.NewContext()
 	userCol := userContext.DbCollection("users")
 	defer userContext.Close()
 
-	isNear := isLocationInGroup(groupId, lat, lng);
+	isNear, group := isLocationInGroup(groupId, lat, lng);
 
 	err := userCol.Update(bson.M{"token": token},
 		bson.M{"$set": bson.M{
@@ -286,7 +284,7 @@ func UpdateUserGroup(token string, groupId string, lat float64, lng float64) (bo
 			"isGroupLocked" : !isNear,
 		}})
 
-	return !isNear, err
+	return !isNear,group, err
 }
 
 func RemoveUserGroup(token string) (error) {
