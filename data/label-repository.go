@@ -13,10 +13,7 @@ func CreateLabel(groupId string, label models.Label) (string, error) {
 	c := context.DbCollection("labels")
 	obj_id := bson.NewObjectId()
 	label.Id = obj_id
-	if (len(groupId) > 0) {
-		label.GroupId = bson.ObjectIdHex(groupId);
-		label.CreatedOn = time.Now().UTC()
-	}
+	label.CreatedOn = time.Now().UTC()
 	err := c.Insert(&label)
 	return obj_id.Hex(), err;
 }

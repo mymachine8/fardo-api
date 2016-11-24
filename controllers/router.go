@@ -356,21 +356,12 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		return
 	}
 
-	var labels []models.Label
-	labels, err = data.GetAllLabels();
-
-	if (err != nil) {
-		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
-		return
-	}
-
 	var subCategories []models.GroupSubCategory
 	subCategories, err = data.GetAllSubCategories();
 
 	var results []models.SolrSchema
 
 	groupsLen := len(groups);
-	labelsLen := len(labels);
 	subCategoriesLen := len(subCategories);
 
 	i := 0
@@ -378,12 +369,6 @@ func solrCollectionHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 	for i = 0; i < groupsLen; i++ {
 		result := models.SolrSchema{Id: groups[i].Id, Name: groups[i].Name, ShortName:groups[i].ShortName, Type: "group"};
 		results = append(results, result)
-	}
-
-	for i = 0; i < labelsLen; i++ {
-		result := models.SolrSchema{Id: labels[i].Id, Name: labels[i].Name, GroupName: labels[i].GroupName, Type: "label"};
-		results = append(results, result)
-		i++;
 	}
 
 	for i = 0; i < subCategoriesLen; i++ {
