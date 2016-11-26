@@ -291,13 +291,25 @@ func UpvotePost(token string, id string, undo bool) (err error) {
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	step := 1;
+	voteStep := 1;
 	if (undo) {
 		step = -1;
+		voteStep = -1;
+	}
+
+	voteType := getPostVoteType(result.Id, id);
+
+	downvoteStep := 0;
+	if(voteType == "downvote") {
+		downvoteStep = -1;
+		voteStep = 2;
 	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
+			"downvotes": downvoteStep,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
@@ -320,14 +332,25 @@ func DownvotePost(token string, id string, undo bool) (err error) {
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	step := 1;
-
+	voteStep := -1;
 	if (undo) {
 		step = -1;
+		voteStep = 1;
+	}
+
+	voteType := getPostVoteType(result.Id, id);
+
+	upvoteStep := 0;
+	if(voteType == "upvote") {
+		upvoteStep = -1;
+		voteStep = -2;
 	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
+			"upvotes": upvoteStep,
 			"downvotes": step,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 	if (err == nil) {
@@ -571,6 +594,56 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 	posts = addUserVotes(token, posts);
 
 	return
+}
+
+func getPostVoteType(userId bson.ObjectId, postId string) string {
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_posts")
+
+	var userPosts models.UserPost
+	err := c.Find(bson.M{"userId": userId}).One(&userPosts)
+
+	if(err != nil) {
+		return "none";
+	}
+
+	for i := 0; i < len(userPosts.PostVotes); i++ {
+		if(userPosts.PostVotes[i].Id.Hex() == postId) {
+			if (userPosts.PostVotes[i].IsUpvote) {
+				return "upvote";
+			} else {
+				return "downvote";
+			}
+		}
+	}
+	return "none";
+}
+
+func getCommentVoteType(userId bson.ObjectId, postId string) string {
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_posts")
+
+	var userPosts models.UserPost
+	err := c.Find(bson.M{"userId": userId}).One(&userPosts)
+
+	if(err != nil) {
+		return "none";
+	}
+
+	for i := 0; i < len(userPosts.CommentVotes); i++ {
+		if(userPosts.PostVotes[i].Id.Hex() == postId) {
+			if (userPosts.PostVotes[i].IsUpvote) {
+				return "upvote";
+			} else {
+				return "downvote";
+			}
+		}
+	}
+	return "none";
 }
 
 func addUserVotes(token string, posts []models.Post) []models.Post {
