@@ -86,6 +86,8 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/news-comments/:id/suspend", suspendNewsCommentHandler);
 	r.PUT("/api/news-report-spam", reportNewsSpamHandler);
 
+	r.PUT("/api/votes-count", voteCountHandler);
+
 	//----------------  End of main endpoints -----------------------
 
 
@@ -1542,6 +1544,13 @@ func reportNewsSpamHandler(rw http.ResponseWriter, r *http.Request, p httprouter
 		writeErrorResponse(rw, r, p, feedback, http.StatusInternalServerError, err);
 		return
 	}
+
+	rw.Write(common.SuccessResponseJSON("success"));
+}
+
+func voteCountHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	data.PostMigration();
 
 	rw.Write(common.SuccessResponseJSON("success"));
 }
