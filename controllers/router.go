@@ -83,6 +83,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/news-comments/:id/downvote", downvoteNewsCommentHandler);
 	r.PUT("/api/news-comments/:id/undo-upvote", undoUpvoteNewsCommentHandler);
 	r.PUT("/api/news-comments/:id/undo-downvote", undoDownvoteNewsCommentHandler);
+	r.PUT("/api/news-comments/:id/suspend", suspendNewsCommentHandler);
 	r.PUT("/api/news-report-spam", reportNewsSpamHandler);
 
 	//----------------  End of main endpoints -----------------------
@@ -657,6 +658,16 @@ func silentSuspendHandler(rw http.ResponseWriter, r *http.Request, p httprouter.
 func suspendCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
 
 	err := data.SuspendComment(p.ByName("id"));
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+	rw.Write(common.SuccessResponseJSON(p.ByName("id")));
+}
+
+func suspendNewsCommentHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+
+	err := data.SuspendNewsComment(p.ByName("id"));
 	if (err != nil) {
 		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
 		return

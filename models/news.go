@@ -25,6 +25,7 @@ type News struct {
 	ImageHeight  int `bson:"imageHeight,omitempty" json:"imageHeight,omitempty"`
 	Upvotes      int  `bson:"upvotes" json:"upvotes"`
 	Downvotes    int  `bson:"downvotes" json:"downvotes"`
+	Votes        int  `bson:"votes" json:"votes"`
 	SpamCount    int  `bson:"spamCount" json:"-"`
 	SpamReasons  []string `bson:"spamReasons" json:"-"`
 	Score        float64  `bson:"score" json:"score"`

@@ -6,16 +6,17 @@ import (
 )
 
 type NewsComment struct {
-	Id        bson.ObjectId `bson:"_id" json:"id"`
-	NewsId    bson.ObjectId `bson:"newsId,omitempty" json:"newsId,omitempty"`
-	Content   string `bson:"content" json:"content"`
-	CreatedOn time.Time `bson:"createdOn" json:"createdOn"`
-	ModifiedOn time.Time `bson:"modifiedOn" json:"-"`
-	Upvotes   int  `bson:"upvotes" json:"upvotes"`
-	Downvotes int  `bson:"downvotes" json:"downvotes"`
+	Id          bson.ObjectId `bson:"_id" json:"id"`
+	NewsId      bson.ObjectId `bson:"newsId,omitempty" json:"newsId,omitempty"`
+	Content     string `bson:"content" json:"content"`
+	CreatedOn   time.Time `bson:"createdOn" json:"createdOn"`
+	ModifiedOn  time.Time `bson:"modifiedOn" json:"-"`
+	Upvotes     int  `bson:"upvotes" json:"upvotes"`
+	Downvotes   int  `bson:"downvotes" json:"downvotes"`
+	Votes       int  `bson:"votes" json:"votes"`
 	VoteClicked string `bson:"-" json:"voteClicked,omitempty"`
-	UserId    bson.ObjectId `bson:"userId" json:"userId"`
-	Username string `bson:"username" json:"username"`
-	IsPrivate  bool `bson:"isPrivate" json:"isPrivate"`
-	IsActive  bool `bson:"isActive" json:"isActive"`
+	UserId      bson.ObjectId `bson:"userId" json:"userId"`
+	Username    string `bson:"username" json:"username"`
+	IsPrivate   bool `bson:"isPrivate" json:"isPrivate"`
+	IsActive    bool `bson:"isActive" json:"isActive"`
 }
