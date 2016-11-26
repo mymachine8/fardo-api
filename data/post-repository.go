@@ -1049,22 +1049,35 @@ func UpvoteComment(token string, id string, undo bool) (err error) {
 	defer context.Close()
 	c := context.DbCollection("comments")
 
-	step := 1;
-	if (undo) {
-		step = -1;
-	}
-
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("users")
 	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
+	step := 1;
+	voteStep := 1;
+	if (undo) {
+		step = -1;
+		voteStep = -1;
+	}
+
+	voteType := getCommentVoteType(result.Id, id);
+
+	downvoteStep := 0;
+	if(voteType == "downvote") {
+		downvoteStep = -1;
+		voteStep = 2;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
+			"downvotes": downvoteStep,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
+
 	go checkCommentVoteCount(result.Id.Hex(), id, true);
 	go addToRecentUserVotes(result.Id, bson.ObjectIdHex(id), true, undo, "comment");
 	return
@@ -1075,20 +1088,32 @@ func DownvoteComment(token string, id string, undo bool) (err error) {
 	defer context.Close()
 	c := context.DbCollection("comments")
 
-	step := 1;
-	if (undo) {
-		step = -1;
-	}
-
 	tokenContext := common.NewContext()
 	defer tokenContext.Close()
 	tokenCol := tokenContext.DbCollection("users")
 	var result models.User
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
+	step := 1;
+	voteStep := -1;
+	if (undo) {
+		step = -1;
+		voteStep = 1;
+	}
+
+	voteType := getPostVoteType(result.Id, id);
+
+	upvoteStep := 0;
+	if(voteType == "upvote") {
+		upvoteStep = -1;
+		voteStep = -2;
+	}
+
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
+			"upvotes": upvoteStep,
 			"downvotes": step,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 

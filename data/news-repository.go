@@ -311,15 +311,28 @@ func UpvoteNews(token string, id string, undo bool) (err error) {
 	result, err := GetUserInfo(token)
 
 	step := 1;
+	voteStep := 1;
 	if (undo) {
 		step = -1;
+		voteStep = -1;
+	}
+
+	voteType := getNewsVoteType(result.Id, id);
+
+	downvoteStep := 0;
+	if(voteType == "downvote") {
+		downvoteStep = -1;
+		voteStep = 2;
 	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
+			"downvotes": downvoteStep,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
+
 	if (err == nil) {
 		go updateUserAndNewsScore(id, ActionUpvote);
 		go checkVoteCountNews(result.Token, result.Id.Hex(), id, true);
@@ -340,16 +353,28 @@ func DownvoteNews(token string, id string, undo bool) (err error) {
 	err = tokenCol.Find(bson.M{"token": token}).One(&result)
 
 	step := 1;
-
+	voteStep := -1;
 	if (undo) {
 		step = -1;
+		voteStep = 1;
+	}
+
+	voteType := getNewsVoteType(result.Id, id);
+
+	upvoteStep := 0;
+	if(voteType == "upvote") {
+		upvoteStep = -1;
+		voteStep = -2;
 	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
+			"upvotes": upvoteStep,
 			"downvotes": step,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
+
 	if (err == nil) {
 		go updateUserAndNewsScore(id, ActionDownvote);
 		go checkVoteCountNews(result.Token, result.Id.Hex(), id, false);
@@ -488,16 +513,28 @@ func UpvoteNewsComment(token string, id string, undo bool) (err error) {
 	defer context.Close()
 	c := context.DbCollection("news_comments")
 
+	result, err := GetUserInfo(token)
+
 	step := 1;
+	voteStep := 1;
 	if (undo) {
 		step = -1;
+		voteStep = -1;
 	}
 
-	result, err := GetUserInfo(token)
+	voteType := getNewsCommentVoteType(result.Id, id);
+
+	downvoteStep := 0;
+	if(voteType == "downvote") {
+		downvoteStep = -1;
+		voteStep = 2;
+	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
 			"upvotes": step,
+			"downvotes": downvoteStep,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 
@@ -511,16 +548,28 @@ func DownvoteNewsComment(token string, id string, undo bool) (err error) {
 	defer context.Close()
 	c := context.DbCollection("news_comments")
 
+	result, err := GetUserInfo(token)
+
 	step := 1;
+	voteStep := -1;
 	if (undo) {
 		step = -1;
+		voteStep = 1;
 	}
 
-	result, err := GetUserInfo(token)
+	voteType := getNewsCommentVoteType(result.Id, id);
+
+	upvoteStep := 0;
+	if(voteType == "upvote") {
+		upvoteStep = -1;
+		voteStep = -2;
+	}
 
 	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
 		bson.M{"$inc": bson.M{
+			"upvotes": upvoteStep,
 			"downvotes": step,
+			"votes": voteStep,
 		}, "$set": bson.M{
 			"modifiedOn": time.Now().UTC()}})
 
@@ -691,4 +740,54 @@ func ReportNewsSpam(id string, reason string) (err error) {
 			"$push": spamReason, })
 
 	return;
+}
+
+func getNewsVoteType(userId bson.ObjectId, postId string) string {
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_news")
+
+	var userNews models.UserNews
+	err := c.Find(bson.M{"userId": userId}).One(&userNews)
+
+	if(err != nil) {
+		return "none";
+	}
+
+	for i := 0; i < len(userNews.CommentVotes); i++ {
+		if(userNews.CommentVotes[i].Id.Hex() == postId) {
+			if (userNews.CommentVotes[i].IsUpvote) {
+				return "upvote";
+			} else {
+				return "downvote";
+			}
+		}
+	}
+	return "none";
+}
+
+func getNewsCommentVoteType(userId bson.ObjectId, commentId string) string {
+
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("user_news")
+
+	var userNews models.UserNews
+	err := c.Find(bson.M{"userId": userId}).One(&userNews)
+
+	if(err != nil) {
+		return "none";
+	}
+
+	for i := 0; i < len(userNews.CommentVotes); i++ {
+		if(userNews.Votes[i].Id.Hex() == commentId) {
+			if (userNews.Votes[i].IsUpvote) {
+				return "upvote";
+			} else {
+				return "downvote";
+			}
+		}
+	}
+	return "none";
 }
