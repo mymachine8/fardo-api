@@ -574,7 +574,7 @@ func SendCommentNotification(postUserId string, postId string, commentUserId str
 		}
 	}
 
-	if (found) {
+	if (found || postUserId == commentUserId) {
 		return;
 	}
 
