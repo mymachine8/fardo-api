@@ -217,7 +217,7 @@ func getNearByNews(lat float64, lng float64) (news[]models.News, err error) {
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }},
-		"isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(LocalPercent).All(&news);
+		"isActive" : true}).Sort("-score").Limit(LocalPercent).All(&news);
 	if (news == nil) {
 		news = []models.News{}
 	}
@@ -246,7 +246,7 @@ func getPopularNewsAdminArea(lat float64, lng float64) (news []models.News, err 
 	err = c.Find(bson.M{"loc":
 	bson.M{"$geoWithin":
 	bson.M{"$centerSphere": []interface{}{currentLatLng, 200 / 3963.2} }},
-		"isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(AdminAreaPercent).All(&news);
+		"isActive" : true, "upvotes": bson.M{"$gt": 1}}).Sort("-score").Limit(AdminAreaPercent).All(&news);
 	if (news == nil) {
 		news = []models.News{
 
