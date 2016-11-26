@@ -405,40 +405,6 @@ func SuspendComment(id string) (err error) {
 	return
 }
 
-func PostMigration() {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("posts")
-
-	var posts []models.Post;
-	c.Find(nil).All(&posts)
-
-
-	for i:=0;i<len(posts);i++ {
-		c.Update(bson.M{"_id": posts[i].Id},
-			bson.M{"$set": bson.M{
-				"votes": posts[i].Upvotes - posts[i].Downvotes,
-			}})
-	}
-
-
-	con := common.NewContext()
-	defer con.Close()
-	cx := con.DbCollection("comments")
-
-	var comments []models.Comment;
-	cx.Find(nil).All(&comments)
-
-
-	for i:=0;i<len(comments);i++ {
-		c.Update(bson.M{"_id": comments[i].Id},
-			bson.M{"$set": bson.M{
-				"votes": comments[i].Upvotes - comments[i].Downvotes,
-			}})
-	}
-	return
-}
-
 func updatePostScore(id string, score float64) (err error) {
 	context := common.NewContext()
 	defer context.Close()
