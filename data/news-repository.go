@@ -67,7 +67,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 
 	news.IsActive = true;
 	news.CreatedOn = time.Now().UTC();
-	news.Score = redditPostRankingAlgorithmNews(news);
+	news.Score = redditNewsRankingAlgorithmNews(news);
 
 	err = c.Insert(&news)
 
@@ -82,7 +82,7 @@ func CreateNews(token string, news models.News, isAdmin bool) (models.News, erro
 	return news, err
 }
 
-func redditPostRankingAlgorithmNews(news models.News) float64 {
+func redditNewsRankingAlgorithmNews(news models.News) float64 {
 	timeDiff := common.GetTimeSeconds(news.CreatedOn) - common.GetZingCreationTimeSeconds();
 	votes := int64(news.Upvotes - news.Downvotes);
 	var sign int64;
@@ -112,6 +112,149 @@ func GetNewsById(id string) (news models.News, err error) {
 	return
 }
 
+func GetNews(token string, lat float64, lng float64) (news []models.News, err error) {
+
+	nearByNews, err := getNearByNews(lat, lng); //50%
+	globalNews, _ := getGlobalNews(); //30%
+	adminAreaNews, _ := getPopularNewsAdminArea(lat, lng); //20%
+
+
+	for index, _ := range nearByNews {
+		nearByNews[index].PlaceName = nearByNews[index].Locality;
+		nearByNews[index].PlaceType = "location"
+		if (len(nearByNews[index].PlaceName) > 24) {
+			nearByNews[index].PlaceName = nearByNews[index].PlaceName[0:24] + "...";
+		}
+	}
+
+	for index, _ := range globalNews {
+		globalNews[index].PlaceName = globalNews[index].City;
+		globalNews[index].PlaceType = "location"
+		if (len(globalNews[index].PlaceName) > 24) {
+			globalNews[index].PlaceName = globalNews[index].PlaceName[0:24] + "...";
+		}
+	}
+
+	for index, _ := range adminAreaNews {
+		adminAreaNews[index].PlaceName = adminAreaNews[index].City;
+		adminAreaNews[index].PlaceType = "location"
+		if (len(adminAreaNews[index].PlaceName) > 24) {
+			adminAreaNews[index].PlaceName = adminAreaNews[index].PlaceName[0:24] + "...";
+		}
+	}
+
+	totalCount := len(nearByNews) + len(globalNews) + len(adminAreaNews)
+
+	j := 0
+	k := 0
+	l := 0
+
+	nearNewsLen := len(nearByNews);
+	globalNewsLen := len(globalNews);
+	adminAreaNewsLen := len(adminAreaNews);
+
+	for i := 0; i < totalCount; i++ {
+		if (i % 3 == 0) {
+			if (j < nearNewsLen && !idInNews(nearByNews[j].Id.Hex(), news)) {
+				news = append(news, nearByNews[j])
+			}
+			j++
+		}
+		if (i % 3 == 1) {
+			if (k < globalNewsLen && !idInNews(globalNews[k].Id.Hex(), news)) {
+				news = append(news, globalNews[k])
+			}
+			k++
+		}
+		if (i % 3 == 2) {
+			if (l < adminAreaNewsLen && !idInNews(adminAreaNews[l].Id.Hex(), news)) {
+				news = append(news, adminAreaNews[l])
+			}
+			l++
+		}
+	}
+
+	for ; j < nearNewsLen; j++ {
+		if (!idInNews(nearByNews[j].Id.Hex(), news)) {
+			news = append(news, nearByNews[j])
+		}
+	}
+
+	for ; k < globalNewsLen; k++ {
+		if (!idInNews(globalNews[k].Id.Hex(), news)) {
+			news = append(news, globalNews[k])
+		}
+	}
+
+	for ; l < adminAreaNewsLen; l++ {
+		if (!idInNews(adminAreaNews[l].Id.Hex(), news)) {
+			news = append(news, adminAreaNews[l])
+		}
+	}
+
+	if (news == nil) {
+		news = []models.News{}
+	}
+	return
+}
+
+func idInNews(id string, list []models.News) bool {
+	for _, b := range list {
+		if b.Id.Hex() == id {
+			return true
+		}
+	}
+	return false
+}
+
+func getNearByNews(lat float64, lng float64) (news[]models.News, err error) {
+
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("news")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 30 / 3963.2} }},
+		"isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(LocalPercent).All(&news);
+	if (news == nil) {
+		news = []models.News{}
+	}
+	return;
+}
+
+func getGlobalNews() (news[]models.News, err error) {
+
+	context := common.NewContext()
+	defer context.Close()
+
+	c := context.DbCollection("news")
+	err = c.Find(bson.M{"isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(GlobalPercent).All(&news);
+	if (news == nil) {
+		news = []models.News{}
+	}
+	return;
+}
+
+func getPopularNewsAdminArea(lat float64, lng float64) (news []models.News, err error) {
+	context := common.NewContext()
+	defer context.Close()
+
+	currentLatLng := [2]float64{lng, lat}
+	c := context.DbCollection("news")
+	err = c.Find(bson.M{"loc":
+	bson.M{"$geoWithin":
+	bson.M{"$centerSphere": []interface{}{currentLatLng, 200 / 3963.2} }},
+		"isActive" : true, "upvotes": bson.M{"$gt": 2}}).Sort("-score").Limit(AdminAreaPercent).All(&news);
+	if (news == nil) {
+		news = []models.News{
+
+		}
+	}
+	return;
+}
+
 func checkVoteCountNews(token string, userId string, id string, isUpvote bool) (err error) {
 	news, err := GetNewsById(id);
 	votes := news.Upvotes - news.Downvotes;
@@ -121,12 +264,12 @@ func checkVoteCountNews(token string, userId string, id string, isUpvote bool) (
 			news := []models.News{news}
 			news = addUserNewsVotes(token, news);
 			var postType string;
-			if(len(news[0].ImageUrl) > 0) {
+			if (len(news[0].ImageUrl) > 0) {
 				postType = "image_news_upvote";
 			} else {
 				postType = "news_upvote";
 			}
-			common.SendUpvoteNotification(userId, news[0].Id.Hex(),news[0].UserId.Hex(), news[0].Upvotes - news[0].Downvotes,postType, news[0].Content);
+			common.SendUpvoteNotification(userId, news[0].Id.Hex(), news[0].UserId.Hex(), news[0].Upvotes - news[0].Downvotes, postType, news[0].Content);
 		}
 	}
 
@@ -140,11 +283,24 @@ func checkVoteCountNews(token string, userId string, id string, isUpvote bool) (
 
 func updateUserAndNewsScore(id string, actionType ActionType) {
 	news, err := GetNewsById(id);
-	updatePostScore(id, redditPostRankingAlgorithmNews(news));
+	updateNewsScore(id, redditNewsRankingAlgorithmNews(news));
 
 	if (err == nil) {
 		CalculateUserScoreForNews(news, actionType);
 	}
+}
+
+
+func updateNewsScore(id string, score float64) (err error) {
+	context := common.NewContext()
+	defer context.Close()
+	c := context.DbCollection("news")
+
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
+		bson.M{"$set": bson.M{
+			"score": score,
+		}})
+	return
 }
 
 func UpvoteNews(token string, id string, undo bool) (err error) {
@@ -197,7 +353,7 @@ func DownvoteNews(token string, id string, undo bool) (err error) {
 	if (err == nil) {
 		go updateUserAndNewsScore(id, ActionDownvote);
 		go checkVoteCountNews(result.Token, result.Id.Hex(), id, false);
-		go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), false, undo, "post");
+		go addToRecentUserNewsVotes(result.Id, bson.ObjectIdHex(id), false, undo, "news");
 	}
 	return
 }
@@ -214,8 +370,8 @@ func SuspendNews(id string, isSilent bool) (err error) {
 		}})
 
 	if (err == nil && !isSilent) {
-		post, _ := findPostById(id)
-		common.SendDeletePostNotification(post.UserId.Hex(), post.Content);
+		news, _ := GetNewsById(id)
+		common.SendDeletePostNotification(news.UserId.Hex(), news.Content);
 	}
 	return
 }
@@ -236,25 +392,13 @@ func SuspendNewsComment(id string) (err error) {
 		}})
 
 	if (err == nil ) {
-		comment, errr := findCommentById(id);
+		comment, errr := findNewsCommentById(id);
 		if (errr != nil) {
 			return
 		}
-		go updateReplyCount(comment.PostId.Hex(), false);
+		go updateReplyCount(comment.NewsId.Hex(), false);
 	}
 
-	return
-}
-
-func updateNewsScore(id string, score float64) (err error) {
-	context := common.NewContext()
-	defer context.Close()
-	c := context.DbCollection("news")
-
-	err = c.Update(bson.M{"_id": bson.ObjectIdHex(id)},
-		bson.M{"$set": bson.M{
-			"score": score,
-		}})
 	return
 }
 
@@ -270,8 +414,8 @@ func addUserNewsVotes(token string, news []models.News) []models.News {
 
 	result, err := GetUserInfo(token);
 
-	var userPosts models.UserNews
-	err = c.Find(bson.M{"userId": result.Id}).One(&userPosts)
+	var userNews models.UserNews
+	err = c.Find(bson.M{"userId": result.Id}).One(&userNews)
 	if (err != nil) {
 		err = models.FardoError{"Get User News: " + err.Error()}
 		return news;
@@ -279,11 +423,11 @@ func addUserNewsVotes(token string, news []models.News) []models.News {
 
 	m := make(map[string]string)
 
-	for i := 0; i < len(userPosts.Votes); i++ {
-		if (userPosts.Votes[i].IsUpvote) {
-			m[userPosts.Votes[i].Id.Hex()] = "upvote";
+	for i := 0; i < len(userNews.Votes); i++ {
+		if (userNews.Votes[i].IsUpvote) {
+			m[userNews.Votes[i].Id.Hex()] = "upvote";
 		} else {
-			m[userPosts.Votes[i].Id.Hex()] = "downvote";
+			m[userNews.Votes[i].Id.Hex()] = "downvote";
 		}
 	}
 
@@ -438,7 +582,7 @@ func checkNewsCommentVoteCount(userId string, id string, isUpvote bool) (err err
 
 	if (isUpvote) {
 		if (comment.Upvotes == 2 || comment.Upvotes == 6 || comment.Upvotes == 9 || (comment.Upvotes > 15 && common.DivisbleByPowerOf2(comment.Upvotes))) {
-			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(),comment.Id.Hex(), comment.NewsId.Hex(),"news_comment_upvote",comment.Upvotes - comment.Downvotes, comment.Content);
+			common.SendCommentUpvoteNotification(userId, comment.UserId.Hex(), comment.Id.Hex(), comment.NewsId.Hex(), "news_comment_upvote", comment.Upvotes - comment.Downvotes, comment.Content);
 		}
 	}
 
@@ -450,7 +594,7 @@ func checkNewsCommentVoteCount(userId string, id string, isUpvote bool) (err err
 	return;
 }
 
-func AddNewsComment(token string, postId string, comment models.NewsComment) (string, error) {
+func AddNewsComment(token string, newsId string, comment models.NewsComment) (string, error) {
 	var err error
 	context := common.NewContext()
 	defer context.Close()
@@ -464,7 +608,7 @@ func AddNewsComment(token string, postId string, comment models.NewsComment) (st
 
 	comment.Id = bson.NewObjectId()
 	comment.IsActive = true;
-	comment.NewsId = bson.ObjectIdHex(postId);
+	comment.NewsId = bson.ObjectIdHex(newsId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
 
@@ -472,28 +616,28 @@ func AddNewsComment(token string, postId string, comment models.NewsComment) (st
 
 	if (err == nil) {
 		go addToRecentUserNews(result.Id, comment.NewsId, "comment");
-		post, err := findPostById(postId);
+		news, err := GetNewsById(newsId);
 		if (err == nil ) {
-			go updateReplyCountNews(postId, true);
-			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content, "news_comment");
+			go updateReplyCountNews(newsId, true);
+			go common.SendCommentNotification(news.UserId.Hex(), news.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), news.Content, comment.Content, "news_comment");
 		}
 	}
 
 	return comment.Id.Hex(), err
 }
 
-func addToRecentUserNews(userId bson.ObjectId, postId bson.ObjectId, fieldType string) {
+func addToRecentUserNews(userId bson.ObjectId, newsId bson.ObjectId, fieldType string) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("user_news")
 
 	ids := bson.M{
-		"newsIds": postId,
+		"newsIds": newsId,
 	}
 
 	if (fieldType == "comment") {
 		ids = bson.M{
-			"commentNewsIds": postId,
+			"commentNewsIds": newsId,
 		}
 	}
 	_, _ = c.Upsert(bson.M{"userId": userId},
@@ -519,12 +663,12 @@ func updateReplyCountNews(id string, isIncrement bool) (err error) {
 	return
 }
 
-func GetAllNewsComments(token string, postId string) (comments []models.NewsComment, err error) {
+func GetAllNewsComments(token string, newsId string) (comments []models.NewsComment, err error) {
 	context := common.NewContext()
 	defer context.Close()
 	c := context.DbCollection("news_comments")
 
-	err = c.Find(bson.M{"newsId": bson.ObjectIdHex(postId), "isActive": true}).All(&comments)
+	err = c.Find(bson.M{"newsId": bson.ObjectIdHex(newsId), "isActive": true}).All(&comments)
 
 	if (comments == nil) {
 		comments = []models.NewsComment{}

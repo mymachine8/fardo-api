@@ -70,6 +70,7 @@ func InitRoutes() http.Handler {
 	r.PUT("/api/report-spam", reportSpamHandler);
 
 	r.POST("/api/news", createNewsHandler);
+	r.GET("/api/news", getNewsHandler);
 	r.GET("/api/news/:id", getNewsByIdHandler);
 	r.GET("/api/news/:id/comments", newsCommentListHandler);
 	r.POST("/api/news/:id/comments", createNewsCommentHandler);
@@ -479,6 +480,27 @@ func createNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Par
 		return
 	}
 
+	rw.Write(common.SuccessResponseJSON(result));
+}
+
+func getNewsHandler(rw http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	var err error;
+	var lat, lng float64;
+	lat, err = strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, err = strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, "", http.StatusInternalServerError, err);
+		return
+	}
+
+	token := common.GetAccessToken(r);
+
+	result, err := data.GetNews(token, lat, lng);
+	if (err != nil) {
+		writeErrorResponse(rw, r, p, []byte{}, http.StatusInternalServerError, err);
+		return
+	}
 	rw.Write(common.SuccessResponseJSON(result));
 }
 
