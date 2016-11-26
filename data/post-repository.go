@@ -1018,7 +1018,7 @@ func AddComment(token string, postId string, comment models.Comment) (string, er
 		post, err := findPostById(postId);
 		if (err == nil ) {
 			go updateReplyCount(postId, true);
-			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content, "comment");
+			go common.SendCommentNotification(post.UserId.Hex(), post.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), post.Content, comment.Content,comment.Username, comment.Jid, "comment");
 		}
 	}
 

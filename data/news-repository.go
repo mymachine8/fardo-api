@@ -668,7 +668,7 @@ func AddNewsComment(token string, newsId string, comment models.NewsComment) (st
 		news, err := GetNewsById(newsId);
 		if (err == nil ) {
 			go updateReplyCountNews(newsId, true);
-			go common.SendCommentNotification(news.UserId.Hex(), news.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), news.Content, comment.Content, "news_comment");
+			go common.SendCommentNotification(news.UserId.Hex(), news.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), news.Content, comment.Content, comment.Username, "", "news_comment");
 		}
 	}
 
