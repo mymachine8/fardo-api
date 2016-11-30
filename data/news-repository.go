@@ -195,6 +195,9 @@ func GetNews(token string, lat float64, lng float64) (news []models.News, err er
 	if (news == nil) {
 		news = []models.News{}
 	}
+
+	news = addUserNewsVotes(token, news);
+
 	return
 }
 

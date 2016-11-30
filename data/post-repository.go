@@ -825,6 +825,9 @@ func GetPopularPosts(token string, lat float64, lng float64) (posts []models.Pos
 	if (posts == nil) {
 		posts = []models.Post{}
 	}
+
+	posts = addUserVotes(token, posts);
+
 	return
 }
 
