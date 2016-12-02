@@ -663,6 +663,7 @@ func AddNewsComment(token string, newsId string, comment models.NewsComment) (st
 	comment.NewsId = bson.ObjectIdHex(newsId);
 	comment.CreatedOn = time.Now()
 	comment.UserId = result.Id;
+	comment.Username = result.Username
 
 	err = c.Insert(&comment)
 
