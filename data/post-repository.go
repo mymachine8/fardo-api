@@ -105,7 +105,7 @@ func CreatePostUser(token string, post models.Post) (models.Post, error) {
 
 	go addToRecentUserPosts(result.Id, post.Id, "post");
 
-	//go common.SendNearByNotification(post)
+	go common.SendNearByNotification(post)
 
 	go CalculateUserScore(post, ActionCreate);
 
@@ -524,7 +524,7 @@ func GetMyCirclePosts(token string, lat float64, lng float64, lastUpdated time.T
 
 		options := []bson.M{}
 
-		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 8 / 3963.2}}}})
+		options = append(options, bson.M{"loc": bson.M{"$geoWithin": bson.M{"$centerSphere": []interface{}{currentLatLng, 25 / 3963.2}}}})
 
 		if (len(result.GroupId) > 0) {
 			options = append(options, bson.M{"groupId" : result.GroupId});
