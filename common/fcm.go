@@ -483,10 +483,11 @@ func findNearByUsers(lat float64, lng float64) (users []models.User, err error) 
 	defer context.Close()
 	c := context.DbCollection("users")
 
+	now := time.Now().UTC()
+	then := now.AddDate(0, 0, -10)
+
 	currentLatLng := [2]float64{lng, lat}
-	err = c.Find(bson.M{"loc":
-	bson.M{"$geoWithin":
-	bson.M{"$centerSphere": []interface{}{currentLatLng, 5 / 3963.2} }}, "isActive" : true}).All(&users);
+	err = c.Find(bson.M{"loc": bson.M{"$near": currentLatLng}, "isActive" : true, "modifiedOn": bson.M{"$gt": then}}).Limit(30).All(&users);
 	if (users == nil) {
 		users = []models.User{}
 	}

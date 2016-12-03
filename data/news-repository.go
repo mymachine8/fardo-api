@@ -272,7 +272,7 @@ func checkVoteCountNews(token string, userId string, id string, isUpvote bool) (
 			} else {
 				postType = "news_upvote";
 			}
-			common.SendUpvoteNotification(userId, news[0].Id.Hex(), news[0].UserId.Hex(), news[0].Upvotes - news[0].Downvotes, postType, news[0].Content);
+			common.SendUpvoteNotification(userId, news[0].Id.Hex(), news[0].UserId.Hex(), news[0].Upvotes - news[0].Downvotes, postType, news[0].Title);
 		}
 	}
 
@@ -672,7 +672,7 @@ func AddNewsComment(token string, newsId string, comment models.NewsComment) (st
 		news, err := GetNewsById(newsId);
 		if (err == nil ) {
 			go updateReplyCountNews(newsId, true);
-			go common.SendCommentNotification(news.UserId.Hex(), news.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), news.Content, comment.Content, comment.Username, "", "news_comment");
+			go common.SendCommentNotification(news.UserId.Hex(), news.Id.Hex(), comment.UserId.Hex(), comment.Id.Hex(), news.Title, comment.Content, comment.Username, "", "news_comment");
 		}
 	}
 
